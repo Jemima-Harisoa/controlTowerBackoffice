@@ -4,11 +4,13 @@ BackOffice projet web avec framework maison
 
 ## 📚 Documentation
 
-**New to the project? Start here:** 👉 **[Quick Start Guide](QUICKSTART.md)**
+**New to the project? Start here:** 👉 **[Quick Start Guide](QUICKSTART.md)** ⭐
 
-### Complete Documentation
+**Complete documentation index:** 📖 **[Documentation Index](DOCS.md)**
 
-- **[Quick Start Guide](QUICKSTART.md)** - 5-minute setup and daily workflow guide ⭐
+### Essential Guides
+
+- **[Quick Start Guide](QUICKSTART.md)** - 5-minute setup and daily workflow guide
 - **[Git Workflow Guide](WORKFLOW.md)** - Complete guide on branching strategy, pull requests, and cherry-picking
 - **[Deployment Guide](DEPLOYMENT.md)** - Step-by-step deployment instructions with cost comparison for students
 - **[Cheatsheet](CHEATSHEET.md)** - Quick reference for common Git commands
