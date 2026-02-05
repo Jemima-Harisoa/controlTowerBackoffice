@@ -6,14 +6,14 @@
 
 <!-- Mark the relevant option with an 'x' -->
 
-- [ ] 🐛 Bug fix (non-breaking change which fixes an issue)
-- [ ] ✨ New feature (non-breaking change which adds functionality)
-- [ ] 💥 Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] 📝 Documentation update
-- [ ] 🎨 Style/UI update (changes that don't affect functionality)
-- [ ] ♻️ Code refactoring (no functional changes)
-- [ ] ⚡ Performance improvement
-- [ ] ✅ Test update
+- [ ] Bug fix (non-breaking change which fixes an issue)
+- [ ] New feature (non-breaking change which adds functionality)
+- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] Documentation update
+- [ ] Style/UI update (changes that don't affect functionality)
+- [ ] Code refactoring (no functional changes)
+- [ ] Performance improvement
+- [ ] Test update
 
 ## Related Issues
 

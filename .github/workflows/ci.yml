@@ -2,9 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main, develop, 'release/**']
+    branches: [main, dev, 'release/**']
   pull_request:
-    branches: [main, develop]
+    branches: [main, dev]
 
 jobs:
   # Test job - runs on all branches
@@ -67,4 +67,4 @@ jobs:
 # 
 # Railway Configuration:
 # - Production environment: deploys from 'main' branch
-# - Staging environment: deploys from 'develop' or 'release/*' branches
+# - Staging environment: deploys from 'dev' or 'release/*' branches
