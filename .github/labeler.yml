@@ -1,0 +1,41 @@
+# Auto-labeler configuration for Java Maven project
+# This file defines which labels are automatically applied based on changed files
+
+# Backend/Java code
+backend:
+  - src/main/java/**
+  - src/test/java/**
+
+# Configuration files  
+config:
+  - pom.xml
+  - .github/**
+  - *.xml
+  - *.properties
+  - *.yml
+
+# Frontend/Web files
+frontend:
+  - src/main/webapp/**
+  - src/webapp/**
+  - "**/*.jsp"
+  - "**/*.css" 
+  - "**/*.js"
+  - "**/*.html"
+
+# Build/Deploy
+build:
+  - build/**
+  - target/**
+  - "*.bat"
+  - "*.sh"
+
+# Documentation
+documentation:
+  - "**/*.md"
+  - documenation/**
+
+# Dependencies
+dependencies:
+  - lib/**
+  - "**/*.jar"

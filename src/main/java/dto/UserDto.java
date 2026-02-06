@@ -1,0 +1,38 @@
+package dto;
+
+/**
+ * DTO pour l'affichage des informations utilisateur (sans données sensibles)
+ */
+public class UserDto {
+    private Long id;
+    private String username;
+    private String email;
+    private String role;
+    private boolean active;
+    
+    // Constructeur par défaut
+    public UserDto() {}
+    
+    // Constructeur avec paramètres
+    public UserDto(Long id, String username, String email, String role, boolean active) {
+        this.id = id;
+        this.username = username;
+        this.email = email;
+        this.role = role;
+        this.active = active;
+    }
+    
+    // Getters
+    public Long getId() { return id; }
+    public String getUsername() { return username; }
+    public String getEmail() { return email; }
+    public String getRole() { return role; }
+    public boolean isActive() { return active; }
+    
+    // Setters
+    public void setId(Long id) { this.id = id; }
+    public void setUsername(String username) { this.username = username; }
+    public void setEmail(String email) { this.email = email; }
+    public void setRole(String role) { this.role = role; }
+    public void setActive(boolean active) { this.active = active; }
+}
