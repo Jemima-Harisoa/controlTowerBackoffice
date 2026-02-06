@@ -9,10 +9,10 @@ backend:
 # Configuration files  
 config:
   - pom.xml
-  - .github/**
-  - *.xml
-  - *.properties
-  - *.yml
+  - ".github/**"
+  - "*.xml"
+  - "*.properties"
+  - "*.yml"
 
 # Frontend/Web files
 frontend:
