@@ -4,17 +4,17 @@ BackOffice projet web avec framework maison
 
 ## 📚 Documentation
 
-**New to the project? Start here:** 👉 **[Quick Start Guide](QUICKSTART.md)** ⭐
+**New to the project? Start here:** 👉 **[Quick Start Guide](documentation/QUICKSTART.md)** ⭐
 
-**Complete documentation index:** 📖 **[Documentation Index](DOCS.md)**
+**Complete documentation index:** 📖 **[Documentation Index](documentation/DOCS.md)**
 
 ### Essential Guides
 
-- **[Quick Start Guide](QUICKSTART.md)** - 5-minute setup and daily workflow guide
-- **[Git Workflow Guide](WORKFLOW.md)** - Complete guide on branching strategy, pull requests, and cherry-picking
-- **[Deployment Guide](DEPLOYMENT.md)** - Step-by-step deployment instructions with cost comparison for students
-- **[Cheatsheet](CHEATSHEET.md)** - Quick reference for common Git commands
-- **[Contributing Guide](CONTRIBUTING.md)** - How to contribute to this project
+- **[Quick Start Guide](documentation/QUICKSTART.md)** - 5-minute setup and daily workflow guide
+- **[Git Workflow Guide](documentation/WORKFLOW.md)** - Complete guide on branching strategy, pull requests, and cherry-picking
+- **[Deployment Guide](documentation/DEPLOYMENT.md)** - Step-by-step deployment instructions with cost comparison for students
+- **[Cheatsheet](documentation/CHEATSHEET.md)** - Quick reference for common Git commands
+- **[Contributing Guide](documentation/CONTRIBUTING.md)** - How to contribute to this project
 
 ## 🚀 Quick Start
 
@@ -32,7 +32,7 @@ release/vX   → deployed on STAGING
 main         → PROD
 ```
 
-**For detailed instructions, see [WORKFLOW.md](WORKFLOW.md)**
+**For detailed instructions, see [WORKFLOW.md](documentation/WORKFLOW.md)**
 
 ### Deployment
 
@@ -42,7 +42,7 @@ We recommend **Railway** for deployment - it offers:
 - Free SSL certificates
 - Built-in databases
 
-**For complete deployment guide, see [DEPLOYMENT.md](DEPLOYMENT.md)**
+**For complete deployment guide, see [DEPLOYMENT.md](documentation/DEPLOYMENT.md)**
 
 ## 🛠️ Development
 
@@ -70,10 +70,10 @@ npm run dev
 
 ## 📖 Learn More
 
-- [How to create branches](WORKFLOW.md#step-1-create-a-feature-branch)
-- [How to make pull requests](WORKFLOW.md#step-3-create-a-pull-request-to-develop)
-- [How to cherry-pick commits](WORKFLOW.md#cherry-pick-guide)
-- [How to deploy to production](DEPLOYMENT.md#deployment-on-railway-step-by-step)
+- [How to create branches](documentation/WORKFLOW.md#step-1-create-a-feature-branch)
+- [How to make pull requests](documentation/WORKFLOW.md#step-3-create-a-pull-request-to-develop)
+- [How to cherry-pick commits](documentation/WORKFLOW.md#cherry-pick-guide)
+- [How to deploy to production](documentation/DEPLOYMENT.md#deployment-on-railway-step-by-step)
 
 ## 🤝 Contributing
 
@@ -82,7 +82,7 @@ npm run dev
 3. Create a pull request to `develop`
 4. Wait for review and approval
 
-See [WORKFLOW.md](WORKFLOW.md) for detailed contribution guidelines.
+See [WORKFLOW.md](documentation/WORKFLOW.md) for detailed contribution guidelines.
 
 ## 📝 License
 
@@ -91,6 +91,6 @@ See [WORKFLOW.md](WORKFLOW.md) for detailed contribution guidelines.
 ## 💬 Support
 
 If you have questions:
-1. Check the documentation ([WORKFLOW.md](WORKFLOW.md), [DEPLOYMENT.md](DEPLOYMENT.md))
+1. Check the documentation ([WORKFLOW.md](documentation/WORKFLOW.md), [DEPLOYMENT.md](documentation/DEPLOYMENT.md))
 2. Open an issue in the repository
 3. Contact the team lead
