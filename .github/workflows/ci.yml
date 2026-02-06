@@ -1,4 +1,5 @@
-# Continue integration and deployment pipeline using GitHub Actions
+# Continuous Integration and Deployment Pipeline using GitHub Actions
+# Java Maven CI/CD for Jakarta Servlet Application
 
 name: CI/CD Pipeline - Java Maven
 
@@ -24,8 +25,37 @@ jobs:
           distribution: 'temurin'
           cache: maven
       
-      - name: Build Framework
-        run: mvn clean install -f ./pom.xml
+      - name: Build Project
+        run: mvn clean install
       
       - name: Run Tests
         run: mvn test
+      
+      - name: Build WAR Package
+        run: mvn clean package -DskipTests
+
+  label-pr:
+    name: Label Pull Request
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Label PR
+        uses: actions/labeler@v4
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+  assign-reviewers:
+    name: Assign Reviewers
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Auto Request Review
+        uses: necojackarc/auto-request-review@v0.12.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+# Note: Deployment to Tomcat or other hosting platforms
+# should be configured separately based on your hosting choice
+# (Render, Heroku, DigitalOcean, etc.)
