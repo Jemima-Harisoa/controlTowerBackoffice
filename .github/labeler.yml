@@ -1,12 +1,12 @@
-# Auto-labeler configuration for Java Maven project
-# This file defines which labels are automatically applied based on changed files
+# Configuration de l'étiquetage automatique pour projet Java Maven
+# Ce fichier définit quels labels sont appliqués automatiquement selon les fichiers modifiés
 
-# Backend/Java code
+# Code Backend/Java
 backend:
   - src/main/java/**
   - src/test/java/**
 
-# Configuration files  
+# Fichiers de configuration  
 config:
   - pom.xml
   - ".github/**"
@@ -14,7 +14,7 @@ config:
   - "*.properties"
   - "*.yml"
 
-# Frontend/Web files
+# Fichiers Frontend/Web
 frontend:
   - src/main/webapp/**
   - src/webapp/**
@@ -33,9 +33,25 @@ build:
 # Documentation
 documentation:
   - "**/*.md"
-  - documenation/**
+  - documentation/**
 
-# Dependencies
+# Dépendances
 dependencies:
   - lib/**
   - "**/*.jar"
+
+# Sprint features (basé sur les noms de branches)
+sprint:
+  - any: ['sprint/**', 'feature/**']
+
+# Staging
+staging:
+  - any: ['staging/**']
+
+# Release
+release:
+  - any: ['release/**']
+
+# Hotfix
+hotfix:
+  - any: ['hotfix/**', 'fix/**']

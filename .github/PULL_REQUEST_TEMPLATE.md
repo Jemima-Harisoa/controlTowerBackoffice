@@ -1,51 +1,51 @@
 ## Description
 
-<!-- Provide a brief description of the changes in this PR -->
+<!-- Fournissez une brève description des changements dans cette PR -->
 
-## Type of Change
+## Type de changement
 
-<!-- Mark the relevant option with an 'x' -->
+<!-- Marquez l'option pertinente avec un 'x' -->
 
-- [ ] Bug fix (non-breaking change which fixes an issue)
-- [ ] New feature (non-breaking change which adds functionality)
-- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] Documentation update
-- [ ] Style/UI update (changes that don't affect functionality)
-- [ ] Code refactoring (no functional changes)
-- [ ] Performance improvement
-- [ ] Test update
+- [ ] Correction de bug (changement non-cassant qui corrige un problème)
+- [ ] Nouvelle fonctionnalité (changement non-cassant qui ajoute une fonctionnalité)
+- [ ] Changement cassant (correction ou fonctionnalité qui empêcherait le fonctionnement des fonctionnalités existantes)
+- [ ] Mise à jour de documentation
+- [ ] Mise à jour de style/UI (changements qui n'affectent pas la fonctionnalité)
+- [ ] Refactoring de code (aucun changement fonctionnel)
+- [ ] Amélioration de performance
+- [ ] Mise à jour de tests
 
-## Related Issues
+## Issues liées
 
-<!-- Link to related issues. Use keywords: Fixes #123, Closes #456, Related to #789 -->
+<!-- Liez aux issues concernées. Utilisez les mots-clés: Fixes #123, Closes #456, Related to #789 -->
 
 Fixes #
 
-## Changes Made
+## Changements effectués
 
-<!-- List the specific changes made in this PR -->
+<!-- Listez les changements spécifiques effectués dans cette PR -->
 
 - 
 - 
 - 
 
-## How Has This Been Tested?
+## Comment cela a-t-il été testé ?
 
-<!-- Describe the tests you ran to verify your changes -->
+<!-- Décrivez les tests que vous avez exécutés pour vérifier vos changements -->
 
-- [ ] Unit tests
-- [ ] Integration tests
-- [ ] Manual testing
-- [ ] No testing required (documentation only)
+- [ ] Tests unitaires
+- [ ] Tests d'intégration
+- [ ] Tests manuels
+- [ ] Aucun test requis (documentation uniquement)
 
-**Test Configuration:**
-- Environment: 
-- Browser (if applicable): 
-- Node version (if applicable): 
+**Configuration de test :**
+- Environnement : 
+- Navigateur (si applicable) : 
+- Version Java (si applicable) : 
 
-## Screenshots (if applicable)
+## Captures d'écran (si applicable)
 
-<!-- Add screenshots to help explain your changes -->
+<!-- Ajoutez des captures d'écran pour aider à expliquer vos changements -->
 
 ## Checklist
 
