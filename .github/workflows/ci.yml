@@ -40,21 +40,14 @@ jobs:
     if: github.event_name == 'pull_request'
     
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
       - name: Label PR
         uses: actions/labeler@v4
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-
-  assign-reviewers:
-    name: Assign Reviewers
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    
-    steps:
-      - name: Auto Request Review
-        uses: necojackarc/auto-request-review@v0.12.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          configuration-path: '.github/labeler.yml'
 
 # Note: Deployment to Tomcat or other hosting platforms
 # should be configured separately based on your hosting choice
