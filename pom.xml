@@ -21,6 +21,9 @@
             <groupId>framework</groupId>
             <artifactId>Framework-servlets</artifactId>
             <version>1.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/Framework-servlets.jar</systemPath>
+
         </dependency>
 
         <dependency>
