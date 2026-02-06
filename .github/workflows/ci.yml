@@ -1,0 +1,59 @@
+# Continuous Integration and Deployment Pipeline using GitHub Actions
+# Java Maven CI/CD for Jakarta Servlet Application
+
+name: CI/CD Pipeline - Java Maven
+
+on:
+  push:
+    branches: [main, dev, 'release/**']
+  pull_request:
+    branches: [main, dev]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup JDK 21
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+      
+      - name: Build Project
+        run: mvn clean install
+      
+      - name: Run Tests
+        run: mvn test
+      
+      - name: Build WAR Package
+        run: mvn clean package -DskipTests
+
+  label-pr:
+    name: Label Pull Request
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Label PR
+        uses: actions/labeler@v4
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          configuration-path: '.github/labeler.yml'
+
+# Note: Deployment to Tomcat or other hosting platforms
+# should be configured separately based on your hosting choice
+# (Render, Heroku, DigitalOcean, etc.)
