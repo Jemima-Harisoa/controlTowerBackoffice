@@ -3,3 +3,7 @@ target/**
 
 # fichiers de configuration locaux
 .vscode/
+
+# fichier de log
+*.log
+dev/logs/*
