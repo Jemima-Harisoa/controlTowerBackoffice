@@ -31,6 +31,15 @@ import model.User;
 public class WelcomeController {
     
     /**
+     * Route racine - Page d'accueil par défaut
+     */
+    @Get 
+    @Url("/")
+    public String homePage() {
+        return "views/welcome.jsp";
+    }
+    
+    /**
      * Route classique avec retours jsp 
      * (par defaut url / renvoi un texte brute de la liste de page presente a modifier dans config du frmework) 
      */

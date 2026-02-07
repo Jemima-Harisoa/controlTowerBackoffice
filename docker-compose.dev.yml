@@ -36,7 +36,7 @@ services:
 
   # === Application Control Tower (MODE DEV) ===
   app:
-    image: tomcat:9.0.86-jre11-temurin
+    image: tomcat:10.1-jdk11
     container_name: controltower_app_dev
     restart: unless-stopped
     ports:
