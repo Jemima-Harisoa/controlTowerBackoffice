@@ -31,7 +31,15 @@
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
-            <version>6.0.0</version>
+            <version>5.0.0</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- JSP API compatible avec Jakarta EE 5.0 -->
+        <dependency>
+            <groupId>jakarta.servlet.jsp</groupId>
+            <artifactId>jakarta.servlet.jsp-api</artifactId>
+            <version>3.0.0</version>
             <scope>provided</scope>
         </dependency>
 
@@ -73,6 +81,25 @@
                 <version>3.3.1</version>
                 <configuration>
                     <encoding>UTF-8</encoding>
+                </configuration>
+            </plugin>
+
+            <!-- CORRIGÉ: Plugin WAR pour inclure les dépendances system -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>3.4.0</version>
+                <configuration>
+                    <includeEmptyDirs>false</includeEmptyDirs>
+                    <webResources>
+                        <resource>
+                            <directory>lib</directory>
+                            <targetPath>WEB-INF/lib</targetPath>
+                            <includes>
+                                <include>**/*.jar</include>
+                            </includes>
+                        </resource>
+                    </webResources>
                 </configuration>
             </plugin>
 

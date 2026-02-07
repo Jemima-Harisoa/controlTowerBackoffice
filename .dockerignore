@@ -1,0 +1,63 @@
+# === Fichiers Docker ===
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# === Environnement ===
+.env
+.env.*
+
+# === Build Maven ===
+target/
+!target/*.war
+*.log
+
+# === IDE ===
+.vscode/
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# === Git ===
+.git/
+.gitignore
+.github/
+
+# === Node (si présent) ===
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# === Documentation ===
+README.md
+TODO.md
+documentation/
+*.md
+!src/**/*.md
+
+# === Temporaires ===
+.DS_Store
+Thumbs.db
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# === Logs ===
+logs/
+*.log
+
+# === Backups ===
+database/backups/*.sql
+*.backup
+
+# === Scripts de développement ===
+scripts/dev/
+scripts/local/
+
+# === Tests ===
+src/test/resources/test-data/
+coverage/
