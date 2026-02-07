@@ -17,7 +17,7 @@ COPY src/ src/
 RUN mvn clean package -DskipTests -B
 
 # === STAGE 2: Runtime Stage ===
-FROM tomcat:9.0.86-jre11-temurin
+FROM tomcat:10.1-jdk11
 
 # Métadonnées
 LABEL maintainer="Control Tower Team"
@@ -55,7 +55,7 @@ USER tomcat
 
 # Point de santé pour Docker
 HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8080/ || exit 1
+    CMD curl -f http://localhost:8080/index.html || exit 1
 
 # Commande par défaut
 CMD ["catalina.sh", "run"]
