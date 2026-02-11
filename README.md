@@ -48,7 +48,7 @@ We recommend **Railway** for deployment - it offers:
 
 ### Prerequisites
 
-- Node.js (version TBD)
+- JDK 11 or higher
 - Git
 - Your favorite code editor
 

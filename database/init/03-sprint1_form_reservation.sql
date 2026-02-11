@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS type_client (
 );
 
 -- Table des hotel 
-CREATE TABLE IF NOT EXISTS hotel (
+CREATE TABLE IF NOT EXISTS hotels (
     id SERIAL PRIMARY KEY,
     hotel VARCHAR(50) NOT NULL,
     adresse VARCHAR(50),
@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS hotel (
 ); 
 
 -- Table des clients
-CREATE TABLE IF NOT EXISTS client (
+CREATE TABLE IF NOT EXISTS clients (
     id SERIAL PRIMARY KEY,
     denomination VARCHAR(50) NOT NULL, 
     sexe_id INTEGER REFERENCES sexe(id) ON DELETE SET NULL, 
@@ -71,12 +71,12 @@ CREATE TABLE IF NOT EXISTS client (
 );
 
 -- Table des reservations
-CREATE TABLE IF NOT EXISTS reservation (
+CREATE TABLE IF NOT EXISTS reservations (
     id SERIAL PRIMARY KEY, 
     numero VARCHAR(20) UNIQUE NOT NULL,
     contact VARCHAR(50),
-    client_id INTEGER REFERENCES client(id) ON DELETE CASCADE,
-    hotel_id INTEGER REFERENCES hotel(id) ON DELETE CASCADE,
+    client_id INTEGER REFERENCES clients(id) ON DELETE CASCADE,
+    hotel_id INTEGER REFERENCES hotels(id) ON DELETE CASCADE,
     passager SMALLINT DEFAULT 1, -- nombre de passager pour le vehicule 
     date_arrival TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -89,9 +89,9 @@ CREATE TABLE IF NOT EXISTS reservation (
 CREATE INDEX IF NOT EXISTS idx_client_sexe ON client(sexe_id);
 CREATE INDEX IF NOT EXISTS idx_client_type ON client(type_id);
 CREATE INDEX IF NOT EXISTS idx_reservation_client ON reservation(client_id);
-CREATE INDEX IF NOT EXISTS idx_reservation_hotel ON reservation(hotel_id);
-CREATE INDEX IF NOT EXISTS idx_reservation_numero ON reservation(numero);
-CREATE INDEX IF NOT EXISTS idx_reservation_date ON reservation(date_arrival);
+CREATE INDEX IF NOT EXISTS idx_reservation_hotel ON reservations(hotel_id);
+CREATE INDEX IF NOT EXISTS idx_reservation_numero ON reservations(numero);
+CREATE INDEX IF NOT EXISTS idx_reservation_date ON reservations(date_arrival);
 
 -- ===========================================
 -- DONNÉES DE TEST
