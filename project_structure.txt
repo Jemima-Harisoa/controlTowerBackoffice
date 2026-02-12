@@ -1,0 +1,442 @@
+================================================================================
+   STRUCTURE DU PROJET: Projet_framework
+================================================================================
+
+Projet_framework/
+back-office/
+├── database/
+│   └── init/
+│   │   ├── 01-init-controltower.sql (4KB)
+│   │   ├── 02-health_check.sql (717B)
+│   │   ├── 03-sprint1_form_reservation.sql (6KB)
+│   │   └── schema_todo.sql (9KB)
+├── documentation/
+│   ├── CHEATSHEET.md (6KB)
+│   ├── CONTRIBUTING.md (8KB)
+│   ├── DEPLOYMENT.md (16KB)
+│   ├── DOCS.md (7KB)
+│   ├── QUICKSTART.md (9KB)
+│   ├── SUMMARY.md (11KB)
+│   └── WORKFLOW.md (11KB)
+├── lib/
+│   └── Framework-1.0-SNAPSHOT.jar (35KB)
+├── scripts/
+│   ├── dev-build.bat (1KB)
+│   ├── dev-build.sh (2KB)
+│   ├── docker-dev.bat (3KB)
+│   └── docker-dev.sh (3KB)
+├── src/
+│   └── main/
+│   │   ├── java/
+│   │       ├── controller/
+│   │       │   ├── ClientController.java (9KB)
+│   │       │   ├── HomeController.java (513B)
+│   │       │   ├── HotelController.java (8KB)
+│   │       │   ├── LoginController.java (3KB)
+│   │       │   ├── ReservationController.java (22KB)
+│   │       │   └── WelcomeController.java (1KB)
+│   │       ├── dto/
+│   │       │   ├── ActiveSessionView.java (1KB)
+│   │       │   ├── ActiveUserView.java (1KB)
+│   │       │   └── ReservationView.java (2KB)
+│   │       ├── filter/
+│   │       │   └── AuthenticationFilter.java (2KB)
+│   │       ├── model/
+│   │       │   ├── Client.java (1KB)
+│   │       │   ├── Hotel.java (2KB)
+│   │       │   ├── Reservation.java (2KB)
+│   │       │   ├── Sexe.java (818B)
+│   │       │   ├── TypeClient.java (836B)
+│   │       │   ├── User.java (1KB)
+│   │       │   └── UserSession.java (1KB)
+│   │       ├── service/
+│   │       │   ├── ClientService.java (11KB)
+│   │       │   ├── HotelService.java (7KB)
+│   │       │   ├── ReservationService.java (20KB)
+│   │       │   ├── UserService.java (9KB)
+│   │       │   └── UserSessionService.java (4KB)
+│   │       └── util/
+│   │       │   ├── DatabaseConnection.java (1KB)
+│   │       │   ├── GeneratePasswordHashes.java (382B)
+│   │       │   └── PasswordUtil.java (2KB)
+│   │   ├── resources/
+│   │       └── application.properties (463B)
+│   │   └── webapp/
+│   │       ├── css/
+│   │           ├── hotel.css (3KB)
+│   │           ├── login.css (1KB)
+│   │           ├── reservation.css (3KB)
+│   │           ├── sidebar.css (3KB)
+│   │           └── welcome.css (2KB)
+│   │       ├── js/
+│   │           ├── main.js (2KB)
+│   │           └── sidebar.js (1KB)
+│   │       ├── views/
+│   │           ├── client/
+│   │           │   ├── confirmation'client.jsp (1KB)
+│   │           │   ├── details-client.jsp (3KB)
+│   │           │   ├── formulaire-client.jsp (3KB)
+│   │           │   ├── liste-clients.jsp (4KB)
+│   │           │   └── modification-client.jsp (3KB)
+│   │           ├── hotel/
+│   │           │   ├── confirmation-hotel.jsp (1KB)
+│   │           │   ├── details-hotel.jsp (4KB)
+│   │           │   ├── edition-hotel.jsp (3KB)
+│   │           │   ├── formulaire-hotel.jsp (2KB)
+│   │           │   └── liste-hotels.jsp (3KB)
+│   │           ├── reservation/
+│   │           │   ├── confirmation-reservation.jsp (1KB)
+│   │           │   ├── details-reservation.jsp (5KB)
+│   │           │   ├── formulaire-reservation.jsp (5KB)
+│   │           │   └── modification-reservation.jsp (5KB)
+│   │           ├── index.jsp (138B)
+│   │           ├── user-profile.jsp (1KB)
+│   │           └── welcome.jsp (4KB)
+│   │       └── WEB-INF/
+│   │           ├── components/
+│   │               └── sidebar.jsp (4KB)
+│   │           ├── templates/
+│   │               └── main-template.jsp (3KB)
+│   │           ├── login.jsp (4KB)
+│   │           ├── web.xml (Web Config) (3KB)
+│   │           └── welcome.jsp (3KB)
+├── target/
+│   ├── classes/
+│   │   ├── controller/
+│   │   │   ├── ClientController.class (5KB)
+│   │   │   ├── HomeController.class (1KB)
+│   │   │   ├── HotelController.class (5KB)
+│   │   │   ├── LoginController.class (3KB)
+│   │   │   ├── ReservationController.class (12KB)
+│   │   │   └── WelcomeController.class (2KB)
+│   │   ├── dto/
+│   │   │   ├── ActiveSessionView.class (1KB)
+│   │   │   ├── ActiveUserView.class (2KB)
+│   │   │   └── ReservationView.class (2KB)
+│   │   ├── filter/
+│   │   │   └── AuthenticationFilter.class (4KB)
+│   │   ├── model/
+│   │   │   ├── Client.class (1KB)
+│   │   │   ├── Hotel.class (2KB)
+│   │   │   ├── Reservation.class (2KB)
+│   │   │   ├── Sexe.class (1KB)
+│   │   │   ├── TypeClient.class (1KB)
+│   │   │   ├── User.class (2KB)
+│   │   │   └── UserSession.class (1KB)
+│   │   ├── service/
+│   │   │   ├── ClientService.class (8KB)
+│   │   │   ├── HotelService.class (7KB)
+│   │   │   ├── ReservationService.class (14KB)
+│   │   │   ├── UserService.class (7KB)
+│   │   │   └── UserSessionService.class (3KB)
+│   │   ├── util/
+│   │   │   ├── DatabaseConnection.class (2KB)
+│   │   │   ├── GeneratePasswordHashes.class (877B)
+│   │   │   └── PasswordUtil.class (2KB)
+│   │   └── application.properties (463B)
+│   ├── ControlTowerBackoffice/
+│   │   ├── css/
+│   │   │   ├── hotel.css (3KB)
+│   │   │   ├── login.css (1KB)
+│   │   │   ├── reservation.css (3KB)
+│   │   │   ├── sidebar.css (3KB)
+│   │   │   └── welcome.css (2KB)
+│   │   ├── js/
+│   │   │   ├── main.js (2KB)
+│   │   │   └── sidebar.js (1KB)
+│   │   ├── META-INF/
+│   │   ├── views/
+│   │   │   ├── client/
+│   │   │   │   ├── confirmation'client.jsp (1KB)
+│   │   │   │   ├── details-client.jsp (3KB)
+│   │   │   │   ├── formulaire-client.jsp (3KB)
+│   │   │   │   ├── liste-clients.jsp (4KB)
+│   │   │   │   └── modification-client.jsp (3KB)
+│   │   │   ├── hotel/
+│   │   │   │   ├── confirmation-hotel.jsp (1KB)
+│   │   │   │   ├── details-hotel.jsp (4KB)
+│   │   │   │   ├── edition-hotel.jsp (3KB)
+│   │   │   │   ├── formulaire-hotel.jsp (2KB)
+│   │   │   │   └── liste-hotels.jsp (3KB)
+│   │   │   ├── reservation/
+│   │   │   │   ├── confirmation-reservation.jsp (1KB)
+│   │   │   │   ├── details-reservation.jsp (5KB)
+│   │   │   │   ├── formulaire-reservation.jsp (5KB)
+│   │   │   │   └── modification-reservation.jsp (5KB)
+│   │   │   ├── index.jsp (138B)
+│   │   │   ├── user-profile.jsp (1KB)
+│   │   │   └── welcome.jsp (4KB)
+│   │   └── WEB-INF/
+│   │   │   ├── classes/
+│   │   │       ├── controller/
+│   │   │       │   ├── ClientController.class (5KB)
+│   │   │       │   ├── HomeController.class (1KB)
+│   │   │       │   ├── HotelController.class (5KB)
+│   │   │       │   ├── LoginController.class (3KB)
+│   │   │       │   ├── ReservationController.class (12KB)
+│   │   │       │   └── WelcomeController.class (2KB)
+│   │   │       ├── dto/
+│   │   │       │   ├── ActiveSessionView.class (1KB)
+│   │   │       │   ├── ActiveUserView.class (2KB)
+│   │   │       │   └── ReservationView.class (2KB)
+│   │   │       ├── filter/
+│   │   │       │   └── AuthenticationFilter.class (4KB)
+│   │   │       ├── model/
+│   │   │       │   ├── Client.class (1KB)
+│   │   │       │   ├── Hotel.class (2KB)
+│   │   │       │   ├── Reservation.class (2KB)
+│   │   │       │   ├── Sexe.class (1KB)
+│   │   │       │   ├── TypeClient.class (1KB)
+│   │   │       │   ├── User.class (2KB)
+│   │   │       │   └── UserSession.class (1KB)
+│   │   │       ├── service/
+│   │   │       │   ├── ClientService.class (8KB)
+│   │   │       │   ├── HotelService.class (7KB)
+│   │   │       │   ├── ReservationService.class (14KB)
+│   │   │       │   ├── UserService.class (7KB)
+│   │   │       │   └── UserSessionService.class (3KB)
+│   │   │       ├── util/
+│   │   │       │   ├── DatabaseConnection.class (2KB)
+│   │   │       │   ├── GeneratePasswordHashes.class (877B)
+│   │   │       │   └── PasswordUtil.class (2KB)
+│   │   │       └── application.properties (463B)
+│   │   │   ├── components/
+│   │   │       └── sidebar.jsp (4KB)
+│   │   │   ├── lib/
+│   │   │       ├── checker-qual-3.5.0.jar (209KB)
+│   │   │       ├── framework-1.0-SNAPSHOT.jar (37KB)
+│   │   │       ├── jakarta.activation-2.0.0.jar (61KB)
+│   │   │       ├── jakarta.el-api-4.0.0.jar (78KB)
+│   │   │       ├── jakarta.servlet.jsp.jstl-2.0.0.jar (3MB)
+│   │   │       ├── jakarta.servlet.jsp.jstl-api-2.0.0.jar (44KB)
+│   │   │       ├── jakarta.xml.bind-api-3.0.0.jar (125KB)
+│   │   │       ├── jbcrypt-0.4.jar (17KB)
+│   │   │       └── postgresql-42.2.24.jar (982KB)
+│   │   │   ├── templates/
+│   │   │       └── main-template.jsp (3KB)
+│   │   │   ├── login.jsp (4KB)
+│   │   │   ├── web.xml (Web Config) (3KB)
+│   │   │   └── welcome.jsp (3KB)
+│   ├── generated-sources/
+│   │   └── annotations/
+│   ├── maven-archiver/
+│   │   └── pom.properties (78B)
+│   ├── maven-status/
+│   │   └── maven-compiler-plugin/
+│   │   │   └── compile/
+│   │   │       └── default-compile/
+│   │   │           ├── createdFiles.lst (696B)
+│   │   │           └── inputFiles.lst (2KB)
+│   └── ControlTowerBackoffice.war (4MB)
+├── creationdossier.py (8KB)
+├── deploy.bat (3KB)
+├── dev.ps1 (3KB)
+├── DEV_ENVIRONMENT_FIX.md (3KB)
+├── docker-compose.dev.yml (2KB)
+├── docker-compose.yml (2KB)
+├── Dockerfile (1KB)
+├── GUIDE_DEMMARAGE.MD (6KB)
+├── pom.xml (Maven) (4KB)
+├── project_structure.txt (9KB)
+├── QUICKSTART.md (1KB)
+├── README.md (2KB)
+└── TODO.md (4KB)
+front-office/
+SPRINT/
+├── Framework/
+│   ├── src/
+│   │   └── main/
+│   │   │   └── java/
+│   │   │       └── framework/
+│   │   │           ├── annotation/
+│   │   │               ├── scanner/
+│   │   │               │   └── ClassPathScanner.java (5KB)
+│   │   │               ├── AuthenticatedOnly.java (411B)
+│   │   │               ├── Controller.java (440B)
+│   │   │               ├── FileParam.java (572B)
+│   │   │               ├── Get.java (292B)
+│   │   │               ├── Post.java (293B)
+│   │   │               ├── RequestParam.java (559B)
+│   │   │               ├── RestAPI.java (678B)
+│   │   │               ├── RoleRequired.java (508B)
+│   │   │               ├── Session.java (727B)
+│   │   │               └── Url.java (313B)
+│   │   │           ├── dispatcher/
+│   │   │               └── FrameworkDispatcher.java (23KB)
+│   │   │           ├── mapping/
+│   │   │               └── MappingInfo.java (5KB)
+│   │   │           ├── ModelAndView/
+│   │   │               └── ModelAndView.java (1KB)
+│   │   │           ├── response/
+│   │   │               └── ApiResponse.java (2KB)
+│   │   │           ├── scanner/
+│   │   │               ├── listener/
+│   │   │               │   └── AnnotationInitializer.java (1KB)
+│   │   │               └── AnnotationScanner.java (9KB)
+│   │   │           ├── security/
+│   │   │               ├── AuthenticationManager.java (2KB)
+│   │   │               └── User.java (923B)
+│   │   │           ├── servlet/
+│   │   │               └── FrontServlet.java (10KB)
+│   │   │           └── upload/
+│   │   │               └── FileUpload.java (1KB)
+│   ├── target/
+│   │   ├── antrun/
+│   │   │   └── build-main.xml (290B)
+│   │   ├── classes/
+│   │   │   └── framework/
+│   │   │   │   ├── annotation/
+│   │   │   │       ├── scanner/
+│   │   │   │       │   └── ClassPathScanner.class (6KB)
+│   │   │   │       ├── AuthenticatedOnly.class (408B)
+│   │   │   │       ├── Controller.class (392B)
+│   │   │   │       ├── FileParam.class (485B)
+│   │   │   │       ├── Get.class (380B)
+│   │   │   │       ├── Post.class (382B)
+│   │   │   │       ├── RequestParam.class (491B)
+│   │   │   │       ├── RestAPI.class (388B)
+│   │   │   │       ├── RoleRequired.class (459B)
+│   │   │   │       ├── Session.class (391B)
+│   │   │   │       └── Url.class (411B)
+│   │   │   │   ├── dispatcher/
+│   │   │   │       └── FrameworkDispatcher.class (18KB)
+│   │   │   │   ├── mapping/
+│   │   │   │       └── MappingInfo.class (4KB)
+│   │   │   │   ├── ModelAndView/
+│   │   │   │       └── ModelAndView.class (2KB)
+│   │   │   │   ├── response/
+│   │   │   │       └── ApiResponse.class (2KB)
+│   │   │   │   ├── scanner/
+│   │   │   │       ├── listener/
+│   │   │   │       │   └── AnnotationInitializer.class (2KB)
+│   │   │   │       └── AnnotationScanner.class (10KB)
+│   │   │   │   ├── security/
+│   │   │   │       ├── AuthenticationManager.class (2KB)
+│   │   │   │       └── User.class (1KB)
+│   │   │   │   ├── servlet/
+│   │   │   │       └── FrontServlet.class (9KB)
+│   │   │   │   └── upload/
+│   │   │   │       └── FileUpload.class (1KB)
+│   │   ├── generated-sources/
+│   │   │   └── annotations/
+│   │   ├── maven-archiver/
+│   │   │   └── pom.properties (65B)
+│   │   ├── maven-status/
+│   │   │   └── maven-compiler-plugin/
+│   │   │   │   └── compile/
+│   │   │   │       └── default-compile/
+│   │   │   │           ├── createdFiles.lst (823B)
+│   │   │   │           └── inputFiles.lst (2KB)
+│   │   └── Framework-1.0-SNAPSHOT.jar (37KB)
+│   └── pom.xml (Maven) (2KB)
+├── SPRINT/
+│   └── Framework/
+│   │   └── target/
+│   │       └── classes/
+│   │           └── framework/
+│   │               ├── annotation/
+│   │                   └── scanner/
+│   │               ├── dispatcher/
+│   │               ├── mapping/
+│   │               ├── ModelAndView/
+│   │               ├── response/
+│   │               ├── scanner/
+│   │                   └── listener/
+│   │               ├── security/
+│   │               ├── servlet/
+│   │               ├── upload/
+│   │               └── creationdossier.py (8KB)
+├── Test/
+│   ├── lib/
+│   │   └── Framework-1.0-SNAPSHOT.jar (37KB)
+│   ├── src/
+│   │   └── main/
+│   │   │   ├── java/
+│   │   │       └── test/
+│   │   │       │   ├── controller/
+│   │   │       │       ├── EtudiantController.java (2KB)
+│   │   │       │       ├── FileUploadController.java (7KB)
+│   │   │       │       ├── PostmanTestController.java (10KB)
+│   │   │       │       ├── SecurityController.java (3KB)
+│   │   │       │       ├── SessionController.java (3KB)
+│   │   │       │       ├── Test1Controller.java (619B)
+│   │   │       │       ├── Test2Controller.java (261B)
+│   │   │       │       ├── Test3Controller.java (1KB)
+│   │   │       │       └── TestController.java (11KB)
+│   │   │       │   ├── model/
+│   │   │       │       ├── Departement.java (1KB)
+│   │   │       │       └── Employe.java (1KB)
+│   │   │       │   ├── Main.java (3KB)
+│   │   │       │   └── TestController.java (778B)
+│   │   │   └── webapp/
+│   │   │       ├── annotation/
+│   │   │           ├── bonjour.jsp (273B)
+│   │   │           └── test-annotation.jsp (261B)
+│   │   │       ├── jsp/
+│   │   │           └── 404.jsp (3B)
+│   │   │       ├── modelAndView/
+│   │   │       ├── views/
+│   │   │           ├── Sprint-10/
+│   │   │           │   ├── upload-form.jsp (6KB)
+│   │   │           │   ├── upload-multiple-result.jsp (5KB)
+│   │   │           │   └── upload-result.jsp (4KB)
+│   │   │           ├── Sprint-11/
+│   │   │           │   ├── afficher-session.jsp (3KB)
+│   │   │           │   ├── choix-couleur.jsp (3KB)
+│   │   │           │   ├── profil-enregistre.jsp (1KB)
+│   │   │           │   ├── resultat-couleur.jsp (1KB)
+│   │   │           │   └── session-videe.jsp (918B)
+│   │   │           ├── Sprint-11-bis/
+│   │   │           │   ├── admin-page.jsp (2KB)
+│   │   │           │   ├── chef-page.jsp (2KB)
+│   │   │           │   ├── login-form.jsp (3KB)
+│   │   │           │   ├── login-success.jsp (2KB)
+│   │   │           │   ├── logout-success.jsp (1KB)
+│   │   │           │   ├── protected-page.jsp (2KB)
+│   │   │           │   └── public-page.jsp (2KB)
+│   │   │           ├── Sprint-8/
+│   │   │           │   ├── form-employe.jsp (5KB)
+│   │   │           │   └── form-user.jsp (7KB)
+│   │   │           ├── departements.jsp (1KB)
+│   │   │           └── etudiant-profil.jsp (2KB)
+│   │   │       ├── WEB-INF/
+│   │   │           └── web.xml (Web Config) (1KB)
+│   │   │       ├── index.html (10B)
+│   │   │       ├── index.jsp (5B)
+│   │   │       └── test.jsp (238B)
+│   ├── target/
+│   │   ├── classes/
+│   │   │   └── test/
+│   │   │   │   ├── controller/
+│   │   │   │       ├── EtudiantController.class (2KB)
+│   │   │   │       ├── FileUploadController.class (6KB)
+│   │   │   │       ├── PostmanTestController.class (7KB)
+│   │   │   │       ├── SecurityController.class (3KB)
+│   │   │   │       ├── SessionController.class (4KB)
+│   │   │   │       ├── Test1Controller.class (1KB)
+│   │   │   │       ├── Test2Controller.class (565B)
+│   │   │   │       ├── Test3Controller.class (1KB)
+│   │   │   │       └── TestController.class (10KB)
+│   │   │   │   ├── model/
+│   │   │   │       ├── Departement.class (1KB)
+│   │   │   │       └── Employe.class (2KB)
+│   │   │   │   └── Main.class (3KB)
+│   │   ├── generated-sources/
+│   │   │   └── annotations/
+│   │   ├── Test/
+│   │   │   └── META-INF/
+│   │   └── test-classes/
+│   └── pom.xml (Maven) (3KB)
+├── uploads/
+├── compilation.txt (1KB)
+├── creationdossier.py (8KB)
+├── deploy.bat (4KB)
+├── hs_err_pid13660.log (72KB)
+├── project_structure.txt (8KB)
+├── replay_pid13660.log (1MB)
+├── SPRINT-10-README.md (7KB)
+├── SPRINT-11-bis-README.md (5KB)
+├── SPRINT-11-README.md (10KB)
+└── Sprint11-bis.txt (365B)
+creationdossier.py (8KB)
+project_structure.txt (15KB)

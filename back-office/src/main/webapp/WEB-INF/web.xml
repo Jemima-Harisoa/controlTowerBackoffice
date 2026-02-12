@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee 
+         https://jakarta.ee/xml/ns/jakartaee/web-app_5_0.xsd"
+         version="5.0">
+
+    <!-- ===================== -->
+    <!-- NOM APPLICATION -->
+    <!-- ===================== -->
+    <display-name>Control Tower Back-Office</display-name>
+
+
+    <!-- ===================== -->
+    <!-- PAGES D'ACCUEIL -->
+    <!-- ===================== -->
+    <welcome-file-list>
+        <welcome-file>login</welcome-file>
+        <welcome-file>index.jsp</welcome-file>
+    </welcome-file-list>
+
+
+    <!-- ===================== -->
+    <!-- SERVLETS -->
+    <!-- ===================== -->
+
+    <!-- Front Controller principal -->
+    <servlet>
+        <servlet-name>FrontServlet</servlet-name>
+        <servlet-class>framework.servlet.FrontServlet</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>FrontServlet</servlet-name>
+        <url-pattern>/</url-pattern>
+    </servlet-mapping>
+
+
+    <!-- Servlet annotations debug -->
+    <servlet>
+        <servlet-name>AnnotationServlet</servlet-name>
+        <servlet-class>framework.AnnotationServlet</servlet-class>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>AnnotationServlet</servlet-name>
+        <url-pattern>/annotations/*</url-pattern>
+    </servlet-mapping>
+
+
+    <!-- ===================== -->
+    <!-- FILTRES -->
+    <!-- ===================== -->
+
+    <filter>
+        <filter-name>AuthenticationFilter</filter-name>
+        <filter-class>filter.AuthenticationFilter</filter-class>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>AuthenticationFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+        <dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
+    </filter-mapping>
+
+
+    <!-- ===================== -->
+    <!-- CONFIGURATION BASE -->
+    <!-- ===================== -->
+
+    <context-param>
+        <param-name>db.url</param-name>
+        <param-value>jdbc:postgresql://localhost:5432/controltower</param-value>
+    </context-param>
+
+    <context-param>
+        <param-name>db.user</param-name>
+        <param-value>postgres</param-value>
+    </context-param>
+
+    <context-param>
+        <param-name>db.password</param-name>
+        <param-value></param-value>
+    </context-param>
+
+<!-- ===================== -->
+<!-- FRAMEWORK CONFIGURATION -->
+<!-- ===================== -->
+<context-param>
+    <param-name>framework.controller.packages</param-name>
+    <param-value>controller,test.controller</param-value>
+</context-param>
+
+    <!-- ===================== -->
+    <!-- CONFIG SESSION -->
+    <!-- ===================== -->
+    <session-config>
+        <session-timeout>30</session-timeout>
+        <cookie-config>
+            <http-only>true</http-only>
+            <secure>false</secure>
+        </cookie-config>
+    </session-config>
+
+
+    <!-- ===================== -->
+    <!-- PAGES ERREURS -->
+    <!-- ===================== -->
+
+    <error-page>
+        <error-code>404</error-code>
+        <location>/WEB-INF/errors/404.jsp</location>
+    </error-page>
+
+    <error-page>
+        <error-code>500</error-code>
+        <location>/WEB-INF/errors/500.jsp</location>
+    </error-page>
+
+    <error-page>
+        <exception-type>java.lang.Exception</exception-type>
+        <location>/WEB-INF/errors/error.jsp</location>
+    </error-page>
+
+</web-app>

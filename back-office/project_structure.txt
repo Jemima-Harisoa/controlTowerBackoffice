@@ -1,0 +1,233 @@
+================================================================================
+   STRUCTURE DU PROJET: back-office
+================================================================================
+
+back-office/
+database/
+└── init/
+│   ├── 01-init-controltower.sql (4KB)
+│   ├── 02-health_check.sql (717B)
+│   ├── 03-sprint1_form_reservation.sql (6KB)
+│   └── schema_todo.sql (9KB)
+documentation/
+├── CHEATSHEET.md (6KB)
+├── CONTRIBUTING.md (8KB)
+├── DEPLOYMENT.md (16KB)
+├── DOCS.md (7KB)
+├── QUICKSTART.md (9KB)
+├── SUMMARY.md (11KB)
+└── WORKFLOW.md (11KB)
+lib/
+└── Framework-1.0-SNAPSHOT.jar (35KB)
+scripts/
+├── dev-build.bat (1KB)
+├── dev-build.sh (2KB)
+├── docker-dev.bat (3KB)
+└── docker-dev.sh (3KB)
+src/
+└── main/
+│   ├── java/
+│       ├── controller/
+│       │   ├── HomeController.java (513B)
+│       │   ├── HotelController.java (8KB)
+│       │   ├── LoginController.java (4KB)
+│       │   ├── ReservationController.java (13KB)
+│       │   └── WelcomeController.java (1KB)
+│       ├── dto/
+│       │   ├── ActiveSessionView.java (1KB)
+│       │   ├── ActiveUserView.java (1KB)
+│       │   └── ReservationView.java (2KB)
+│       ├── filter/
+│       │   └── AuthenticationFilter.java (2KB)
+│       ├── model/
+│       │   ├── Client.java (1KB)
+│       │   ├── Hotel.java (2KB)
+│       │   ├── Reservation.java (2KB)
+│       │   ├── Sexe.java (509B)
+│       │   ├── TypeClient.java (515B)
+│       │   ├── User.java (1KB)
+│       │   └── UserSession.java (1KB)
+│       ├── service/
+│       │   ├── ClientService.java (9KB)
+│       │   ├── HotelService.java (7KB)
+│       │   ├── ReservationService.java (14KB)
+│       │   ├── UserService.java (9KB)
+│       │   └── UserSessionService.java (4KB)
+│       └── util/
+│       │   ├── DatabaseConnection.java (1KB)
+│       │   ├── GeneratePasswordHashes.java (382B)
+│       │   └── PasswordUtil.java (2KB)
+│   ├── resources/
+│       └── application.properties (463B)
+│   └── webapp/
+│       ├── css/
+│           ├── hotel.css (3KB)
+│           ├── login.css (1KB)
+│           ├── reservation.css (3KB)
+│           ├── sidebar.css (3KB)
+│           └── welcome.css (2KB)
+│       ├── js/
+│           ├── main.js (2KB)
+│           └── sidebar.js (1KB)
+│       ├── views/
+│           ├── hotel/
+│           │   ├── confirmation-hotel-content.jsp (429B)
+│           │   ├── confirmation-hotel.jsp (377B)
+│           │   ├── details-hotel-content.jsp (2KB)
+│           │   ├── details-hotel.jsp (374B)
+│           │   ├── edition-hotel-content.jsp (1KB)
+│           │   ├── edition-hotel.jsp (375B)
+│           │   ├── formulaire-hotel-content.jsp (1KB)
+│           │   ├── formulaire-hotel.jsp (380B)
+│           │   └── liste-hotels.jsp (2KB)
+│           ├── reservation/
+│           │   ├── confirmation-reservation-content.jsp (439B)
+│           │   ├── confirmation-reservation.jsp (411B)
+│           │   ├── formulaire-reservation-content.jsp (1KB)
+│           │   └── formulaire-reservation.jsp (402B)
+│           ├── index.jsp (138B)
+│           ├── user-profile.jsp (1KB)
+│           └── welcome.jsp (4KB)
+│       └── WEB-INF/
+│           ├── components/
+│               └── sidebar.jsp (4KB)
+│           ├── templates/
+│               └── main-template.jsp (3KB)
+│           ├── login.jsp (4KB)
+│           ├── web.xml (Web Config) (3KB)
+│           └── welcome.jsp (3KB)
+target/
+├── classes/
+│   ├── controller/
+│   │   ├── HomeController.class (1KB)
+│   │   ├── HotelController.class (5KB)
+│   │   ├── LoginController.class (4KB)
+│   │   ├── ReservationController.class (9KB)
+│   │   └── WelcomeController.class (2KB)
+│   ├── dto/
+│   │   ├── ActiveSessionView.class (1KB)
+│   │   ├── ActiveUserView.class (2KB)
+│   │   └── ReservationView.class (2KB)
+│   ├── filter/
+│   │   └── AuthenticationFilter.class (4KB)
+│   ├── model/
+│   │   ├── Client.class (1KB)
+│   │   ├── Hotel.class (2KB)
+│   │   ├── Reservation.class (2KB)
+│   │   ├── Sexe.class (935B)
+│   │   ├── TypeClient.class (953B)
+│   │   ├── User.class (2KB)
+│   │   └── UserSession.class (1KB)
+│   ├── service/
+│   │   ├── ClientService.class (6KB)
+│   │   ├── HotelService.class (7KB)
+│   │   ├── ReservationService.class (11KB)
+│   │   ├── UserService.class (7KB)
+│   │   └── UserSessionService.class (3KB)
+│   ├── util/
+│   │   ├── DatabaseConnection.class (2KB)
+│   │   ├── GeneratePasswordHashes.class (877B)
+│   │   └── PasswordUtil.class (2KB)
+│   └── application.properties (463B)
+├── ControlTowerBackoffice/
+│   ├── css/
+│   │   ├── hotel.css (3KB)
+│   │   ├── login.css (1KB)
+│   │   ├── reservation.css (3KB)
+│   │   ├── sidebar.css (3KB)
+│   │   └── welcome.css (2KB)
+│   ├── js/
+│   │   ├── main.js (2KB)
+│   │   └── sidebar.js (1KB)
+│   ├── META-INF/
+│   ├── views/
+│   │   ├── hotel/
+│   │   │   ├── confirmation-hotel-content.jsp (429B)
+│   │   │   ├── confirmation-hotel.jsp (377B)
+│   │   │   ├── details-hotel-content.jsp (2KB)
+│   │   │   ├── details-hotel.jsp (374B)
+│   │   │   ├── edition-hotel-content.jsp (1KB)
+│   │   │   ├── edition-hotel.jsp (375B)
+│   │   │   ├── formulaire-hotel-content.jsp (1KB)
+│   │   │   ├── formulaire-hotel.jsp (380B)
+│   │   │   └── liste-hotels.jsp (2KB)
+│   │   ├── reservation/
+│   │   │   ├── confirmation-reservation-content.jsp (439B)
+│   │   │   ├── confirmation-reservation.jsp (411B)
+│   │   │   ├── formulaire-reservation-content.jsp (1KB)
+│   │   │   └── formulaire-reservation.jsp (402B)
+│   │   ├── index.jsp (138B)
+│   │   ├── user-profile.jsp (1KB)
+│   │   └── welcome.jsp (4KB)
+│   └── WEB-INF/
+│   │   ├── classes/
+│   │       ├── controller/
+│   │       │   ├── HomeController.class (1KB)
+│   │       │   ├── HotelController.class (5KB)
+│   │       │   ├── LoginController.class (4KB)
+│   │       │   ├── ReservationController.class (9KB)
+│   │       │   └── WelcomeController.class (2KB)
+│   │       ├── dto/
+│   │       │   ├── ActiveSessionView.class (1KB)
+│   │       │   ├── ActiveUserView.class (2KB)
+│   │       │   └── ReservationView.class (2KB)
+│   │       ├── filter/
+│   │       │   └── AuthenticationFilter.class (4KB)
+│   │       ├── model/
+│   │       │   ├── Client.class (1KB)
+│   │       │   ├── Hotel.class (2KB)
+│   │       │   ├── Reservation.class (2KB)
+│   │       │   ├── Sexe.class (935B)
+│   │       │   ├── TypeClient.class (953B)
+│   │       │   ├── User.class (2KB)
+│   │       │   └── UserSession.class (1KB)
+│   │       ├── service/
+│   │       │   ├── ClientService.class (6KB)
+│   │       │   ├── HotelService.class (7KB)
+│   │       │   ├── ReservationService.class (11KB)
+│   │       │   ├── UserService.class (7KB)
+│   │       │   └── UserSessionService.class (3KB)
+│   │       ├── util/
+│   │       │   ├── DatabaseConnection.class (2KB)
+│   │       │   ├── GeneratePasswordHashes.class (877B)
+│   │       │   └── PasswordUtil.class (2KB)
+│   │       └── application.properties (463B)
+│   │   ├── components/
+│   │       └── sidebar.jsp (4KB)
+│   │   ├── lib/
+│   │       ├── framework-1.0-SNAPSHOT.jar (35KB)
+│   │       ├── jakarta.activation-2.0.0.jar (61KB)
+│   │       ├── jakarta.el-api-4.0.0.jar (78KB)
+│   │       ├── jakarta.servlet.jsp.jstl-2.0.0.jar (3MB)
+│   │       ├── jakarta.servlet.jsp.jstl-api-2.0.0.jar (44KB)
+│   │       ├── jakarta.xml.bind-api-3.0.0.jar (125KB)
+│   │       └── jbcrypt-0.4.jar (17KB)
+│   │   ├── templates/
+│   │       └── main-template.jsp (3KB)
+│   │   ├── login.jsp (4KB)
+│   │   ├── web.xml (Web Config) (3KB)
+│   │   └── welcome.jsp (3KB)
+├── generated-sources/
+│   └── annotations/
+├── maven-archiver/
+│   └── pom.properties (78B)
+├── maven-status/
+│   └── maven-compiler-plugin/
+│   │   └── compile/
+│   │       └── default-compile/
+│   │           ├── createdFiles.lst (662B)
+│   │           └── inputFiles.lst (1KB)
+└── ControlTowerBackoffice.war (3MB)
+creationdossier.py (8KB)
+deploy.bat (3KB)
+dev.ps1 (3KB)
+DEV_ENVIRONMENT_FIX.md (3KB)
+docker-compose.dev.yml (2KB)
+docker-compose.yml (2KB)
+Dockerfile (1KB)
+GUIDE_DEMMARAGE.MD (6KB)
+pom.xml (Maven) (4KB)
+project_structure.txt (7KB)
+QUICKSTART.md (1KB)
+README.md (2KB)
+TODO.md (4KB)
