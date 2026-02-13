@@ -235,3 +235,14 @@ Il ne contient **aucune logique métier** et consomme uniquement l’API REST ex
   - Filtres date / hôtel
 - Tests E2E :
   - Affichage des données formatées
+
+# Sprint 2 - Crud de gestion des voitures
+
+# Sprint 3 - Assignation des courses aux vehicules
+Estimation du cycle des vehicules selon les courses: vehicule => vitesse moyenne => temps de course => disponibilité 
+- CRUD de gestion des courses
+
+Base de données:
+Lieux 
+Distance  from - to 
+Parametre : vitesse moyenne des vehicules
