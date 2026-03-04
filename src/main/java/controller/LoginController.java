@@ -1,111 +1,111 @@
 package controller;
 
+import java.util.Map;
+
 import framework.ModelAndView.ModelAndView;
 import framework.annotation.Controller;
 import framework.annotation.Get;
 import framework.annotation.Post;
 import framework.annotation.RequestParam;
+import framework.annotation.Session;
 import framework.annotation.Url;
 import framework.security.AuthenticationManager;
 import framework.security.User;
 import jakarta.servlet.http.HttpServletRequest;
-import service.ReservationService;
 import service.UserService;
 import util.PasswordUtil;
 
+/**
+ * Gestion de l'authentification (login / logout)
+ * ================================================
+ * Tout passe par ModelAndView + @Session, pas de request.setAttribute().
+ * 
+ * @Session Map : le framework injecte les attributs de la HttpSession comme Map.
+ *   - session.put(cle, valeur) → ajoute dans la Map
+ *   - syncSessionBack() recopie la Map vers HttpSession apres le return
+ * 
+ * ModelAndView.addObject() → passe des donnees a la vue (forward)
+ * HttpServletRequest → utilise UNIQUEMENT pour invalidate() dans logout
+ *                      (comme SessionController.viderSession dans le projet Test)
+ */
 @Controller
 public class LoginController {
+    
     private UserService userService = new UserService();
-    private ReservationService reservationService = new ReservationService();
     
     /**
-     * Affiche le formulaire de connexion
+     * GET /login → Affiche le formulaire de connexion
      */
-    @Url("/login")
     @Get
-    public ModelAndView showLoginForm() {
-        return new ModelAndView("/WEB-INF/login.jsp");
+    @Url("/login")
+    public ModelAndView showLogin() {
+        return new ModelAndView("/views/login.jsp");
     }
     
     /**
-     * Traite la soumission du formulaire de connexion
+     * POST /login → Traite la connexion
+     * 
+     * Erreurs : passees via ModelAndView.addObject("erreur", ...)
+     * Session : stockee via @Session Map.put()
      */
-    @Url("/login")
     @Post
+    @Url("/login")
     public ModelAndView processLogin(
             @RequestParam("username") String username,
             @RequestParam("password") String password,
-            HttpServletRequest request) {
+            @Session Map<String, Object> session) {
         
-        // Validation des données
+        ModelAndView log = new ModelAndView("/views/login.jsp");
+        
+        // Validation basique
         if (username == null || username.trim().isEmpty() || 
             password == null || password.isEmpty()) {
-            
-            ModelAndView mav = new ModelAndView("/WEB-INF/login.jsp");
-            mav.addObject("erreur", "Veuillez remplir tous les champs");
-            return mav;
+            log.addObject("erreur", "Veuillez remplir tous les champs");
+            return log;
         }
         
-        // Récupérer l'utilisateur depuis la BDD (avec BCrypt)
+        // Recherche de l'utilisateur en BDD
         model.User dbUser = userService.getUserByUsername(username.trim());
         
-        if (dbUser == null) {
-            ModelAndView mav = new ModelAndView("/WEB-INF/login.jsp");
-            mav.addObject("erreur", "Nom d'utilisateur ou mot de passe incorrect");
-            return mav;
-        }        
-        
-        // Vérifier le mot de passe avec BCrypt
-        if (!PasswordUtil.verifyPassword(password, dbUser.getPassword())) {
-            ModelAndView mav = new ModelAndView("/WEB-INF/login.jsp");
-            mav.addObject("erreur", "Nom d'utilisateur ou mot de passe incorrect");
-            return mav;
+        // Verification credentials (BCrypt)
+        if (dbUser == null || !PasswordUtil.verifyPassword(password, dbUser.getPassword())) {
+            log.addObject("erreur", "Nom d'utilisateur ou mot de passe incorrect");
+            return log;
         }
         
-        // Vérifier que l'utilisateur est actif
+        // Verification compte actif
         if (!dbUser.isActive()) {
-            ModelAndView mav = new ModelAndView("/WEB-INF/login.jsp");
-            mav.addObject("erreur", "Compte désactivé. Contactez l'administrateur.");
-            return mav;
+            log.addObject("erreur", "Compte desactive. Contactez l'administrateur.");
+            return log;
         }
         
-        // Créer un User du framework à partir de l'utilisateur BD
+        // === SUCCES : creer le User framework (necessaire pour @AuthenticatedOnly) ===
         User frameworkUser = new User();
         frameworkUser.setUsername(dbUser.getUsername());
         frameworkUser.setPassword(dbUser.getPassword());
         frameworkUser.setRole(dbUser.getRole());
         
-        // Stocker l'utilisateur dans la session avec la clé du framework
-        request.getSession().setAttribute(AuthenticationManager.SESSION_USER_KEY, frameworkUser);
+        // Stocker dans la Map @Session (syncSessionBack recopie vers HttpSession)
+        session.put(AuthenticationManager.SESSION_USER_KEY, frameworkUser);
         
-        // Stocker aussi l'utilisateur BD pour les détails complets
-        request.getSession().setAttribute("dbUser", dbUser);
+        // Donnees supplementaires pour l'affichage dans header.jsp
+        session.put("dbUser", dbUser);
+        session.put("userName", dbUser.getFirstName() + " " + dbUser.getLastName());
         
-        // Afficher la liste des réservations avec le template
-        ModelAndView mav = new ModelAndView("/WEB-INF/templates/main-template.jsp");
-        mav.addObject("pageTitle", "Tableau de Bord - Réservations");
-        mav.addObject("contentPage", "/views/reservation/liste-reservations.jsp");
-        mav.addObject("currentPage", "reservations-list");
-        mav.addObject("userName", dbUser.getFirstName() + " " + dbUser.getLastName());
-        mav.addObject("currentUser", dbUser);
-        
-        // Récupérer et afficher les réservations
-        mav.addObject("reservations", reservationService.getAllReservationsForView());
-        
-        return mav;
+        // Page intermediaire qui redirige vers /reservations (meta-refresh)
+        return new ModelAndView("/views/login-success.jsp");
     }
     
     /**
-     * Déconnecte l'utilisateur
+     * GET /logout → Invalidation de session + retour au formulaire
+     * Pattern identique a SessionController.viderSession() :
+     *   @Session + HttpServletRequest pour invalidate()
      */
-    @Url("/logout")
     @Get
-    public String logout(HttpServletRequest request) {
-        // Invalidation de la session HTTP
-        if (request.getSession(false) != null) {
-            request.getSession().invalidate();
-        }
-        // Afficher le formulaire de connexion
-        return "/WEB-INF/login.jsp";
+    @Url("/logout")
+    public ModelAndView logout(@Session Map<String, Object> session, HttpServletRequest request) {
+        // Invalider completement la session HTTP
+        request.getSession().invalidate();
+        return new ModelAndView("/views/login.jsp");
     }
 }
