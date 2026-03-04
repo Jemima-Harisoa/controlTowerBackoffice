@@ -166,25 +166,45 @@
 }
 
 .icon-eye::before {
-    content: "👁️";
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    content: "\f06e";
 }
 
 .icon-edit::before {
-    content: "✏️";
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    content: "\f044";
 }
 
 .icon-trash::before {
-    content: "🗑️";
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    content: "\f1f8";
 }
 
 .icon-plus::before {
-    content: "➕";
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    content: "\f067";
 }
 
 .icon-hotel::before {
-    content: "🏨";
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    content: "\f594";
 }
 
 .icon-warning::before {
-    content: "⚠️";
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    content: "\f071";
+}
+
+.star-icon {
+    color: #f5a623;
+}
+
+.inline-form {
+    display: inline;
 }

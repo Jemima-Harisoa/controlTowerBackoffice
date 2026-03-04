@@ -43,7 +43,7 @@
                         <td>${hotel.ville}</td>
                         <td>${hotel.pays}</td>
                         <td>
-                            <c:forEach begin="1" end="${hotel.nombreEtoiles}">⭐</c:forEach>
+                            <c:forEach begin="1" end="${hotel.nombreEtoiles}"><i class="fas fa-star star-icon"></i></c:forEach>
                         </td>
                         <td>
                             <span class="badge ${hotel.active ? 'badge-success' : 'badge-danger'}">
@@ -60,7 +60,7 @@
                                 <i class="fas fa-edit"></i>
                             </a>
                             <form action="${pageContext.request.contextPath}/hotels/delete" 
-                                  method="post" style="display: inline;">
+                                  method="post" class="inline-form">
                                 <input type="hidden" name="id" value="${hotel.id}">
                                 <button type="submit" class="btn btn-sm btn-danger" title="Supprimer" 
                                         onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet hôtel ?')">

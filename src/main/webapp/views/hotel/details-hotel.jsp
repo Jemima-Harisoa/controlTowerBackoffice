@@ -48,7 +48,7 @@
                     <div class="detail-row">
                         <span class="detail-label">Nombre d'étoiles:</span>
                         <span class="detail-value">
-                            <c:forEach begin="1" end="${hotel.nombreEtoiles}">⭐</c:forEach>
+                            <c:forEach begin="1" end="${hotel.nombreEtoiles}"><i class="fas fa-star star-icon"></i></c:forEach>
                             (${hotel.nombreEtoiles}/5)
                         </span>
                     </div>
