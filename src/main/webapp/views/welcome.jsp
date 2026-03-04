@@ -9,14 +9,16 @@
     <p class="subtitle">Bienvenue, ${sessionScope.userName}</p>
 
     <%-- Cartes statistiques --%>
+    <%-- totalHotels et totalReservations sont poses par WelcomeController via
+         mav.addObject() → deviennent des request attributes → accessibles en EL --%>
     <div class="stats-grid">
         <div class="stat-card">
-            <h3>Hôtels</h3>
+            <h3>H&#244;tels</h3>
             <p class="stat-number">${totalHotels}</p>
             <a href="${pageContext.request.contextPath}/hotels/list">Voir la liste</a>
         </div>
         <div class="stat-card">
-            <h3>Réservations</h3>
+            <h3>R&#233;servations</h3>
             <p class="stat-number">${totalReservations}</p>
             <a href="${pageContext.request.contextPath}/reservations">Voir la liste</a>
         </div>
