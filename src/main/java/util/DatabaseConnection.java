@@ -70,7 +70,7 @@ public class DatabaseConnection {
             throw new SQLException("Driver de base de données non trouvé", e);
         }
         
-        System.out.println("📊 Connexion à la base de données:");
+        System.out.println("[DB] Connexion a la base de donnees:");
         System.out.println("   URL: " + url);
         System.out.println("   User: " + user);
         

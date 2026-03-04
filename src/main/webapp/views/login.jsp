@@ -87,7 +87,7 @@
                 </div>
             </form>
             
-            <div style="margin-top: 20px; padding: 10px; background: #f0f0f0; border-radius: 5px; font-size: 12px;">
+            <div class="test-credentials">
                 <strong>Comptes de test :</strong><br>
                 Username: <code>admin</code> | Password: <code>password</code>
             </div>

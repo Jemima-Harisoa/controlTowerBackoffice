@@ -52,18 +52,18 @@ Objectif : environnement reproductible
 
 
 # Sprint 1 – Feature de reservation pour les clients
-# Module Réservation
+## Module Réservation
 ---
 
-# I. BACKOFFICE (Administration)
+### I. BACKOFFICE (Administration)
 > Le backoffice est responsable de **l’insertion des réservations**, de la **validation** et de **toute la logique métier**.  
 Il peut utiliser des vues serveur (MVC) et n’est pas consommé par le public.
 
 ---
 
-## A. Interface Backoffice (UI)
+#### A. Interface Backoffice (UI)
 
-### A1. Formulaire de réservation
+##### A1. Formulaire de réservation
 - **Champs**
   - Nom
   - Email
@@ -87,9 +87,9 @@ Il peut utiliser des vues serveur (MVC) et n’est pas consommé par le public.
 
 ---
 
-## B. Backend Backoffice
+#### B. Backend Backoffice
 
-### B1. Endpoints (MVC)
+##### B1. Endpoints (MVC)
 - **GET `/reservations/create`**
   - Affiche le formulaire de réservation
   - Fournit la liste des hôtels disponibles
@@ -102,9 +102,9 @@ Il peut utiliser des vues serveur (MVC) et n’est pas consommé par le public.
 
 ---
 
-## C. Logique Métier (Backoffice uniquement)
+#### C. Logique Métier (Backoffice uniquement)
 
-### C1. Services
+##### C1. Services
 - **HotelService**
   - `getAvailableHotels()`
   - Requête : `SELECT * FROM hotels`
@@ -116,7 +116,7 @@ Il peut utiliser des vues serveur (MVC) et n’est pas consommé par le public.
 
 ---
 
-## D. Modèles (Persistence)
+#### D. Modèles (Persistence)
 - **Hotel**
   - Champs correspondant à la table `hotels`
   - Getters / Setters
@@ -135,15 +135,15 @@ Il peut utiliser des vues serveur (MVC) et n’est pas consommé par le public.
 
 ---
 
-# II. FRONTOFFICE (Consultation)
+### II. FRONTOFFICE (Consultation)
 > Le frontoffice est dédié **à l’affichage des réservations**.  
 Il ne contient **aucune logique métier** et consomme uniquement l’API REST exposée par le backend.
 
 ---
 
-## E. Interface Frontoffice (UI)
+#### E. Interface Frontoffice (UI)
 
-### E1. Vue Liste des réservations
+##### E1. Vue Liste des réservations
 - Affichage sous forme de **tableau / liste**
 - Données **formatées pour l’utilisateur**
   - Nom formaté (ex : `Jean Dupont`)
@@ -160,9 +160,9 @@ Il ne contient **aucune logique métier** et consomme uniquement l’API REST ex
 
 ---
 
-## F. API REST (Backend partagé)
+#### F. API REST (Backend partagé)
 
-### F1. Endpoints Frontoffice
+##### F1. Endpoints Frontoffice
 - **GET `/api/reservations`**
   - Retourne toutes les réservations formatées
 - **GET `/api/reservations?date=YYYY-MM-DD`**
@@ -174,7 +174,7 @@ Il ne contient **aucune logique métier** et consomme uniquement l’API REST ex
 
 ---
 
-## G. View Models / DTO (Frontoffice)
+#### G. View Models / DTO (Frontoffice)
 - **ReservationView**
   - nomFormate
   - email
@@ -187,7 +187,7 @@ Il ne contient **aucune logique métier** et consomme uniquement l’API REST ex
 
 ---
 
-## H. Services exposés au Frontoffice
+#### H. Services exposés au Frontoffice
 - `getAllReservationsForView()`
 - `getReservationsForViewByDate(...)`
 - `getReservationsForViewByHotel(...)`
@@ -199,20 +199,20 @@ Il ne contient **aucune logique métier** et consomme uniquement l’API REST ex
 
 ---
 
-# III. INFRASTRUCTURE COMMUNE
+### III. INFRASTRUCTURE COMMUNE
 
-## I. Base de Données
+##### I. Base de Données
 - Script : `database/init/03-sprint1_form_reservation.sql`
 - Tables :
-  - `hotels`
-  - `reservations`
+  - `hotel`
+  - `reservation`
 - Vue :
   - `vue_reservations_completes`
   - Jointure + données prêtes pour affichage
 
 ---
 
-## J. Configuration
+##### J. Configuration
 - PostgreSQL
 - `DataSource` Java
 - Configuration via `.env`
@@ -220,16 +220,16 @@ Il ne contient **aucune logique métier** et consomme uniquement l’API REST ex
 
 ---
 
-## K. Tests
+##### K. Tests
 
-### K1. Backoffice
+###### K1. Backoffice
 - Tests unitaires :
   - Validation
   - Logique métier
 - Tests E2E :
   - Création complète d’une réservation
 
-### K2. Frontoffice
+###### K2. Frontoffice
 - Tests d’intégration :
   - API REST
   - Filtres date / hôtel
@@ -237,6 +237,7 @@ Il ne contient **aucune logique métier** et consomme uniquement l’API REST ex
   - Affichage des données formatées
 
 # Sprint 2 - Crud de gestion des voitures
+Gestion et assignation des voitures : 
 
 # Sprint 3 - Assignation des courses aux vehicules
 Estimation du cycle des vehicules selon les courses: vehicule => vitesse moyenne => temps de course => disponibilité 
@@ -246,3 +247,14 @@ Base de données:
 Lieux 
 Distance  from - to 
 Parametre : vitesse moyenne des vehicules
+
+Seul les vihicule ayant la capatcite d'acceuilir les passager sont prioriser pour le transport des passagers. 
+=> Si plusieur vehicule sont disponible pour une course, on priorise celui qui est le plus proche du lieu de depart.
+=> Si plusieur vehicule sint disponible pour une course et se trouve a la meme distance du lieu de depart, on priorise celui qui tourne au diesel 
+
+Circuit des vehicules: du plus proche au plus eloigne du lieu de depart
+
+
+
+# Sprint 4 - Principe de temps d'attente 
+- Plusieurs client peuvent prendre un seul et meme vehicule en fonction des places disponible pour chaque vehicule et d'un delai d'attente defini ex : 2 client arrive avec 15 min d'ecart le temps d'attente est de 20 les 2 peuvent prendre le meme vehicule si le nombre de place le permet. Les regle du sprint 3 reste valide  

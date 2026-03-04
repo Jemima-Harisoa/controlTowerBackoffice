@@ -26,7 +26,7 @@ public class AdminPasswordHashTest {
         
         assertTrue("Le mot de passe 'password' devrait correspondre au hash de l'utilisateur admin", isValid);
         
-        System.out.println("✓ Test réussi: Le hash du mot de passe est correct");
+        System.out.println("[OK] Test reussi: Le hash du mot de passe est correct");
         System.out.println("  Username: admin");
         System.out.println("  Password: password");
         System.out.println("  Hash: " + adminPasswordHash);

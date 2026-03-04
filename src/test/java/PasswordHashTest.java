@@ -29,7 +29,7 @@ public class PasswordHashTest {
         boolean isValid = PasswordUtil.verifyPassword(plainPassword, knownHash);
         
         assertTrue("Le mot de passe 'password' devrait correspondre au hash", isValid);
-        System.out.println("✓ Test réussi: Le hash du mot de passe 'password' est correct");
+        System.out.println("[OK] Test reussi: Le hash du mot de passe 'password' est correct");
     }
     
     /**
@@ -51,7 +51,7 @@ public class PasswordHashTest {
         boolean isValid = PasswordUtil.verifyPassword(plainPassword, dbUser.getPassword());
         
         assertTrue("Le mot de passe 'password' devrait être valide pour l'utilisateur 'admin'", isValid);
-        System.out.println("✓ Test réussi: Le mot de passe de l'utilisateur 'admin' est correct");
+        System.out.println("[OK] Test reussi: Le mot de passe de l'utilisateur 'admin' est correct");
         System.out.println("  Username: " + dbUser.getUsername());
         System.out.println("  Email: " + dbUser.getEmail());
         System.out.println("  Role: " + dbUser.getRole());
@@ -69,7 +69,7 @@ public class PasswordHashTest {
         boolean isValid = PasswordUtil.verifyPassword(wrongPassword, knownHash);
         
         assertFalse("Un mauvais mot de passe ne devrait pas correspondre au hash", isValid);
-        System.out.println("✓ Test réussi: Le mauvais mot de passe est correctement rejeté");
+        System.out.println("[OK] Test reussi: Le mauvais mot de passe est correctement rejete");
     }
     
     /**
@@ -90,7 +90,7 @@ public class PasswordHashTest {
         boolean isValid = PasswordUtil.verifyPassword(plainPassword, newHash);
         assertTrue("Le mot de passe devrait correspondre au hash généré", isValid);
         
-        System.out.println("✓ Test réussi: Génération et vérification du hash");
+        System.out.println("[OK] Test reussi: Generation et verification du hash");
         System.out.println("  Hash généré: " + newHash);
     }
 }
