@@ -61,8 +61,8 @@ CREATE TABLE type_clients (
     description VARCHAR(100)
 );
 
--- Table des hôtels (Java: HotelService → FROM hotel, Model Hotel: nom, adresse, ville, pays, etc.)
-CREATE TABLE hotel (
+-- Table des hotel 
+CREATE TABLE IF NOT EXISTS hotels (
     id SERIAL PRIMARY KEY,
     nom VARCHAR(255) NOT NULL,
     adresse VARCHAR(255),
@@ -75,8 +75,8 @@ CREATE TABLE hotel (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Table des clients (Java: ClientService → FROM clients, Model Client: denomination, sexe_id, type_id)
-CREATE TABLE clients (
+-- Table des clients
+CREATE TABLE IF NOT EXISTS clients (
     id SERIAL PRIMARY KEY,
     denomination VARCHAR(50) NOT NULL,
     sexe_id INTEGER REFERENCES sexes(id) ON DELETE SET NULL,
@@ -85,18 +85,17 @@ CREATE TABLE clients (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Table des réservations (Java: ReservationService → FROM reservations)
-CREATE TABLE reservations (
-    id SERIAL PRIMARY KEY,
-    nom VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL,
-    date_arrivee TIMESTAMP NOT NULL,
-    heure VARCHAR(5) NOT NULL CHECK (heure ~ '^([01]?[0-9]|2[0-3]):[0-5][0-9]$'),
-    nombre_personnes INT NOT NULL CHECK (nombre_personnes > 0),
-    hotel_id INT NOT NULL REFERENCES hotel(id) ON DELETE CASCADE,
-    is_confirmed BOOLEAN DEFAULT false,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- Table des reservations
+CREATE TABLE IF NOT EXISTS reservations (
+    id SERIAL PRIMARY KEY, 
+    numero VARCHAR(20) UNIQUE NOT NULL,
+    contact VARCHAR(50),
+    client_id INTEGER REFERENCES clients(id) ON DELETE CASCADE,
+    hotel_id INTEGER REFERENCES hotels(id) ON DELETE CASCADE,
+    passager SMALLINT DEFAULT 1, -- nombre de passager pour le vehicule 
+    date_arrival TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ===========================================
@@ -111,32 +110,12 @@ CREATE INDEX IF NOT EXISTS idx_hotel_active ON hotel(is_active);
 -- ===========================================
 -- TRIGGERS UPDATED_AT
 -- ===========================================
-DROP TRIGGER IF EXISTS update_hotel_updated_at ON hotel;
-CREATE TRIGGER update_hotel_updated_at
-    BEFORE UPDATE ON hotel
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-DROP TRIGGER IF EXISTS update_clients_updated_at ON clients;
-CREATE TRIGGER update_clients_updated_at
-    BEFORE UPDATE ON clients
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-DROP TRIGGER IF EXISTS update_reservations_updated_at ON reservations;
-CREATE TRIGGER update_reservations_updated_at
-    BEFORE UPDATE ON reservations
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- ===========================================
--- VUES
--- ===========================================
-CREATE OR REPLACE VIEW vue_reservations_completes AS
-SELECT
-    r.id, r.nom, r.email, r.date_arrivee, r.heure, r.nombre_personnes,
-    h.nom AS nom_hotel, h.adresse, h.ville, h.pays, h.nombre_etoiles,
-    r.is_confirmed, r.created_at, r.updated_at
-FROM reservations r
-JOIN hotel h ON r.hotel_id = h.id
-ORDER BY r.date_arrivee DESC;
+CREATE INDEX IF NOT EXISTS idx_client_sexe ON client(sexe_id);
+CREATE INDEX IF NOT EXISTS idx_client_type ON client(type_id);
+CREATE INDEX IF NOT EXISTS idx_reservation_client ON reservation(client_id);
+CREATE INDEX IF NOT EXISTS idx_reservation_hotel ON reservations(hotel_id);
+CREATE INDEX IF NOT EXISTS idx_reservation_numero ON reservations(numero);
+CREATE INDEX IF NOT EXISTS idx_reservation_date ON reservations(date_arrival);
 
 -- ===========================================
 -- DONNÉES DE TEST
@@ -191,7 +170,7 @@ GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO controltower_user;
 -- Message de confirmation
 DO $$
 BEGIN
-  RAISE NOTICE '✅ Tables Sprint 1 créées avec succès!';
-  RAISE NOTICE '🏨 Tables: sexes, type_clients, hotel, clients, reservations';
-  RAISE NOTICE '📊 Données de test ajoutées (3 hôtels, 3 clients, 3 réservations)';
+  RAISE NOTICE 'Tables Sprint 1 créées avec succès!';
+  RAISE NOTICE 'Tables: sexes, type_clients, hotel, clients, reservations';
+  RAISE NOTICE 'Données de test ajoutées (3 hôtels, 3 clients, 3 réservations)';
 END $$;
