@@ -7,3 +7,5 @@ target/**
 # fichier de log
 *.log
 dev/logs/*
+
+test.txt

@@ -20,27 +20,55 @@ jobs:
   build:
     name: Build & Test
     runs-on: ubuntu-latest
-    
+
+    # Service PostgreSQL pour les tests d'integration
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: controltower
+          POSTGRES_USER: controltower_user
+          POSTGRES_PASSWORD: controltower_pass_2024
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    # Variables d'environnement pour la connexion DB (lues par DatabaseConnection.java)
+    env:
+      POSTGRES_DB: controltower
+      POSTGRES_USER: controltower_user
+      POSTGRES_PASSWORD: controltower_pass_2024
+      DB_HOST: localhost
+      POSTGRES_PORT: 5432
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup JDK 11
         uses: actions/setup-java@v4
         with:
           java-version: '11'
           distribution: 'temurin'
           cache: maven
-      
-      - name: Build Project
-        run: mvn clean install
-      
-      - name: Run Tests
-        run: mvn test
-      
-      - name: Build WAR Package
-        run: mvn clean package -DskipTests
-        
+
+      - name: Initialiser la base de donnees
+        run: |
+          export PGPASSWORD=controltower_pass_2024
+          psql -h localhost -U controltower_user -d controltower -f database/init/01-init-controltower.sql
+          psql -h localhost -U controltower_user -d controltower -f database/init/02-health_check.sql
+          psql -h localhost -U controltower_user -d controltower -f database/init/03-sprint1_form_reservation.sql
+
+      - name: Build & Test
+        run: mvn clean verify
+
+      - name: Build WAR
+        run: mvn package -DskipTests
+
       - name: Upload WAR Artifact
         uses: actions/upload-artifact@v4
         with:
