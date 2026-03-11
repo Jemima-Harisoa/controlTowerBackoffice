@@ -139,6 +139,9 @@
         }
         
         .btn-reset {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
             padding: 10px 24px;
             background: #6c757d;
             color: white;
@@ -146,6 +149,7 @@
             border-radius: 6px;
             cursor: pointer;
             font-size: 14px;
+            text-decoration: none;
             transition: background 0.3s;
         }
         
@@ -329,223 +333,126 @@
     </div>
     
     <div class="container">
+        <c:set var="totalReservations" value="${empty reservations ? 0 : reservations.size()}" />
+        <c:set var="confirmedReservations" value="0" />
+        <c:if test="${not empty reservations}">
+            <c:forEach items="${reservations}" var="res">
+                <c:if test="${res.confirmed}">
+                    <c:set var="confirmedReservations" value="${confirmedReservations + 1}" />
+                </c:if>
+            </c:forEach>
+        </c:if>
+
         <!-- Filtres -->
-        <div class="filters-card">
+        <form class="filters-card" action="${pageContext.request.contextPath}/frontoffice/reservations" method="get" >
             <h3><i class="fas fa-filter"></i> Filtrer les r&#233;servations</h3>
             <div class="filters-row">
                 <div class="filter-group">
                     <label for="filterDate">Date d'arriv&#233;e</label>
-                    <input type="date" id="filterDate">
+                    <input type="date" name="date" id="filterDate" value="${param.date}">
                 </div>
                 <div class="filter-group">
                     <label for="filterHotel">H&#244;tel</label>
-                    <select id="filterHotel">
+                    <select id="filterHotel" name="hotelId">
                         <option value="">Tous les h&#244;tels</option>
                         <c:forEach items="${hotels}" var="hotel">
-                            <option value="${hotel.id}">${hotel.nom} - ${hotel.ville}</option>
+                            <option value="${hotel.id}" ${param.hotelId == hotel.id ? 'selected' : ''}>${hotel.nom} - ${hotel.ville}</option>
                         </c:forEach>
                     </select>
                 </div>
                 <div class="filter-actions">
-                    <button class="btn-filter" onclick="applyFilters()">
+                    <button type="submit" class="btn-filter">
+                        
                         <i class="fas fa-search"></i> Rechercher
                     </button>
-                    <button class="btn-reset" onclick="resetFilters()">
+                    <a class="btn-reset" href="${pageContext.request.contextPath}/frontoffice/reservations">
                         <i class="fas fa-undo"></i> R&#233;initialiser
-                    </button>
+                    </a>
                 </div>
             </div>
-        </div>
+        </form>
         
         <!-- Statistiques -->
         <div class="stats-bar" id="statsBar">
             <div class="stat-item">
                 <i class="fas fa-calendar-check"></i>
                 <div>
-                    <div class="stat-value" id="statTotal">-</div>
+                    <div class="stat-value">${totalReservations}</div>
                     <div class="stat-label">R&#233;servations</div>
                 </div>
             </div>
             <div class="stat-item">
                 <i class="fas fa-check-circle icon-confirmed"></i>
                 <div>
-                    <div class="stat-value" id="statConfirmed">-</div>
+                    <div class="stat-value">${confirmedReservations}</div>
                     <div class="stat-label">Confirm&#233;es</div>
                 </div>
             </div>
             <div class="stat-item">
                 <i class="fas fa-clock icon-pending"></i>
                 <div>
-                    <div class="stat-value" id="statPending">-</div>
+                    <div class="stat-value">${totalReservations - confirmedReservations}</div>
                     <div class="stat-label">En attente</div>
                 </div>
             </div>
         </div>
         
         <!-- Tableau des réservations -->
-        <div class="table-card">
-            <div id="tableContent">
-                <div class="loading">
-                    <i class="fas fa-spinner"></i>
-                    <p>Chargement des r&#233;servations...</p>
-                </div>
-            </div>
+        
+<!-- Tableau des réservations -->
+<c:choose>
+    <c:when test="${empty reservations}">
+        <div class="empty-state">
+            <div class="empty-state-icon"><i class="fas fa-clipboard-list"></i></div>
+            <h3>Aucune réservation</h3>
+            <p>Aucune réservation ne correspond aux critères actuels.</p>
         </div>
+    </c:when>
+    <c:otherwise>
+        <table class="reservations-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Client</th>
+                    <th>Email</th>
+                    <th>Date d'arrivée</th>
+                    <th>Heure</th>
+                    <th>Personnes</th>
+                    <th>Hôtel</th>
+                    <th>Statut</th>
+                </tr>
+            </thead>
+            <tbody>
+                <c:forEach items="${reservations}" var="reservation">
+                    <tr>
+                        <td><strong>#${reservation.id}</strong></td>
+                        <td>${reservation.nomFormate}</td>
+                        <td>${reservation.email}</td>
+                        <td>${reservation.dateAffichee}</td>
+                        <td>${reservation.heureAffichee}</td>
+                        <td>
+                            <strong>${reservation.nombrePersonnes}</strong>
+                            <span class="text-muted-sm">pers.</span>
+                        </td>
+                        <td>${reservation.nomHotel}</td>
+                        <td>
+                            <c:choose>
+                                <c:when test="${reservation.confirmed}">
+                                    <span class="badge badge-success"><i class="fas fa-check"></i> Confirmee</span>
+                                </c:when>
+                                <c:otherwise>
+                                    <span class="badge badge-warning"><i class="fas fa-hourglass-half"></i> En attente</span>
+                                </c:otherwise>
+                            </c:choose>
+                        </td>
+                    </tr>
+                </c:forEach>
+            </tbody>
+        </table>
+    </c:otherwise>
+</c:choose>
+
     </div>
     
-    <script>
-        const API_BASE = '${pageContext.request.contextPath}/api/reservations';
-        
-        // Chargement initial
-        document.addEventListener('DOMContentLoaded', function() {
-            loadReservations();
-        });
-        
-        /**
-         * Charge les réservations depuis l'API REST
-         */
-        function loadReservations(params) {
-            const tableContent = document.getElementById('tableContent');
-            tableContent.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><p>Chargement...</p></div>';
-            
-            let url = API_BASE;
-            if (params) {
-                const queryParams = new URLSearchParams();
-                if (params.date) queryParams.append('date', params.date);
-                if (params.hotelId) queryParams.append('hotelId', params.hotelId);
-                const qs = queryParams.toString();
-                if (qs) url += '?' + qs;
-            }
-            
-            fetch(url)
-                .then(function(response) {
-                    if (!response.ok) throw new Error('Erreur serveur ' + response.status);
-                    return response.json();
-                })
-                .then(function(apiResponse) {
-                    if (apiResponse.status === 'success') {
-                        renderTable(apiResponse.data);
-                        updateStats(apiResponse.data);
-                    } else {
-                        showError(apiResponse.message || 'Erreur inconnue');
-                    }
-                })
-                .catch(function(error) {
-                    console.error('Erreur:', error);
-                    showError('Impossible de charger les r\u00e9servations : ' + error.message);
-                });
-        }
-        
-        /**
-         * Génère le tableau HTML à partir des données
-         */
-        function renderTable(reservations) {
-            const tableContent = document.getElementById('tableContent');
-            
-            if (!reservations || reservations.length === 0) {
-                tableContent.innerHTML = 
-                    '<div class="empty-state">' +
-                    '  <i class="fas fa-calendar-times"></i>' +
-                    '  <h3>Aucune r\u00e9servation trouv\u00e9e</h3>' +
-                    '  <p>Aucune r\u00e9servation ne correspond aux crit\u00e8res de recherche.</p>' +
-                    '</div>';
-                return;
-            }
-            
-            var html = '<table class="reservations-table">';
-            html += '<thead><tr>';
-            html += '<th>Client</th>';
-            html += '<th>Email</th>';
-            html += '<th>Date d\'arriv\u00e9e</th>';
-            html += '<th>Heure</th>';
-            html += '<th>Personnes</th>';
-            html += '<th>H\u00f4tel</th>';
-            html += '<th>Statut</th>';
-            html += '</tr></thead>';
-            html += '<tbody>';
-            
-            for (var i = 0; i < reservations.length; i++) {
-                var r = reservations[i];
-                var badgeClass = r.confirmed ? 'badge-success' : 'badge-warning';
-                var badgeText = r.confirmed ? 'Confirm\u00e9e' : 'En attente';
-                
-                html += '<tr>';
-                html += '<td><strong>' + escapeHtml(r.nomFormate) + '</strong></td>';
-                html += '<td>' + escapeHtml(r.email) + '</td>';
-                html += '<td>' + escapeHtml(r.dateAffichee) + '</td>';
-                html += '<td>' + escapeHtml(r.heureAffichee) + '</td>';
-                html += '<td><strong>' + r.nombrePersonnes + '</strong> pers.</td>';
-                html += '<td>' + escapeHtml(r.nomHotel) + '</td>';
-                html += '<td><span class="badge ' + badgeClass + '">' + badgeText + '</span></td>';
-                html += '</tr>';
-            }
-            
-            html += '</tbody></table>';
-            tableContent.innerHTML = html;
-        }
-        
-        /**
-         * Met à jour les statistiques
-         */
-        function updateStats(reservations) {
-            var total = reservations ? reservations.length : 0;
-            var confirmed = 0;
-            
-            if (reservations) {
-                for (var i = 0; i < reservations.length; i++) {
-                    if (reservations[i].confirmed) confirmed++;
-                }
-            }
-            
-            document.getElementById('statTotal').textContent = total;
-            document.getElementById('statConfirmed').textContent = confirmed;
-            document.getElementById('statPending').textContent = total - confirmed;
-        }
-        
-        /**
-         * Applique les filtres sélectionnés
-         */
-        function applyFilters() {
-            var params = {};
-            var date = document.getElementById('filterDate').value;
-            var hotelId = document.getElementById('filterHotel').value;
-            
-            if (date) params.date = date;
-            if (hotelId) params.hotelId = hotelId;
-            
-            loadReservations(params);
-        }
-        
-        /**
-         * Réinitialise les filtres
-         */
-        function resetFilters() {
-            document.getElementById('filterDate').value = '';
-            document.getElementById('filterHotel').value = '';
-            loadReservations();
-        }
-        
-        /**
-         * Échappe le HTML pour éviter les injections XSS
-         */
-        function escapeHtml(text) {
-            if (!text) return '';
-            var div = document.createElement('div');
-            div.appendChild(document.createTextNode(text));
-            return div.innerHTML;
-        }
-        
-        /**
-         * Affiche un message d'erreur
-         */
-        function showError(message) {
-            document.getElementById('tableContent').innerHTML = 
-                '<div class="error-state">' +
-                '  <i class="fas fa-exclamation-triangle"></i>' +
-                '  <h3>Erreur</h3>' +
-                '  <p>' + escapeHtml(message) + '</p>' +
-                '</div>';
-        }
-    </script>
 </body>
 </html>
