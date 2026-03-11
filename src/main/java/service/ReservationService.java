@@ -1,6 +1,7 @@
 package service;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -133,7 +134,7 @@ public class ReservationService {
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(query)) {
             
-            SimpleDateFormat dateFormat = new SimpleDateFormat("dd MMMM yyyy");
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd MMMM yyyy", java.util.Locale.FRENCH);
             
             while (rs.next()) {
                 ReservationView reservationView = new ReservationView();
@@ -175,10 +176,10 @@ public class ReservationService {
         try (Connection conn = dbConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
             
-            stmt.setString(1, date);
+            stmt.setDate(1, Date.valueOf(date));
             ResultSet rs = stmt.executeQuery();
             
-            SimpleDateFormat dateFormat = new SimpleDateFormat("dd MMMM yyyy");
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd MMMM yyyy", java.util.Locale.FRENCH);
             
             while (rs.next()) {
                 ReservationView reservationView = new ReservationView();
@@ -223,7 +224,7 @@ public class ReservationService {
             stmt.setInt(1, hotelId);
             ResultSet rs = stmt.executeQuery();
             
-            SimpleDateFormat dateFormat = new SimpleDateFormat("dd MMMM yyyy");
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd MMMM yyyy", java.util.Locale.FRENCH);
             
             while (rs.next()) {
                 ReservationView reservationView = new ReservationView();
@@ -266,11 +267,11 @@ public class ReservationService {
         try (Connection conn = dbConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
             
-            stmt.setString(1, date);
+            stmt.setDate(1, Date.valueOf(date));
             stmt.setInt(2, hotelId);
             ResultSet rs = stmt.executeQuery();
             
-            SimpleDateFormat dateFormat = new SimpleDateFormat("dd MMMM yyyy");
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd MMMM yyyy", java.util.Locale.FRENCH);
             
             while (rs.next()) {
                 ReservationView reservationView = new ReservationView();
