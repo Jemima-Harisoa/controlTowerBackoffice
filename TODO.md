@@ -240,13 +240,7 @@ Il ne contient **aucune logique métier** et consomme uniquement l’API REST ex
 ### Todo : fix filtre date 
 Probleme : le filtre date ne fonctionne pas correctement, il retourne des résultats vides
 - [X] mettre les date et les hotel en paramettre optionnel dans le controller  
-- [] appler directement les fonction de service dans le controller au lieu de faire un mapping complexe
-- [] utiliser un formulaire de type post derriere le filtre pour envoyer les parametres de date et hotel au lieu de les envoyer en query params 
-- [] ajouter des logs pour debuguer le probleme
+- [X] appler directement les fonction de service dans le controller au lieu de faire un mapping complexe
+- [X] utiliser un formulaire de type post derriere le filtre pour envoyer les parametres de date et hotel au lieu de les envoyer en query params 
 
-SELECT r.id, r.nom, r.email, r.date_arrivee, r.heure, r.nombre_personnes,
-h.nom as nom_hotel, r.is_confirmed
-FROM reservations r
-JOIN hotel h ON r.hotel_id = h.id
-WHERE DATE(r.date_arrivee) = '2026-05-01' AND r.hotel_id = 2
-ORDER BY r.date_arrivee DESC
+### Todo : refactorisation code - separation des requete sql dans des repository et logique métier dans des services
