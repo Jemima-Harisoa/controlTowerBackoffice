@@ -1,51 +1,51 @@
 ---
-name: Feature Request
-about: Suggest an idea for this project
+name: Demande de Fonctionnalité
+about: Suggérer une idée pour ce projet
 title: '[FEATURE] '
 labels: enhancement
 assignees: ''
 ---
 
-## Feature Description
+## Description de la fonctionnalité
 
-<!-- A clear and concise description of the feature you're proposing -->
+<!-- Une description claire et concise de la fonctionnalité que vous proposez -->
 
-## Problem Statement
+## Énoncé du problème
 
-<!-- Is your feature request related to a problem? Please describe -->
-<!-- Example: I'm always frustrated when [...] -->
+<!-- Votre demande de fonctionnalité est-elle liée à un problème ? Veuillez décrire -->
+<!-- Exemple : Je suis toujours frustré quand [...] -->
 
-## Proposed Solution
+## Solution proposée
 
-<!-- Describe the solution you'd like -->
+<!-- Décrivez la solution que vous aimeriez -->
 
-## Alternatives Considered
+## Alternatives considérées
 
-<!-- Describe any alternative solutions or features you've considered -->
+<!-- Décrivez toutes les solutions alternatives ou fonctionnalités que vous avez considérées -->
 
-## Benefits
+## Avantages
 
-<!-- What benefits would this feature bring? -->
+<!-- Quels avantages cette fonctionnalité apporterait-elle ? -->
 
 - 
 - 
 - 
 
-## Mockups/Examples
+## Maquettes/Exemples
 
-<!-- If applicable, add mockups, sketches, or examples -->
+<!-- Si applicable, ajoutez des maquettes, esquisses ou exemples -->
 
-## Implementation Considerations
+## Considérations d'implémentation
 
-<!-- Any technical considerations, dependencies, or concerns? -->
+<!-- Des considérations techniques, dépendances ou préoccupations ? -->
 
-## Additional Context
+## Contexte supplémentaire
 
-<!-- Add any other context, screenshots, or examples about the feature request here -->
+<!-- Ajoutez tout autre contexte, captures d'écran ou exemples concernant la demande de fonctionnalité ici -->
 
-## Acceptance Criteria
+## Critères d'acceptation
 
-<!-- What must be true for this feature to be considered complete? -->
+<!-- Qu'est-ce qui doit être vrai pour que cette fonctionnalité soit considérée comme complète ? -->
 
 - [ ] 
 - [ ] 

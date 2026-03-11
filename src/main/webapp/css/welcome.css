@@ -133,10 +133,9 @@ h2 {
 }
 
 .info-list li::before {
-	font-family: "Font Awesome 5 Free";
-	font-weight: 900;
-	content: "\f00c";
+	content: "✓";
 	color: #667eea;
+	font-weight: bold;
 	margin-right: 10px;
 }
 

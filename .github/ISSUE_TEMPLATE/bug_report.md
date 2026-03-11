@@ -1,45 +1,45 @@
 ---
-name: Bug Report
-about: Create a report to help us improve
+name: Rapport de Bug
+about: Créer un rapport pour nous aider à nous améliorer
 title: '[BUG] '
 labels: bug
 assignees: ''
 ---
 
-## Bug Description
+## Description du bug
 
-<!-- A clear and concise description of what the bug is -->
+<!-- Une description claire et concise du bug -->
 
-## Steps to Reproduce
+## Étapes pour reproduire
 
-1. Go to '...'
-2. Click on '...'
-3. Scroll down to '...'
-4. See error
+1. Aller à '...'
+2. Cliquer sur '...'
+3. Faire défiler vers le bas jusqu'à '...'
+4. Voir l'erreur
 
-## Expected Behavior
+## Comportement attendu
 
-<!-- A clear and concise description of what you expected to happen -->
+<!-- Une description claire et concise de ce que vous attendiez qu'il arrive -->
 
-## Actual Behavior
+## Comportement réel
 
-<!-- A clear and concise description of what actually happened -->
+<!-- Une description claire et concise de ce qui s'est réellement passé -->
 
-## Screenshots
+## Captures d'écran
 
-<!-- If applicable, add screenshots to help explain your problem -->
+<!-- Si applicable, ajoutez des captures d'écran pour aider à expliquer votre problème -->
 
-## Environment
+## Environnement
 
-- **OS**: [e.g. Windows 10, macOS 12, Ubuntu 20.04]
-- **Browser** (if applicable): [e.g. Chrome 96, Firefox 95, Safari 15]
-- **Node version** (if applicable): [e.g. 16.13.0]
-- **Version/Branch**: [e.g. main, develop, v1.0.0]
+- **OS** : [ex. Windows 10, macOS 12, Ubuntu 20.04]
+- **Navigateur** (si applicable) : [ex. Chrome 96, Firefox 95, Safari 15]
+- **Version Java** (si applicable) : [ex. 17, 21]
+- **Version/Branche** : [ex. main, dev, v1.0.0]
 
-## Additional Context
+## Contexte supplémentaire
 
-<!-- Add any other context about the problem here -->
+<!-- Ajoutez tout autre contexte concernant le problème ici -->
 
-## Possible Solution
+## Solution possible
 
-<!-- Optional: suggest a fix or reason for the bug -->
+<!-- Optionnel : suggérez une correction ou une raison pour le bug -->
