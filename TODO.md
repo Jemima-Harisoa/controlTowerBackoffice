@@ -244,3 +244,47 @@ Probleme : le filtre date ne fonctionne pas correctement, il retourne des résul
 - [X] utiliser un formulaire de type post derriere le filtre pour envoyer les parametres de date et hotel au lieu de les envoyer en query params 
 
 ### Todo : refactorisation code - separation des requete sql dans des repository et logique métier dans des services
+
+
+# Sprint 2 – Feature de planning des trajets pour les vehicules
+## 1. Database : Nouvel migration pour les tables de planification des trajets
+  - script de creation de table
+     - vehicule
+     - planning_trajet
+     - disatnce 
+     - lieu (hotel, aeroport, gare)
+     - reservation (ajout de champ lieu_depart et lieu_arrivee)
+     - paramatre de configuration (vitesse moyenne, etc)
+     - code carburant (essence, diesel, electrique, ect)
+     - token d'authentification (pour la securite de l'interface de planification des trajets) 
+## 2. Backoffice : Metier de planification des trajets
+### A. Interface Backoffice (UI)
+- page de planning des trajets
+#### affichage :
+- Page assignation des vehicules aux reservations
+  [] liste :  vehicule 
+  [] table :  date, heure arrivee, reservations
+  [] filtre : date, heure arrivee
+  [] action : afficher les reservation non assignees, valider le planning, voir reservation  a la date, assigneer un voiture manuellement a une reservation, generer le planning automatiquement
+
+- Page de visualisation du planning des trajets - considerons les reservation comme des trajets a planifier (1 reservation = 1 tarajet a planifier)
+  
+  [] table :  date, heure arrivee, reservations, vehicule , nb places, distance a parcourir, duree du trajet, point arrive  - point depart
+  [] filtre : date, heure arrivee, vehicule
+  
+#### fonctionnalité :
+[] afficher les reservation non assignees : getReservationNonAssignees() - classe ReservationService - > requete sql : select * from reservation where vehicule_id is null (ReservationRepository)
+[] generer le planning : genererPlanning() - classe PlanningTrajetService - > fonction de planification des trajets (PlanningTrajetService) - > assignation des reservations aux vehicules (PlanningTrajetRepository)
+- Prioriser par date ancienne
+- Voir les distance la plus courte a parcourir -> table distance 
+- Assignation de voiture nb>= nb places 
+- Si 2 vehicule correspondent au condition enonce precedement, prioriser les vehicule diesel
+
+[] valider le planning : validerPlanning() - classe PlanningTrajetService - > fonction de planification des trajets (PlanningTrajetService) - > assignation des reservations aux vehicules (PlanningTrajetRepository)
+
+[] caluler la durer du trajet : calculerDureeTrajet() - classe PlanningTrajetService - > fonction de planification des trajets (PlanningTrajetService) - > assignation des reservations aux vehicules (PlanningTrajetRepository) - > calcul de la distance a parcourir (table distance) / vitesse moyenne (table parametre de configuration)
+
+[] securite asignation de vehicule : seul ceux avec autorisation peuve acceder a la page de planning des trajets et faire l'assignation des vehicules aux reservations => les session utilisateur serons gerer avec des token - base de donnée utilisateur (table user) - login / mot de passe - token d'authentification 
+
+## 3. Modif code existant : 
+Ajout des token pour les logins des utilisateurs du backoffice - classe UserService - table user (id, username, password, role) - session (date connexion, token, user permission) - dans param mettre la duree d'un token (ex 30 min, 1j)  fonction de generation de token d'authentification (UserService) - securisation de l'interface de planification des trajets (PlanningTrajetController) - verification du token d'authentification dans les requetes vers l'interface de planification des trajets (PlanningTrajetController)
