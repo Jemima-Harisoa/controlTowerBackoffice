@@ -172,6 +172,65 @@ public class ReservationRepository {
         return false;
     }
 
+    // ==================== PLANNING OPERATIONS ====================
+
+    /**
+     * Récupère les réservations non assignées : celles dont l'id n'apparaît pas dans planning_trajet
+     */
+    public List<Reservation> findNonAssignees() {
+        List<Reservation> reservations = new ArrayList<>();
+        String query = "SELECT * FROM reservations WHERE id NOT IN (SELECT reservation_id FROM planning_trajet) ORDER BY date_arrivee ASC";
+
+        try (Connection conn = dbConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+
+            while (rs.next()) {
+                Reservation r = new Reservation();
+                r.setId(rs.getInt("id"));
+                r.setNom(rs.getString("nom"));
+                r.setEmail(rs.getString("email"));
+                r.setDateArrivee(rs.getTimestamp("date_arrivee"));
+                r.setHeure(rs.getString("heure"));
+                r.setNombrePersonnes(rs.getInt("nombre_personnes"));
+                r.setHotelId(rs.getInt("hotel_id"));
+                r.setConfirmed(rs.getBoolean("is_confirmed"));
+                r.setCreatedAt(rs.getTimestamp("created_at"));
+                r.setUpdatedAt(rs.getTimestamp("updated_at"));
+                reservations.add(r);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return reservations;
+    }
+    /**
+     * Récupère les réservations non assignées : celles dont l'id n'apparaît pas dans planning_trajet
+     */
+    public List<ReservationView> findNonAssigneesForView() {
+        List<ReservationView> reservations = new ArrayList<>();
+        String query = "SELECT r.id, r.nom, r.email, r.date_arrivee, r.heure, r.nombre_personnes, " + 
+                        "h.nom as nom_hotel, r.is_confirmed " + 
+                        "FROM reservations r " + 
+                        "JOIN hotel h ON r.hotel_id = h.id "  +
+                        "WHERE r.id NOT IN (SELECT reservation_id FROM planning_trajet) ORDER BY date_arrivee ASC";
+
+        try (Connection conn = dbConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+                
+                while (rs.next()) {
+                    reservations.add(mapRowToReservationView(rs));
+                }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return reservations;
+    }
     // ==================== MÉTHODES D'AFFICHAGE (View) ====================
 
     /**

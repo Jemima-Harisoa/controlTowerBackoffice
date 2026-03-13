@@ -4,8 +4,8 @@
 -- 
 -- CONTINUITÉ AVEC LES SPRINTS PRÉCÉDENTS :
 -- - Sprint 0 (01): Tables users et user_sessions
--- - Sprint 1 (03): Tables hotels, reservations, clients, sexes, type_clients
--- - Sprint 2 (04): Tables vehicules, lieux (lien vers hotels), distances, planning_trajet
+-- - Sprint 1 (03): Tables hotel, reservations, clients, sexes, type_clients
+-- - Sprint 2 (04): Tables vehicules, lieux (lien vers hotel), distances, planning_trajet
 --
 -- Ce script :
 -- 1. Crée les nouvelles tables pour le planning
@@ -83,13 +83,13 @@ CREATE TABLE IF NOT EXISTS lieux (
     latitude DECIMAL(10, 8),
     longitude DECIMAL(11, 8),
     description TEXT,
-    hotel_id INT REFERENCES hotels(id) ON DELETE SET NULL,
+    hotel_id INT REFERENCES hotel(id) ON DELETE SET NULL,
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-COMMENT ON TABLE lieux IS 'Catalogue des lieux (hôtels, aéroports, gares) - lien optionnel vers la table hotels existante';
+COMMENT ON TABLE lieux IS 'Catalogue des lieux (hôtels, aéroports, gares) - lien optionnel vers la table hotel existante';
 CREATE INDEX IF NOT EXISTS idx_lieux_type ON lieux(type_lieu_id);
 CREATE INDEX IF NOT EXISTS idx_lieux_hotel ON lieux(hotel_id);
 CREATE INDEX IF NOT EXISTS idx_lieux_ville ON lieux(ville);
@@ -255,7 +255,7 @@ SELECT
     h.description,
     h.id,
     h.is_active
-FROM hotels h, type_hotel
+FROM hotel h, type_hotel
 WHERE NOT EXISTS (
     SELECT 1 FROM lieux l 
     WHERE l.hotel_id = h.id

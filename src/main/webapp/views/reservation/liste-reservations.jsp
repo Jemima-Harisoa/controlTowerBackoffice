@@ -252,7 +252,7 @@
 
 <!-- En-tête avec bouton -->
 <div class="reservations-header">
-    <h2><i class="fas fa-calendar-alt"></i> Mes Reservations</h2>
+    <h2><i class="fas fa-calendar-alt"></i> Les Reservations</h2>
     <a href="${pageContext.request.contextPath}/reservations/create" class="btn-primary">
         <i class="fas fa-plus"></i> Nouvelle Reservation
     </a>

@@ -126,5 +126,26 @@ public class ReservationService {
     public List<ReservationView> getReservationsForViewByDateAndHotel(String date, int hotelId) {
         return reservationRepository.findByDateAndHotelForView(date, hotelId);
     }
+
+    // ==================== PLANNING OPERATIONS ====================
+
+    /**
+     * Récupère les réservations non assignées (sans véhicule)
+     * Utilisé par le PlanningTrajetService pour la génération automatique du planning
+     * @return Liste des réservations où vehicule_id IS NULL
+     */
+    public List<Reservation> getReservationNonAssignees() {
+        return reservationRepository.findNonAssignees();
+    }
+
+    public List<ReservationView> getReservationNonAssigneesViews(){
+        return  reservationRepository.findNonAssigneesForView();
+    }
+    /**
+     * Mettre à jour une réservation (notamment le vehiculeId lors d'une assignation)
+     */
+    public void updateReservation(Reservation reservation) {
+        reservationRepository.update(reservation);
+    }
 }
 
