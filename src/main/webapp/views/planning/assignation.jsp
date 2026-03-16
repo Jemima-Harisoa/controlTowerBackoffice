@@ -154,8 +154,11 @@
     .filter-actions {
         display: flex;
         gap: 10px;
+<<<<<<< HEAD
         align-self: end;
         white-space: nowrap;
+=======
+>>>>>>> cf4a9dd (feat : assignation vehicule - vue vehicule disponible)
     }
 
     .btn-filter {
