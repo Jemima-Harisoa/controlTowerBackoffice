@@ -4,6 +4,9 @@
 <%-- Page d'assignation des véhicules aux réservations : inclut header et footer automatiquement --%>
 <%@ include file="/views/components/header.jsp" %>
 
+<!-- CSS spécifique à cette page -->
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/reservation.css">
+
 <style>
     .planning-header {
         display: flex;
@@ -82,16 +85,16 @@
     
     .filter-section {
         background: white;
-        padding: 20px;
-        border-radius: 8px;
+        border-radius: 10px;
+        padding: 25px;
         margin-bottom: 25px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
 
     .filter-section h3 {
-        margin-top: 0;
-        color: #333;
-        font-size: 18px;
+        margin: 0 0 15px;
+        color: #555;
+        font-size: 16px;
     }
 
     .filter-row {
@@ -108,10 +111,10 @@
 
     .filter-group label {
         display: block;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
         font-weight: 600;
-        color: #555;
-        font-size: 14px;
+        color: #666;
+        font-size: 13px;
     }
 
     .filter-group input,
@@ -119,16 +122,60 @@
         width: 100%;
         padding: 10px 12px;
         border: 1px solid #ddd;
-        border-radius: 4px;
+        border-radius: 6px;
         font-size: 14px;
-        transition: border 0.3s;
+        transition: border-color 0.3s;
     }
 
     .filter-group input:focus,
     .filter-group select:focus {
+        border-color: #667eea;
         outline: none;
-        border-color: #007bff;
-        box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+        box-shadow: 0 0 0 3px rgba(102,126,234,0.15);
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn-filter {
+        padding: 10px 24px;
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: background 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .btn-filter:hover {
+        background: #5a6fd6;
+    }
+
+    .btn-reset {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 24px;
+        background: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        text-decoration: none;
+        transition: background 0.3s;
+    }
+
+    .btn-reset:hover {
+        background: #5a6268;
     }
 
     .btn-sm {
@@ -446,18 +493,7 @@
         <h3>${fn:length(reservations)}</h3>
         <p>Réservations à planifier</p>
     </div>
-    <div class="stat-card stat-card-unassigned">
-        <%-- <h3>
-            <c:set var="unassigned" value="0"/>
-            <c:forEach items="${reservations}" var="res">
-                <c:if test="${res.vehiculeId == null}">
-                    <c:set var="unassigned" value="${unassigned + 1}"/>
-                </c:if>
-            </c:forEach>
-            ${unassigned}
-        </h3>
-        <p>Non assignées</p> --%>
-    </div>
+
     <div class="stat-card stat-card-vehicles">
         <h3>${fn:length(vehicules)}</h3>
         <p>Véhicules disponibles</p>
@@ -474,9 +510,9 @@
         <button class="btn-primary" onclick="validerPlanning()" title="Valider le planning">
             <i class="fas fa-check-circle"></i> Valider Planning
         </button>
-        <button class="btn-warning" onclick="afficherNonAssignees()" title="Afficher uniquement les réservations non assignées">
-            <i class="fas fa-filter"></i> Non Assignées
-        </button>
+            <a class="btn-warning" href="#nonAssigneesSection" title="Aller à la section des réservations non assignées">
+                <i class="fas fa-filter"></i> Non Assignées
+            </a>
     </div>
 </div>
 
@@ -495,7 +531,7 @@
 
 <!-- Filtres -->
 <div class="filter-section">
-    <h3>Filtres</h3>
+    <h3><i class="fas fa-filter"></i> Filtrer les assignations</h3>
     <form method="post" action="${pageContext.request.contextPath}/planning/assignation/filter">
         <div class="filter-row">
             <div class="filter-group">
@@ -517,12 +553,14 @@
                     </c:forEach>
                 </select>
             </div>
-            <button type="submit" class="btn-primary">
-                <i class="fas fa-search"></i> Filtrer
-            </button>
-            <a href="${pageContext.request.contextPath}/planning/assignation" class="btn-primary" style="background: #6c757d;">
-                <i class="fas fa-refresh"></i> Réinitialiser
-            </a>
+            <div class="filter-actions">
+                <button type="submit" class="btn-filter">
+                    <i class="fas fa-search"></i> Rechercher
+                </button>
+                <a href="${pageContext.request.contextPath}/planning/assignation" class="btn-reset">
+                    <i class="fas fa-undo"></i> Réinitialiser
+                </a>
+            </div>
         </div>
     </form>
 </div>
@@ -565,7 +603,9 @@
     </c:choose>
 </div>
 
-    <!-- Tableau des réservations -->
+<div class= "vehicules-section" id="nonAssigneesSection">  
+    <h3><i class="fas fa-van-shuttle"></i> Réservation Non Assignée </h3>
+    <!-- Tableau des réservations Non assignée -->
     <c:choose>
         <c:when test="${empty reservations}">
             <div class="empty-state">
@@ -617,7 +657,7 @@
             </table>
         </c:otherwise>
     </c:choose>
-
+</div>
 <script>
     let selectedVehiculeId = null;
 
