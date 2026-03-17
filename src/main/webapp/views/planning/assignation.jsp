@@ -116,7 +116,7 @@
     .filter-row {
         display: grid;
         grid-template-columns: repeat(3, minmax(220px, 1fr)) auto;
-        gap: 15px;
+        gap: 10px;
         align-items: flex-end;
     }
 
@@ -134,7 +134,9 @@
 
     .filter-group input,
     .filter-group select {
-        width: 100%;
+        width: 1.5in;
+        min-width: 1.5in;
+        max-width: 1.5in;
         padding: 10px 12px;
         border: 1px solid #ddd;
         border-radius: 6px;
