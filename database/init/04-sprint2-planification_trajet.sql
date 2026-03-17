@@ -312,6 +312,94 @@ WHERE l1.id < l2.id
 ON CONFLICT (lieu_depart_id, lieu_arrivee_id) DO NOTHING;
 
 -- ===========================================
+-- 6E. RÉSERVATIONS - Mise à jour pour intégrer lieux départ/arrivée
+-- ===========================================
+-- Logique :
+-- - lieu_arrivee_id = l'hôtel (via la table lieux avec lien hotel_id)
+-- - lieu_depart_id = aéroport/gare basé sur la ville de l'hôtel
+-- Comment utiliser :
+--   * Pour toute réservation avec hotel_id → remplir lieu_arrivee_id et lieu_depart_id
+--   * Pour nouvelles réservations → créer directement avec lieu_depart_id + lieu_arrivee_id
+-- ===========================================
+
+-- Étape 1 : Remplir lieu_arrivee_id pour les réservations existantes
+-- (récupère le lieu correspondant à l'hôtel)
+UPDATE reservations r
+SET lieu_arrivee_id = (
+    SELECT l.id 
+    FROM lieux l 
+    WHERE l.hotel_id = r.hotel_id AND l.is_active = true
+    LIMIT 1
+)
+WHERE r.hotel_id IS NOT NULL AND r.lieu_arrivee_id IS NULL;
+
+-- Étape 2 : Remplir lieu_depart_id pour les réservations existantes
+-- Stratégie : Paris → Aéroport Paris-CDG, Nice → Aéroport Nice
+-- Fallback : utiliser la première gare de la même ville si l'aéroport n'existe pas
+UPDATE reservations r
+SET lieu_depart_id = COALESCE(
+    (SELECT l.id 
+     FROM lieux l, hotel h
+     WHERE l.type_lieu_id = (SELECT id FROM type_lieu WHERE libelle = 'Aéroport')
+     AND l.ville = h.ville
+     AND h.id = r.hotel_id
+     AND l.is_active = true
+     LIMIT 1),
+    (SELECT l.id 
+     FROM lieux l, hotel h
+     WHERE l.type_lieu_id = (SELECT id FROM type_lieu WHERE libelle = 'Gare')
+     AND l.ville = h.ville
+     AND h.id = r.hotel_id
+     AND l.is_active = true
+     LIMIT 1)
+)
+WHERE r.hotel_id IS NOT NULL AND r.lieu_depart_id IS NULL;
+
+-- Étape 3 : Nouvelles réservations avec le nouveau modèle
+-- (exemples de réservations créées directement avec les lieux)
+INSERT INTO reservations (nom, email, date_arrivee, heure, nombre_personnes, lieu_depart_id, lieu_arrivee_id, is_confirmed) 
+SELECT 
+    'Sophie Leclerc',
+    'sophie.leclerc@email.com',
+    '2026-06-15 09:00:00'::TIMESTAMP WITH TIME ZONE,
+    '09:00',
+    4,
+    (SELECT id FROM lieux WHERE nom LIKE '%Aéroport Paris%' AND is_active = true LIMIT 1),
+    (SELECT l.id FROM lieux l JOIN hotel h ON l.hotel_id = h.id WHERE h.nom = 'Hotel Royal Palace' AND l.is_active = true LIMIT 1),
+    true
+WHERE NOT EXISTS (
+    SELECT 1 FROM reservations WHERE email = 'sophie.leclerc@email.com'
+);
+
+INSERT INTO reservations (nom, email, date_arrivee, heure, nombre_personnes, lieu_depart_id, lieu_arrivee_id, is_confirmed) 
+SELECT 
+    'Luc Moreau',
+    'luc.moreau@email.com',
+    '2026-07-10 15:30:00'::TIMESTAMP WITH TIME ZONE,
+    '15:30',
+    2,
+    (SELECT id FROM lieux WHERE nom LIKE '%Gare de Lyon%' AND is_active = true LIMIT 1),
+    (SELECT l.id FROM lieux l JOIN hotel h ON l.hotel_id = h.id WHERE h.nom = 'Grand Hotel Central' AND l.is_active = true LIMIT 1),
+    false
+WHERE NOT EXISTS (
+    SELECT 1 FROM reservations WHERE email = 'luc.moreau@email.com'
+);
+
+INSERT INTO reservations (nom, email, date_arrivee, heure, nombre_personnes, lieu_depart_id, lieu_arrivee_id, is_confirmed) 
+SELECT 
+    'Claire Dubois',
+    'claire.dubois@email.com',
+    '2026-08-05 11:00:00'::TIMESTAMP WITH TIME ZONE,
+    '11:00',
+    5,
+    (SELECT id FROM lieux WHERE nom LIKE '%Aéroport Nice%' AND is_active = true LIMIT 1),
+    (SELECT l.id FROM lieux l JOIN hotel h ON l.hotel_id = h.id WHERE h.nom = 'Boutique Hotel Vue Mer' AND l.is_active = true LIMIT 1),
+    true
+WHERE NOT EXISTS (
+    SELECT 1 FROM reservations WHERE email = 'claire.dubois@email.com'
+);
+
+-- ===========================================
 -- 7. PERMISSIONS
 -- ===========================================
 
