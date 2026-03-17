@@ -84,6 +84,9 @@ public class PlanningTrajetService {
                 planning = new PlanningTrajet(reservationId, 1); // 1 = PLANIFIE
             }
             planning.setVehiculeId((long) vehiculeId);
+            if (reservation.getDateArrivee() != null) {
+                planning.setDatePlanification(reservation.getDateArrivee().toString());
+            }
 
             boolean vehiculeDejaPlanifie = getPlanningByVehiculeAndReservation(vehiculeId, reservationId);
 
