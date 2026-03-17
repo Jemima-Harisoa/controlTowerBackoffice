@@ -56,6 +56,14 @@ public class PlanningTrajetService {
     }
 
     /**
+     * Vérifier si un véhicule est déjà planifié pour une réservation donnée
+     */
+    public boolean getPlanningByVehiculeAndReservation(int vehiculeId, int reservationId) {
+        return planningRepository.existsByVehiculeAndReservation(vehiculeId, reservationId);
+    }
+
+
+    /**
      * FONCTIONNALITÉ 1 : Assigner manuellement un véhicule à une réservation
      */
     public void assignerVehicule(int reservationId, int vehiculeId) throws Exception {
@@ -77,7 +85,15 @@ public class PlanningTrajetService {
             }
             planning.setVehiculeId((long) vehiculeId);
 
-            updatePlanning(planning);
+            boolean vehiculeDejaPlanifie = getPlanningByVehiculeAndReservation(vehiculeId, reservationId);
+
+            // Vérification préalable avant update via véhicule + réservation
+            // Si aucun planning n'existe encore pour cette réservation : insert
+            if (planning.getId() == 0 && !vehiculeDejaPlanifie) {
+                createPlanning(planning);
+            } else {
+                updatePlanning(planning);
+            }
         } catch (Exception e) {
             throw new Exception("Erreur lors de l'assignation du véhicule: " + e.getMessage());
         }
@@ -118,9 +134,15 @@ public class PlanningTrajetService {
             List<PlanningTrajet> plannings = getAllPlannings();
             for (PlanningTrajet planning : plannings) {
                 if (planning.getVehiculeId() != null) { // Seulement si assigné
-                    planning.setStatutId(2); // 2 = VALIDE
-                    planning.setStatut("VALIDE");
-                    updatePlanning(planning);
+                    boolean vehiculeDejaPlanifie = getPlanningByVehiculeAndReservation(
+                            planning.getVehiculeId().intValue(),
+                            (int) planning.getReservationId()
+                    );
+                    if (vehiculeDejaPlanifie) {
+                        planning.setStatutId(2); // 2 = VALIDE
+                        planning.setStatut("VALIDE");
+                        updatePlanning(planning);
+                    }
                 }
             }
         } catch (Exception e) {

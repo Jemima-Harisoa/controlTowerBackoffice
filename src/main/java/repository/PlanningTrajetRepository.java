@@ -108,6 +108,20 @@ public class PlanningTrajetRepository {
         return list;
     }
 
+    public boolean existsByVehiculeAndReservation(long vehiculeId, long reservationId) {
+        String sql = "SELECT 1 FROM planning_trajet WHERE vehicule_id = ? AND reservation_id = ? LIMIT 1";
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, vehiculeId);
+            stmt.setLong(2, reservationId);
+            ResultSet rs = stmt.executeQuery();
+            return rs.next();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     public void create(PlanningTrajet p) {
         String sql = "INSERT INTO planning_trajet " +
                      "(reservation_id, vehicule_id, lieu_depart_id, lieu_arrivee_id, " +

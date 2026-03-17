@@ -675,18 +675,27 @@
     function genererPlanning() {
         if (confirm('Êtes-vous sûr de vouloir générer le planning automatiquement ?\nCette action assignera les réservations non assignées aux véhicules disponibles.')) {
             fetch('${pageContext.request.contextPath}/planning/assignation/generer', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
+                method: 'POST'
             })
-            .then(response => response.json())
+            .then(response =>
+                response.json()
+                    .then(data => {
+                        if (!response.ok && (!data || !data.message)) {
+                            return { success: false, message: 'Erreur serveur (' + response.status + ')' };
+                        }
+                        return data;
+                    })
+                    .catch(() => ({
+                        success: false,
+                        message: 'Réponse invalide du serveur'
+                    }))
+            )
             .then(data => {
-                if (data.success) {
+                if (data.status === 'success') {
                     alert('Planning généré avec succès !');
                     location.reload();
                 } else {
-                    alert('Erreur: ' + data.message);
+                    alert('Erreur: ' + (data && data.message ? data.message : 'Une erreur inconnue est survenue'));
                 }
             })
             .catch(error => {
@@ -704,13 +713,25 @@
                     'Content-Type': 'application/json'
                 }
             })
-            .then(response => response.json())
+            .then(response =>
+                response.json()
+                    .then(data => {
+                        if (!response.ok && (!data || !data.message)) {
+                            return { success: false, message: 'Erreur serveur (' + response.status + ')' };
+                        }
+                        return data;
+                    })
+                    .catch(() => ({
+                        success: false,
+                        message: 'Réponse invalide du serveur'
+                    }))
+            )
             .then(data => {
-                if (data.success) {
+                if (data.status === 'success') {
                     alert('Planning validé avec succès !');
                     location.reload();
                 } else {
-                    alert('Erreur: ' + data.message);
+                    alert('Erreur: ' + (data && data.message ? data.message : 'Une erreur inconnue est survenue'));
                 }
             })
             .catch(error => {
