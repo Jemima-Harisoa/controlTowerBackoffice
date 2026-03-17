@@ -106,6 +106,8 @@ public class PlanningTrajetService {
      * 2. Chercher le véhicule avec la plus courte distance à parcourir
      * 3. Vérifier que le véhicule a assez de places
      * 4. Si 2+ véhicules correspondent, priorité au diesel
+     * 5. Remplir lieux de départ/arrivée depuis la réservation
+     * 6. Calculer distance et durée estimées
      */
     public void genererPlanning() throws Exception {
         try {
@@ -118,10 +120,64 @@ public class PlanningTrajetService {
 
                 if (meilleurVehicule != null) {
                     assignerVehicule(reservation.getId(), (int) meilleurVehicule.getId());
+                    
+                    // Remplir les détails du planning (lieux, distance, durée)
+                    remplirDetailsPlanification(reservation);
                 }
             }
         } catch (Exception e) {
             throw new Exception("Erreur lors de la génération du planning: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Remplir les détails de planification d'une réservation
+     * - lieux de départ/arrivée
+     * - distance estimée (depuis table distances)
+     * - durée estimée (distance / vitesse_moyenne)
+     */
+    private void remplirDetailsPlanification(Reservation reservation) {
+        try {
+            PlanningTrajet planning = getPlanningByReservationId((int) reservation.getId());
+            
+            if (planning == null) {
+                return;
+            }
+
+            // Récupérer les lieux depuis la réservation
+            if (reservation.getLieuDepartId() != null && reservation.getLieuDepartId() > 0) {
+                planning.setLieuDepartId(reservation.getLieuDepartId());
+            }
+            
+            if (reservation.getLieuArriveeId() != null && reservation.getLieuArriveeId() > 0) {
+                planning.setLieuArriveeId(reservation.getLieuArriveeId());
+            }
+
+            // Calculer distance et durée si les lieux sont disponibles
+            if (planning.getLieuDepartId() != null && planning.getLieuArriveeId() != null) {
+                double distance = distanceService.calculerDistance(
+                        planning.getLieuDepartId(), 
+                        planning.getLieuArriveeId()
+                );
+                
+                if (distance > 0) {
+                    planning.setDistanceEstimee(distance);
+                    
+                    // Calculer durée estimée = distance / vitesse_moyenne
+                    int vitesseMoyenne = paramService.getParametreAsInt("VITESSE_MOYENNE_KMH");
+                    if (vitesseMoyenne > 0) {
+                        double heures = distance / vitesseMoyenne;
+                        int minutes = (int) Math.round(heures * 60);
+                        planning.setDureeEstimee(String.format("%d:%02d", minutes / 60, minutes % 60));
+                    }
+                }
+            }
+
+            // Mettre à jour le planning avec les détails calculés
+            updatePlanning(planning);
+            
+        } catch (Exception e) {
+            System.err.println("Erreur lors du remplissage des détails: " + e.getMessage());
         }
     }
 
