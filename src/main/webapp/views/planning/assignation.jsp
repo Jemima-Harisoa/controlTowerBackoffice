@@ -114,15 +114,14 @@
     }
 
     .filter-row {
-        display: flex;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(220px, 1fr)) auto;
         gap: 15px;
-        flex-wrap: wrap;
         align-items: flex-end;
     }
 
     .filter-group {
-        flex: 1;
-        min-width: 200px;
+        min-width: 0;
     }
 
     .filter-group label {
@@ -153,6 +152,8 @@
     .filter-actions {
         display: flex;
         gap: 10px;
+        align-self: end;
+        white-space: nowrap;
     }
 
     .btn-filter {
@@ -501,6 +502,33 @@
         background: #fff3cd;
         color: #856404;
     }
+
+    @media (max-width: 1080px) {
+        .filter-row {
+            grid-template-columns: repeat(2, minmax(220px, 1fr));
+        }
+
+        .filter-actions {
+            grid-column: 1 / -1;
+        }
+    }
+
+    @media (max-width: 720px) {
+        .filter-row {
+            grid-template-columns: 1fr;
+        }
+
+        .filter-actions {
+            width: 100%;
+            justify-content: stretch;
+        }
+
+        .btn-filter,
+        .btn-reset {
+            flex: 1;
+            justify-content: center;
+        }
+    }
 </style>
 
 <!-- Statistiques -->
@@ -548,7 +576,7 @@
 <!-- Filtres -->
 <div class="filter-section sticky-filter">
     <h3><i class="fas fa-filter"></i> Filtrer les plannings</h3>
-    <form method="post" action="${pageContext.request.contextPath}/planning/assignation/filter">
+    <form method="get" action="${pageContext.request.contextPath}/planning/assignation#statutPlanningSection">
         <div class="filter-row">
             <div class="filter-group">
                 <label for="filterDate">Date d'arrivée</label>
@@ -573,7 +601,7 @@
                 <button type="submit" class="btn-filter">
                     <i class="fas fa-search"></i> Rechercher
                 </button>
-                <a href="${pageContext.request.contextPath}/planning/assignation" class="btn-reset">
+                <a href="${pageContext.request.contextPath}/planning/assignation#statutPlanningSection" class="btn-reset">
                     <i class="fas fa-undo"></i> Réinitialiser
                 </a>
             </div>

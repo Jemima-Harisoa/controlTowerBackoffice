@@ -31,11 +31,38 @@ public class PlanningTrajetController {
      */
     @Url("/planning/assignation")
     @Get
-    public ModelAndView afficherAssignation() {
+    public ModelAndView afficherAssignation(
+            @RequestParam(value = "date", required = false) String date,
+            @RequestParam(value = "heure", required = false) String heure,
+            @RequestParam(value = "vehiculeId", required = false) String vehiculeId) {
         ModelAndView mav = new ModelAndView("/views/planning/assignation.jsp");
         
         // Récupérer toutes les réservations non assignées ou en cours
         List<ReservationView> reservations = reservationService.getReservationNonAssigneesViews();
+        List<PlanningTrajetView> plannings = planningTrajetService.getAllPlanningsForView();
+
+        // Filtre par date (sur table planning)
+        if (date != null && !date.isEmpty()) {
+            plannings = plannings.stream()
+                    .filter(p -> p.getDateArriveeIso() != null && p.getDateArriveeIso().startsWith(date))
+                    .collect(Collectors.toList());
+        }
+
+        // Filtre par heure (sur table planning)
+        if (heure != null && !heure.isEmpty()) {
+            final String filterHeure = heure;
+            plannings = plannings.stream()
+                    .filter(p -> p.getHeureArrivee() != null && p.getHeureArrivee().startsWith(filterHeure))
+                    .collect(Collectors.toList());
+        }
+
+        // Filtre par véhicule assigné (sur table planning)
+        if (vehiculeId != null && !vehiculeId.isEmpty()) {
+            final long filterVehiculeId = Long.parseLong(vehiculeId);
+            plannings = plannings.stream()
+                    .filter(p -> p.getVehiculeId() == filterVehiculeId)
+                    .collect(Collectors.toList());
+        }
         
         // Récupérer tous les véhicules disponibles
         List<Vehicule> vehicules = vehiculeService.getVehiculesDisponibles();
@@ -44,7 +71,10 @@ public class PlanningTrajetController {
         mav.addObject("pageTitle", pageTitle);
         mav.addObject("reservations", reservations);
         mav.addObject("vehicules", vehicules);
-        mav.addObject("plannings", planningTrajetService.getAllPlanningsForView());
+        mav.addObject("plannings", plannings);
+        mav.addObject("filterDate", date);
+        mav.addObject("filterHeure", heure);
+        mav.addObject("filterVehiculeId", vehiculeId);
         
         return mav;
     }
@@ -65,58 +95,6 @@ public class PlanningTrajetController {
             return ApiResponse.error(500, errorMessage);
         }
     }
-/**
-     * Filtre les réservations par date et heure d'arrivée
-     */
-    @Url("/planning/assignation/filter")
-    @Post
-    public ModelAndView filterAssignation(
-            @RequestParam(value = "date", required = false) String date,
-            @RequestParam(value = "heure", required = false) String heure,
-            @RequestParam(value = "vehiculeId", required = false) String vehiculeId) {
-        
-        ModelAndView mav = new ModelAndView("/views/planning/assignation.jsp");
-        
-        List<ReservationView> reservations = reservationService.getReservationNonAssigneesViews();
-        List<PlanningTrajetView> plannings = planningTrajetService.getAllPlanningsForView();
-        
-        // Filtre par date
-        if (date != null && !date.isEmpty()) {
-                plannings = plannings.stream()
-                    .filter(p -> p.getDateArriveeIso() != null &&
-                           p.getDateArriveeIso().startsWith(date))
-                    .collect(Collectors.toList());
-        }
-        
-        // Filtre par heure
-        if (heure != null && !heure.isEmpty()) {
-            final String filterHeure = heure;
-                plannings = plannings.stream()
-                    .filter(p -> p.getHeureArrivee() != null &&
-                           p.getHeureArrivee().startsWith(filterHeure))
-                    .collect(Collectors.toList());
-        }
-
-            // Filtre par véhicule assigné (sur le planning)
-            if (vehiculeId != null && !vehiculeId.isEmpty()) {
-                final long filterVehiculeId = Long.parseLong(vehiculeId);
-                plannings = plannings.stream()
-                    .filter(p -> p.getVehiculeId() == filterVehiculeId)
-                    .collect(Collectors.toList());
-            }
-        
-        List<Vehicule> vehicules = vehiculeService.getVehiculesDisponibles();
-        
-        mav.addObject("reservations", reservations);
-        mav.addObject("vehicules", vehicules);
-        mav.addObject("filterDate", date);
-        mav.addObject("filterHeure", heure);
-        mav.addObject("filterVehiculeId", vehiculeId);
-        mav.addObject("plannings", plannings);
-        
-        return mav;
-    }
-
     /**
      * Assigner manuellement un véhicule à une réservation
      */
@@ -133,7 +111,7 @@ public class PlanningTrajetController {
         } catch (Exception e) {
             mav.addObject("erreur", e.getMessage());
         }
-        mav.addObject("reservations", reservationService.getReservationNonAssignees());
+        mav.addObject("reservations", reservationService.getReservationNonAssigneesViews());
         mav.addObject("vehicules", vehiculeService.getVehiculesDisponibles());
         mav.addObject("plannings", planningTrajetService.getAllPlanningsForView());
         return mav;
