@@ -308,7 +308,7 @@ SELECT
     END as distance
 FROM lieux l1
 CROSS JOIN lieux l2
-WHERE l1.id < l2.id
+WHERE l1.id <> l2.id
 ON CONFLICT (lieu_depart_id, lieu_arrivee_id) DO NOTHING;
 
 -- ===========================================
@@ -322,8 +322,6 @@ ON CONFLICT (lieu_depart_id, lieu_arrivee_id) DO NOTHING;
 --   * Pour nouvelles réservations → créer directement avec lieu_depart_id + lieu_arrivee_id
 -- ===========================================
 
--- Étape 1 : Remplir lieu_arrivee_id pour les réservations existantes
--- (récupère le lieu correspondant à l'hôtel)
 UPDATE reservations r
 SET lieu_arrivee_id = (
     SELECT l.id 
@@ -333,9 +331,6 @@ SET lieu_arrivee_id = (
 )
 WHERE r.hotel_id IS NOT NULL AND r.lieu_arrivee_id IS NULL;
 
--- Étape 2 : Remplir lieu_depart_id pour les réservations existantes
--- Stratégie : Paris → Aéroport Paris-CDG, Nice → Aéroport Nice
--- Fallback : utiliser la première gare de la même ville si l'aéroport n'existe pas
 UPDATE reservations r
 SET lieu_depart_id = COALESCE(
     (SELECT l.id 
@@ -354,6 +349,18 @@ SET lieu_depart_id = COALESCE(
      LIMIT 1)
 )
 WHERE r.hotel_id IS NOT NULL AND r.lieu_depart_id IS NULL;
+
+-- DEBUG: Vérifier que les lieux ont été assignés
+-- Afficher les réservations avec leurs lieux
+DO $$
+DECLARE
+    res_count INT;
+    with_lieux INT;
+BEGIN
+    SELECT COUNT(*) INTO res_count FROM reservations;
+    SELECT COUNT(*) INTO with_lieux FROM reservations WHERE lieu_depart_id IS NOT NULL AND lieu_arrivee_id IS NOT NULL;
+    RAISE NOTICE 'Réservations totales: %, Avec lieux: %', res_count, with_lieux;
+END $$;
 
 -- Étape 3 : Nouvelles réservations avec le nouveau modèle
 -- (exemples de réservations créées directement avec les lieux)
