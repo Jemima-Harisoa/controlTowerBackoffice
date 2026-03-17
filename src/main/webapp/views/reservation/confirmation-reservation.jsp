@@ -4,6 +4,9 @@
 <%-- Header commun : sidebar + barre de navigation --%>
 <%@ include file="/views/components/header.jsp" %>
 
+<!-- CSS spécifique à cette page -->
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/reservation.css">
+
 <div class="container">
     <div class="confirmation-message text-center">
         <div class="confirmation-icon text-success">

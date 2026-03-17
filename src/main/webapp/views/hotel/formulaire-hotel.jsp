@@ -4,6 +4,9 @@
 <%-- Header commun : sidebar + barre de navigation --%>
 <%@ include file="/views/components/header.jsp" %>
 
+<!-- CSS spécifique à cette page -->
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/hotel.css">
+
 <div class="container">
     <h1>Ajouter un hôtel</h1>
     

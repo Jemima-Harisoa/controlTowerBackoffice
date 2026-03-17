@@ -3,6 +3,9 @@
 <%-- Liste des réservations : inclut header (sidebar+layout) et footer automatiquement --%>
 <%@ include file="/views/components/header.jsp" %>
 
+<!-- CSS spécifique à cette page -->
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/reservation.css">
+
 <style>
     .reservations-header {
         display: flex;
