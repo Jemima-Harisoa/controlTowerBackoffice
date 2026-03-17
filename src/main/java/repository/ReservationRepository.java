@@ -200,6 +200,9 @@ public class ReservationRepository {
                 r.setHeure(rs.getString("heure"));
                 r.setNombrePersonnes(rs.getInt("nombre_personnes"));
                 r.setHotelId(rs.getInt("hotel_id"));
+                try { r.setLieuDepartId(rs.getLong("lieu_depart_id")); } catch (SQLException e) {}
+                try { r.setLieuArriveeId(rs.getLong("lieu_arrivee_id")); } catch (SQLException e) {}
+                try { r.setVehiculeId(rs.getLong("vehicule_id")); } catch (SQLException e) {}
                 r.setConfirmed(rs.getBoolean("is_confirmed"));
                 r.setCreatedAt(rs.getTimestamp("created_at"));
                 r.setUpdatedAt(rs.getTimestamp("updated_at"));

@@ -168,18 +168,29 @@ public class PlanningTrajetService {
                     if (vitesseMoyenne > 0) {
                         double heures = distance / vitesseMoyenne;
                         int minutes = (int) Math.round(heures * 60);
-                        planning.setDureeEstimee(String.format("%d:%02d", minutes / 60, minutes % 60));
+                            planning.setDureeEstimee(formatDureeForInterval(minutes));
                     }
                 }
             }
 
             // Mettre à jour le planning avec les détails calculés
             updatePlanning(planning);
-            
-        } catch (Exception e) {
-            System.err.println("Erreur lors du remplissage des détails: " + e.getMessage());
+
+            } catch (Exception e) {
+                System.err.println("Erreur lors du remplissage des détails: " + e.getMessage());
+                e.printStackTrace();
+            }
         }
-    }
+
+        /**
+         * Formater une durée en minutes au format HH:MM:SS pour INTERVAL PostgreSQL
+         */
+        private String formatDureeForInterval(int minutes) {
+            int heures = minutes / 60;
+            int mins = minutes % 60;
+            int secs = 0;
+            return String.format("%02d:%02d:%02d", heures, mins, secs);
+        }
 
     /**
      * FONCTIONNALITÉ 3 : Valider le planning
