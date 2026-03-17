@@ -14,6 +14,16 @@
         align-items: center;
         margin-bottom: 25px;
     }
+
+    .planning-header.sticky-actions {
+        position: sticky;
+        top: 10px;
+        z-index: 1000;
+        background: #f5f7fb;
+        padding: 12px;
+        border-radius: 10px;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+    }
     
     .planning-header h2 {
         margin: 0;
@@ -89,6 +99,12 @@
         padding: 25px;
         margin-bottom: 25px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .filter-section.sticky-filter {
+        position: sticky;
+        top: 96px;
+        z-index: 999;
     }
 
     .filter-section h3 {
@@ -501,7 +517,7 @@
 </div>
 
 <!-- En-tête avec boutons d'action -->
-<div class="planning-header">
+<div class="planning-header sticky-actions">
     <h2><i class="fas fa-route"></i> Assignation des Véhicules</h2>
     <div class="btn-group">
         <button class="btn-success" href="#statutPlanningSection" onclick="genererPlanning()" title="Générer le planning automatiquement">
@@ -530,8 +546,8 @@
 </c:if>
 
 <!-- Filtres -->
-<div class="filter-section">
-    <h3><i class="fas fa-filter"></i> Filtrer les assignations</h3>
+<div class="filter-section sticky-filter">
+    <h3><i class="fas fa-filter"></i> Filtrer les plannings</h3>
     <form method="post" action="${pageContext.request.contextPath}/planning/assignation/filter">
         <div class="filter-row">
             <div class="filter-group">
@@ -751,7 +767,7 @@
             .then(data => {
                 if (data.status === 'success') {
                     alert('Planning généré avec succès !');
-                    location.reload();
+                    location.href = '${pageContext.request.contextPath}/planning/assignation#statutPlanningSection';
                 } else {
                     alert('Erreur: ' + (data && data.message ? data.message : 'Une erreur inconnue est survenue'));
                 }
@@ -787,7 +803,7 @@
             .then(data => {
                 if (data.status === 'success') {
                     alert('Planning validé avec succès !');
-                    location.reload();
+                    location.href = '${pageContext.request.contextPath}/planning/assignation#statutPlanningSection';
                 } else {
                     alert('Erreur: ' + (data && data.message ? data.message : 'Une erreur inconnue est survenue'));
                 }

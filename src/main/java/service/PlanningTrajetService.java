@@ -1,6 +1,8 @@
 package service;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 import dto.PlanningTrajetView;
@@ -306,6 +308,7 @@ public class PlanningTrajetService {
      */
     public List<PlanningTrajetView> getAllPlanningsForView() {
         List<PlanningTrajet> plannings = getAllPlannings();
+        DateTimeFormatter formatterDateFr = DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale.FRENCH);
         return plannings.stream()
             .map(p -> {
                 Reservation reservation = reservationService.getReservationById((int) p.getReservationId());
@@ -314,6 +317,7 @@ public class PlanningTrajetService {
                     : null;
 
                 String dateArrivee = "";
+                String dateArriveeIso = "";
                 String heureArrivee = "";
                 String nomClient = "";
                 int nombrePersonnes = 0;
@@ -323,7 +327,8 @@ public class PlanningTrajetService {
                 nombrePersonnes = reservation.getNombrePersonnes();
                 heureArrivee = reservation.getHeure() != null ? reservation.getHeure() : "";
                 if (reservation.getDateArrivee() != null) {
-                    dateArrivee = reservation.getDateArrivee().toLocalDateTime().toLocalDate().toString();
+                    dateArriveeIso = reservation.getDateArrivee().toLocalDateTime().toLocalDate().toString();
+                    dateArrivee = reservation.getDateArrivee().toLocalDateTime().toLocalDate().format(formatterDateFr);
                 }
                 }
 
@@ -335,10 +340,12 @@ public class PlanningTrajetService {
                 return new PlanningTrajetView(
                     p.getId(),
                     p.getReservationId(),
+                    p.getVehiculeId() != null ? p.getVehiculeId() : 0,
                     p.getVehiculeImmatriculation(),
                     p.getLieuDepart(),
                     p.getLieuArrivee(),
                     dateArrivee,
+                    dateArriveeIso,
                     heureArrivee,
                     nomClient,
                     nombrePersonnes,

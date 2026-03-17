@@ -3,6 +3,7 @@ package controller;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import dto.PlanningTrajetView;
 import dto.ReservationView;
 import framework.ModelAndView.ModelAndView;
 import framework.annotation.Controller;
@@ -76,24 +77,33 @@ public class PlanningTrajetController {
         
         ModelAndView mav = new ModelAndView("/views/planning/assignation.jsp");
         
-        List<Reservation> reservations = reservationService.getReservationNonAssignees();
+        List<ReservationView> reservations = reservationService.getReservationNonAssigneesViews();
+        List<PlanningTrajetView> plannings = planningTrajetService.getAllPlanningsForView();
         
         // Filtre par date
         if (date != null && !date.isEmpty()) {
-            reservations = reservations.stream()
-                    .filter(r -> r.getDateArrivee() != null &&
-                               r.getDateArrivee().toString().startsWith(date))
+                plannings = plannings.stream()
+                    .filter(p -> p.getDateArriveeIso() != null &&
+                           p.getDateArriveeIso().startsWith(date))
                     .collect(Collectors.toList());
         }
         
         // Filtre par heure
         if (heure != null && !heure.isEmpty()) {
             final String filterHeure = heure;
-            reservations = reservations.stream()
-                    .filter(r -> r.getHeure() != null &&
-                               r.getHeure().startsWith(filterHeure))
+                plannings = plannings.stream()
+                    .filter(p -> p.getHeureArrivee() != null &&
+                           p.getHeureArrivee().startsWith(filterHeure))
                     .collect(Collectors.toList());
         }
+
+            // Filtre par véhicule assigné (sur le planning)
+            if (vehiculeId != null && !vehiculeId.isEmpty()) {
+                final long filterVehiculeId = Long.parseLong(vehiculeId);
+                plannings = plannings.stream()
+                    .filter(p -> p.getVehiculeId() == filterVehiculeId)
+                    .collect(Collectors.toList());
+            }
         
         List<Vehicule> vehicules = vehiculeService.getVehiculesDisponibles();
         
@@ -102,7 +112,7 @@ public class PlanningTrajetController {
         mav.addObject("filterDate", date);
         mav.addObject("filterHeure", heure);
         mav.addObject("filterVehiculeId", vehiculeId);
-        mav.addObject("plannings", planningTrajetService.getAllPlanningsForView());
+        mav.addObject("plannings", plannings);
         
         return mav;
     }

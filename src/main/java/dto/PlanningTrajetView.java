@@ -6,10 +6,12 @@ package dto;
 public class PlanningTrajetView {
     private long id;
     private long reservationId;
+    private long vehiculeId;
     private String vehiculeImmatriculation;
     private String lieuDepart;
     private String lieuArrivee;
     private String dateArrivee;
+    private String dateArriveeIso;
     private String heureArrivee;
     private String nomClient;
     private int nombrePersonnes;
@@ -21,17 +23,19 @@ public class PlanningTrajetView {
 
     public PlanningTrajetView() {}
 
-    public PlanningTrajetView(long id, long reservationId, String vehiculeImmatriculation,
-                             String lieuDepart, String lieuArrivee, String dateArrivee,
+    public PlanningTrajetView(long id, long reservationId, long vehiculeId, String vehiculeImmatriculation,
+                             String lieuDepart, String lieuArrivee, String dateArrivee, String dateArriveeIso,
                              String heureArrivee, String nomClient, int nombrePersonnes,
                              double distance, String dureeEstimee, String statut,
                              String typeCarburantVehicule, int capaciteVehicule) {
         this.id = id;
         this.reservationId = reservationId;
+        this.vehiculeId = vehiculeId;
         this.vehiculeImmatriculation = vehiculeImmatriculation;
         this.lieuDepart = lieuDepart;
         this.lieuArrivee = lieuArrivee;
         this.dateArrivee = dateArrivee;
+        this.dateArriveeIso = dateArriveeIso;
         this.heureArrivee = heureArrivee;
         this.nomClient = nomClient;
         this.nombrePersonnes = nombrePersonnes;
@@ -57,6 +61,14 @@ public class PlanningTrajetView {
 
     public void setReservationId(long reservationId) {
         this.reservationId = reservationId;
+    }
+
+    public long getVehiculeId() {
+        return vehiculeId;
+    }
+
+    public void setVehiculeId(long vehiculeId) {
+        this.vehiculeId = vehiculeId;
     }
 
     public String getVehiculeImmatriculation() {
@@ -89,6 +101,14 @@ public class PlanningTrajetView {
 
     public void setDateArrivee(String dateArrivee) {
         this.dateArrivee = dateArrivee;
+    }
+
+    public String getDateArriveeIso() {
+        return dateArriveeIso;
+    }
+
+    public void setDateArriveeIso(String dateArriveeIso) {
+        this.dateArriveeIso = dateArriveeIso;
     }
 
     public String getHeureArrivee() {
