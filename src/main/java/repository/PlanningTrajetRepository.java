@@ -125,17 +125,18 @@ public class PlanningTrajetRepository {
     public void create(PlanningTrajet p) {
         String sql = "INSERT INTO planning_trajet " +
                      "(reservation_id, vehicule_id, lieu_depart_id, lieu_arrivee_id, " +
-                     "duree_estimee, distance_estimee, statut_id) " +
-                     "VALUES (?, ?, ?, ?, ?::interval, ?, ?)";
+                     "date_planification, duree_estimee, distance_estimee, statut_id) " +
+                     "VALUES (?, ?, ?, ?, ?::timestamp, ?::interval, ?, ?)";
         try (Connection conn = dbConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setLong(1, p.getReservationId());
             if (p.getVehiculeId() != null) stmt.setLong(2, p.getVehiculeId()); else stmt.setNull(2, java.sql.Types.BIGINT);
             if (p.getLieuDepartId() != null) stmt.setLong(3, p.getLieuDepartId()); else stmt.setNull(3, java.sql.Types.BIGINT);
             if (p.getLieuArriveeId() != null) stmt.setLong(4, p.getLieuArriveeId()); else stmt.setNull(4, java.sql.Types.BIGINT);
-            stmt.setString(5, p.getDureeEstimee());
-            stmt.setDouble(6, p.getDistanceEstimee());
-            stmt.setLong(7, p.getStatutId());
+            stmt.setString(5, p.getDatePlanification());
+            stmt.setString(6, p.getDureeEstimee());
+            stmt.setDouble(7, p.getDistanceEstimee());
+            stmt.setLong(8, p.getStatutId());
             stmt.executeUpdate();
             ResultSet keys = stmt.getGeneratedKeys();
             if (keys.next()) p.setId(keys.getLong(1));
@@ -144,7 +145,7 @@ public class PlanningTrajetRepository {
 
     public void update(PlanningTrajet p) {
         String sql = "UPDATE planning_trajet SET " +
-                     "vehicule_id = ?, lieu_depart_id = ?, lieu_arrivee_id = ?, " +
+                     "vehicule_id = ?, lieu_depart_id = ?, lieu_arrivee_id = ?, date_planification = COALESCE(?::timestamp, date_planification), " +
                      "duree_estimee = ?::interval, distance_estimee = ?, statut_id = ?, " +
                      "updated_at = NOW() WHERE id = ?";
         try (Connection conn = dbConnection.getConnection();
@@ -152,10 +153,11 @@ public class PlanningTrajetRepository {
             if (p.getVehiculeId() != null) stmt.setLong(1, p.getVehiculeId()); else stmt.setNull(1, java.sql.Types.BIGINT);
             if (p.getLieuDepartId() != null) stmt.setLong(2, p.getLieuDepartId()); else stmt.setNull(2, java.sql.Types.BIGINT);
             if (p.getLieuArriveeId() != null) stmt.setLong(3, p.getLieuArriveeId()); else stmt.setNull(3, java.sql.Types.BIGINT);
-            stmt.setString(4, p.getDureeEstimee());
-            stmt.setDouble(5, p.getDistanceEstimee());
-            stmt.setLong(6, p.getStatutId());
-            stmt.setLong(7, p.getId());
+            stmt.setString(4, p.getDatePlanification());
+            stmt.setString(5, p.getDureeEstimee());
+            stmt.setDouble(6, p.getDistanceEstimee());
+            stmt.setLong(7, p.getStatutId());
+            stmt.setLong(8, p.getId());
             stmt.executeUpdate();
         } catch (SQLException e) { e.printStackTrace(); }
     }

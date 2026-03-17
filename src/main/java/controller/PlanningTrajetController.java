@@ -43,6 +43,7 @@ public class PlanningTrajetController {
         mav.addObject("pageTitle", pageTitle);
         mav.addObject("reservations", reservations);
         mav.addObject("vehicules", vehicules);
+        mav.addObject("plannings", planningTrajetService.getAllPlanningsForView());
         
         return mav;
     }
@@ -101,6 +102,7 @@ public class PlanningTrajetController {
         mav.addObject("filterDate", date);
         mav.addObject("filterHeure", heure);
         mav.addObject("filterVehiculeId", vehiculeId);
+        mav.addObject("plannings", planningTrajetService.getAllPlanningsForView());
         
         return mav;
     }
@@ -123,6 +125,7 @@ public class PlanningTrajetController {
         }
         mav.addObject("reservations", reservationService.getReservationNonAssignees());
         mav.addObject("vehicules", vehiculeService.getVehiculesDisponibles());
+        mav.addObject("plannings", planningTrajetService.getAllPlanningsForView());
         return mav;
     }
 
@@ -158,7 +161,5 @@ public class PlanningTrajetController {
         
         return mav;
     }
-
-
 
 }

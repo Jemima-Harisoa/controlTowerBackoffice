@@ -504,10 +504,10 @@
 <div class="planning-header">
     <h2><i class="fas fa-route"></i> Assignation des Véhicules</h2>
     <div class="btn-group">
-        <button class="btn-success" onclick="genererPlanning()" title="Générer le planning automatiquement">
+        <button class="btn-success" href="#statutPlanningSection" onclick="genererPlanning()" title="Générer le planning automatiquement">
             <i class="fas fa-robot"></i> Générer Planning
         </button>
-        <button class="btn-primary" onclick="validerPlanning()" title="Valider le planning">
+        <button class="btn-primary"  href="#statutPlanningSection" onclick="validerPlanning()" title="Valider le planning">
             <i class="fas fa-check-circle"></i> Valider Planning
         </button>
             <a class="btn-warning" href="#nonAssigneesSection" title="Aller à la section des réservations non assignées">
@@ -648,6 +648,64 @@
                                     </c:when>
                                     <c:otherwise>
                                         <span class="badge badge-warning"><i class="fas fa-hourglass-half"></i> En attente</span>
+                                    </c:otherwise>
+                                </c:choose>
+                            </td>
+                        </tr>
+                    </c:forEach>
+                </tbody>
+            </table>
+        </c:otherwise>
+    </c:choose>
+</div>
+
+<div class="vehicules-section" id="statutPlanningSection">
+    <h3><i class="fas fa-list-check"></i> Statut de Planification des Trajets</h3>
+    <c:choose>
+        <c:when test="${empty plannings}">
+            <div class="empty-state">
+                <div class="empty-state-icon"><i class="fas fa-route"></i></div>
+                <h3>Aucun trajet planifié</h3>
+                <p>Générez le planning pour voir le statut d'assignation des réservations et véhicules.</p>
+            </div>
+        </c:when>
+        <c:otherwise>
+            <table class="reservations-table">
+                <thead>
+                    <tr>
+                        <th>Client</th>
+                        <th>Passagers</th>
+                        <th>Date arrivée</th>
+                        <th>Heure arrivée</th>
+                        <th>Temps estimé</th>
+                        <th>Départ</th>
+                        <th>Arrivée</th>
+                        <th>Carburant</th>
+                        <th>Places véhicule</th>
+                        <th>Véhicule</th>
+                        <th>Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <c:forEach items="${plannings}" var="planning">
+                        <tr>
+                            <td>${planning.nomClient}</td>
+                            <td>${planning.nombrePersonnes}</td>
+                            <td>${planning.dateArrivee}</td>
+                            <td>${planning.heureArrivee}</td>
+                            <td>${planning.dureeEstimee}</td>
+                            <td>${planning.lieuDepart}</td>
+                            <td>${planning.lieuArrivee}</td>
+                            <td>${planning.typeCarburantVehicule}</td>
+                            <td>${planning.capaciteVehicule}</td>
+                            <td>${planning.vehiculeImmatriculation}</td>
+                            <td>
+                                <c:choose>
+                                    <c:when test="${planning.statut == 'VALIDE'}">
+                                        <span class="badge badge-success">${planning.statut}</span>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <span class="badge badge-warning">${planning.statut}</span>
                                     </c:otherwise>
                                 </c:choose>
                             </td>

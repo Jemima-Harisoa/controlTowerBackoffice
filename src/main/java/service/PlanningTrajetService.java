@@ -307,20 +307,48 @@ public class PlanningTrajetService {
     public List<PlanningTrajetView> getAllPlanningsForView() {
         List<PlanningTrajet> plannings = getAllPlannings();
         return plannings.stream()
-                .map(p -> new PlanningTrajetView(
-                        p.getId(),
-                        p.getReservationId(),
-                        p.getVehiculeImmatriculation(),
-                        p.getLieuDepart(),
-                        p.getLieuArrivee(),
-                        "", // À extraire de la réservation
-                        "", // À extraire de la réservation
-                        "", // À extraire de la réservation
-                        0,  // À extraire de la réservation
-                        p.getDistanceEstimee(),
-                        p.getDureeEstimee(),
-                        p.getStatut()
-                ))
+            .map(p -> {
+                Reservation reservation = reservationService.getReservationById((int) p.getReservationId());
+                Vehicule vehicule = p.getVehiculeId() != null
+                    ? vehiculeService.getVehiculeById((int) p.getVehiculeId().longValue())
+                    : null;
+
+                String dateArrivee = "";
+                String heureArrivee = "";
+                String nomClient = "";
+                int nombrePersonnes = 0;
+
+                if (reservation != null) {
+                nomClient = reservation.getNom() != null ? reservation.getNom() : "";
+                nombrePersonnes = reservation.getNombrePersonnes();
+                heureArrivee = reservation.getHeure() != null ? reservation.getHeure() : "";
+                if (reservation.getDateArrivee() != null) {
+                    dateArrivee = reservation.getDateArrivee().toLocalDateTime().toLocalDate().toString();
+                }
+                }
+
+                String typeCarburantVehicule = vehicule != null && vehicule.getTypeCarburant() != null
+                    ? vehicule.getTypeCarburant()
+                    : "";
+                int capaciteVehicule = vehicule != null ? vehicule.getCapacitePassagers() : 0;
+
+                return new PlanningTrajetView(
+                    p.getId(),
+                    p.getReservationId(),
+                    p.getVehiculeImmatriculation(),
+                    p.getLieuDepart(),
+                    p.getLieuArrivee(),
+                    dateArrivee,
+                    heureArrivee,
+                    nomClient,
+                    nombrePersonnes,
+                    p.getDistanceEstimee(),
+                    p.getDureeEstimee(),
+                    p.getStatut(),
+                    typeCarburantVehicule,
+                    capaciteVehicule
+                );
+            })
                 .collect(Collectors.toList());
     }
 }
