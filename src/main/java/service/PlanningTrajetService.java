@@ -1,14 +1,22 @@
 package service;
 
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import dto.PlanningTrajetView;
+import model.PlanningAssignationDetail;
 import model.PlanningTrajet;
 import model.Reservation;
 import model.Vehicule;
+import repository.PlanningAssignationDetailRepository;
 import repository.PlanningTrajetRepository;
 
 /**
@@ -21,6 +29,7 @@ public class PlanningTrajetService {
     private VehiculeService vehiculeService = new VehiculeService();
     private DistanceService distanceService = new DistanceService();
     private ParametreConfigurationService paramService = new ParametreConfigurationService();
+    private PlanningAssignationDetailRepository planningAssignationDetailRepository = new PlanningAssignationDetailRepository();
 
     /**
      * Récupérer tous les plannings
@@ -99,6 +108,10 @@ public class PlanningTrajetService {
             } else {
                 updatePlanning(planning);
             }
+
+            // Mettre a jour les metadonnees de trajet et externaliser un detail agrege
+            remplirDetailsPlanification(reservation);
+            externaliserDetailAssignationVehicule(vehiculeId, reservation);
         } catch (Exception e) {
             throw new Exception("Erreur lors de l'assignation du véhicule: " + e.getMessage());
         }
@@ -125,9 +138,6 @@ public class PlanningTrajetService {
 
                 if (meilleurVehicule != null) {
                     assignerVehicule(reservation.getId(), (int) meilleurVehicule.getId());
-                    
-                    // Remplir les détails du planning (lieux, distance, durée)
-                    remplirDetailsPlanification(reservation);
                 }
             }
         } catch (Exception e) {
@@ -197,6 +207,141 @@ public class PlanningTrajetService {
             return String.format("%02d:%02d:%02d", heures, mins, secs);
         }
 
+        /**
+         * Exporte un detail d'assignation agrege par vehicule + date + heure.
+         * Objectif sprint 3: stocker la liste des reservations assignees a un meme vehicule.
+         */
+        private void externaliserDetailAssignationVehicule(int vehiculeId, Reservation reservationPivot) {
+            if (reservationPivot == null || reservationPivot.getDateArrivee() == null || reservationPivot.getHeure() == null) {
+                return;
+            }
+
+            String dateArrivee = reservationPivot.getDateArrivee().toLocalDateTime().toLocalDate().toString();
+            String heureArrivee = reservationPivot.getHeure();
+
+            List<PlanningTrajet> planningsVehicule = getPlanningsByVehicule(vehiculeId);
+            if (planningsVehicule == null || planningsVehicule.isEmpty()) {
+                return;
+            }
+
+            List<PlanningTrajet> groupeMemeVehiculeDateHeure = new ArrayList<>();
+            List<Reservation> reservationsGroupe = new ArrayList<>();
+
+            for (PlanningTrajet p : planningsVehicule) {
+                Reservation r = reservationService.getReservationById((int) p.getReservationId());
+                if (r == null || r.getDateArrivee() == null || r.getHeure() == null) {
+                    continue;
+                }
+
+                String rDate = r.getDateArrivee().toLocalDateTime().toLocalDate().toString();
+                if (dateArrivee.equals(rDate) && heureArrivee.equals(r.getHeure())) {
+                    groupeMemeVehiculeDateHeure.add(p);
+                    reservationsGroupe.add(r);
+                }
+            }
+
+            if (reservationsGroupe.isEmpty()) {
+                return;
+            }
+
+            Vehicule vehicule = vehiculeService.getVehiculeById(vehiculeId);
+            int capaciteVehicule = vehicule != null ? vehicule.getCapacitePassagers() : 0;
+            int passagersTotal = reservationsGroupe.stream().mapToInt(Reservation::getNombrePersonnes).sum();
+            int placesLibres = Math.max(capaciteVehicule - passagersTotal, 0);
+
+                reservationsGroupe.sort(Comparator
+                    .comparing(Reservation::getHeure, Comparator.nullsLast(String::compareTo))
+                    .thenComparingInt(Reservation::getId));
+
+                Map<Long, PlanningTrajet> planningByReservationId = new HashMap<>();
+                for (PlanningTrajet planning : groupeMemeVehiculeDateHeure) {
+                planningByReservationId.put(planning.getReservationId(), planning);
+                }
+
+                Reservation premiereReservation = reservationsGroupe.get(0);
+                Reservation derniereReservation = reservationsGroupe.get(reservationsGroupe.size() - 1);
+                PlanningTrajet planningPremiereReservation = planningByReservationId.get((long) premiereReservation.getId());
+                PlanningTrajet planningDerniereReservation = planningByReservationId.get((long) derniereReservation.getId());
+
+                String premierPointDepart = planningPremiereReservation != null
+                    ? planningPremiereReservation.getLieuDepart()
+                    : null;
+                String dernierPointArrivee = planningDerniereReservation != null
+                    ? planningDerniereReservation.getLieuArrivee()
+                    : null;
+
+                for (Reservation reservation : reservationsGroupe) {
+                PlanningTrajet planningReservation = planningByReservationId.get((long) reservation.getId());
+
+                String nomClient = reservation.getNom() == null ? "" : reservation.getNom();
+                String pointsDepart = planningReservation != null ? planningReservation.getLieuDepart() : null;
+                String pointsArrivee = planningReservation != null ? planningReservation.getLieuArrivee() : null;
+                double distanceEstimee = planningReservation != null ? planningReservation.getDistanceEstimee() : 0;
+                String dureeEstimee = planningReservation != null ? planningReservation.getDureeEstimee() : null;
+
+                PlanningAssignationDetail detail = new PlanningAssignationDetail();
+                detail.setVehiculeId(vehiculeId);
+                detail.setDateArrivee(dateArrivee);
+                detail.setHeureArrivee(reservation.getHeure());
+                detail.setReservationId(reservation.getId());
+                detail.setPremiereReservationId(premiereReservation.getId());
+                detail.setReservationClient(nomClient + "(" + reservation.getNombrePersonnes() + "p)");
+                detail.setNombrePassagersTotal(passagersTotal);
+                detail.setCapaciteVehicule(capaciteVehicule);
+                detail.setPlacesLibres(placesLibres);
+                detail.setDistanceEstimee(distanceEstimee);
+                detail.setDureeEstimee(dureeEstimee);
+                detail.setPremierPointDepart(premierPointDepart);
+                detail.setDernierPointArrivee(dernierPointArrivee);
+                detail.setPointsDepart(pointsDepart);
+                detail.setPointsArrivee(pointsArrivee);
+
+                planningAssignationDetailRepository.upsert(detail);
+
+                String heureArriveePrevue = calculerHeureArriveePrevue(reservation.getHeure(), dureeEstimee);
+                planningAssignationDetailRepository.upsertHistoriqueAssignation(
+                        vehiculeId,
+                        reservation.getId(),
+                        planningReservation != null ? planningReservation.getId() : null,
+                        dateArrivee,
+                        reservation.getHeure(),
+                        heureArriveePrevue,
+                        "PLANIFIE"
+                );
+                }
+        }
+
+        private String calculerHeureArriveePrevue(String heureDepart, String dureeInterval) {
+            if (heureDepart == null || heureDepart.isEmpty() || dureeInterval == null || dureeInterval.isEmpty()) {
+                return null;
+            }
+
+            try {
+                LocalTime depart = LocalTime.parse(normaliserHeure(heureDepart));
+                String[] parts = dureeInterval.split(":");
+                if (parts.length < 2) {
+                    return null;
+                }
+
+                int heures = Integer.parseInt(parts[0]);
+                int minutes = Integer.parseInt(parts[1]);
+                int secondes = parts.length > 2 ? Integer.parseInt(parts[2]) : 0;
+
+                LocalTime arrivee = depart.plusHours(heures).plusMinutes(minutes).plusSeconds(secondes);
+                return arrivee.toString();
+            } catch (DateTimeParseException | NumberFormatException e) {
+                return null;
+            }
+        }
+
+        private String normaliserHeure(String heure) {
+            String h = heure.trim();
+            if (h.matches("^\\d{2}:\\d{2}$")) {
+                return h + ":00";
+            }
+            return h;
+        }
+
     /**
      * FONCTIONNALITÉ 3 : Valider le planning
      * Met à jour le statut de tous les plannings en PLANIFIE → VALIDE
@@ -259,6 +404,15 @@ public class PlanningTrajetService {
         // Filtrer par capacité passagers
         List<Vehicule> vehiculesAptes = vehiculeService
                 .getVehiculesByCapacite(reservation.getNombrePersonnes());
+
+        if (reservation.getDateArrivee() != null && reservation.getHeure() != null && !reservation.getHeure().isEmpty()) {
+            String dateService = reservation.getDateArrivee().toLocalDateTime().toLocalDate().toString();
+            String heureReference = reservation.getHeure();
+
+            vehiculesAptes = vehiculesAptes.stream()
+                .filter(v -> planningAssignationDetailRepository.isVehiculeDisponibleAt(v.getId(), dateService, heureReference))
+                .collect(Collectors.toList());
+        }
 
         // Prioriser les diesel
         List<Vehicule> diesels = vehiculesAptes.stream()
