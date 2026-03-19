@@ -20,6 +20,7 @@ import model.Reservation;
 import model.Vehicule;
 import repository.PlanningAssignationDetailRepository;
 import repository.PlanningTrajetRepository;
+import repository.VehiculeDeplacementHistoriqueRepository;
 
 /**
  * Service pour la gestion de la planification des trajets
@@ -32,12 +33,27 @@ public class PlanningTrajetService {
     private DistanceService distanceService = new DistanceService();
     private ParametreConfigurationService paramService = new ParametreConfigurationService();
     private PlanningAssignationDetailRepository planningAssignationDetailRepository = new PlanningAssignationDetailRepository();
+    private VehiculeDeplacementHistoriqueRepository vehiculeDeplacementHistoriqueRepository = new VehiculeDeplacementHistoriqueRepository();
 
     /**
      * Récupérer tous les plannings
      */
     public List<PlanningTrajet> getAllPlannings() {
         return planningRepository.findAll();
+    }
+
+    /**
+     * Récupérer tous les détails d'assignation (une ligne par réservation)
+     */
+    public List<PlanningAssignationDetail> getAllPlanningDetails() {
+        return planningAssignationDetailRepository.findAll();
+    }
+
+    /**
+     * Récupérer les détails d'assignation filtrés
+     */
+    public List<PlanningAssignationDetail> getPlanningDetailsFiltered(String date, String heure, Long vehiculeId) {
+        return planningAssignationDetailRepository.findByFilters(date, heure, vehiculeId);
     }
 
     /**
@@ -114,6 +130,9 @@ public class PlanningTrajetService {
             // Mettre a jour les metadonnees de trajet et externaliser un detail agrege
             remplirDetailsPlanification(reservation);
             externaliserDetailAssignationVehicule(vehiculeId, reservation);
+
+            PlanningTrajet planningMisAJour = getPlanningByReservationId(reservationId);
+            enregistrerHistoriqueDeplacementVehicule(vehiculeId, reservation, planningMisAJour);
         } catch (Exception e) {
             throw new Exception("Erreur lors de l'assignation du véhicule: " + e.getMessage());
         }
@@ -169,7 +188,16 @@ public class PlanningTrajetService {
                 continue;
             }
 
+            String dateHeureCreneau = construireDateHeureReservation(reservationPivot);
+            Long localisationCouranteVehicule = dateHeureCreneau != null
+                    ? vehiculeDeplacementHistoriqueRepository.getDernierLieuIdAvant(vehicule.getId(), dateHeureCreneau)
+                    : null;
+
             assignerVehicule(reservationPivot.getId(), (int) vehicule.getId());
+
+            if (reservationPivot.getLieuDepartId() != null && reservationPivot.getLieuDepartId() > 0) {
+                localisationCouranteVehicule = reservationPivot.getLieuDepartId();
+            }
 
             int placesRestantes = vehicule.getCapacitePassagers() - reservationPivot.getNombrePersonnes();
             if (placesRestantes <= 0 || restantes.isEmpty()) {
@@ -177,20 +205,28 @@ public class PlanningTrajetService {
             }
 
             List<Reservation> candidats = new ArrayList<>(restantes);
-            candidats.sort(Comparator
-                    .comparingDouble((Reservation r) -> calculerProximiteRamassage(reservationPivot, r))
-                    .thenComparing(Comparator.comparingInt(Reservation::getNombrePersonnes).reversed())
-                    .thenComparingInt(Reservation::getId));
+            while (placesRestantes > 0 && !candidats.isEmpty()) {
+                final Long lieuCourant = localisationCouranteVehicule;
+                final int placesDisponibles = placesRestantes;
+                Reservation prochainCandidat = candidats.stream()
+                    .filter(r -> r.getNombrePersonnes() <= placesDisponibles)
+                        .min(Comparator
+                                .comparingDouble((Reservation r) -> calculerProximiteDepuisLieu(lieuCourant, r))
+                                .thenComparing(Comparator.comparingInt(Reservation::getNombrePersonnes).reversed())
+                                .thenComparingInt(Reservation::getId))
+                        .orElse(null);
 
-            for (Reservation candidat : candidats) {
-                if (candidat.getNombrePersonnes() <= placesRestantes) {
-                    assignerVehicule(candidat.getId(), (int) vehicule.getId());
-                    placesRestantes -= candidat.getNombrePersonnes();
-                    restantes.removeIf(r -> r.getId() == candidat.getId());
+                if (prochainCandidat == null) {
+                    break;
+                }
 
-                    if (placesRestantes <= 0) {
-                        break;
-                    }
+                assignerVehicule(prochainCandidat.getId(), (int) vehicule.getId());
+                placesRestantes -= prochainCandidat.getNombrePersonnes();
+                restantes.removeIf(r -> r.getId() == prochainCandidat.getId());
+                candidats.removeIf(r -> r.getId() == prochainCandidat.getId());
+
+                if (prochainCandidat.getLieuDepartId() != null && prochainCandidat.getLieuDepartId() > 0) {
+                    localisationCouranteVehicule = prochainCandidat.getLieuDepartId();
                 }
             }
         }
@@ -216,6 +252,68 @@ public class PlanningTrajetService {
         );
 
         return distance > 0 ? distance : Double.MAX_VALUE;
+    }
+
+    private double calculerProximiteDepuisLieu(Long lieuReferenceId, Reservation candidate) {
+        if (lieuReferenceId == null || candidate.getLieuDepartId() == null) {
+            return Double.MAX_VALUE;
+        }
+
+        if (lieuReferenceId.longValue() == candidate.getLieuDepartId().longValue()) {
+            return 0.0;
+        }
+
+        double distance = distanceService.calculerDistance(lieuReferenceId, candidate.getLieuDepartId());
+        return distance > 0 ? distance : Double.MAX_VALUE;
+    }
+
+    private String construireDateHeureReservation(Reservation reservation) {
+        if (reservation == null || reservation.getDateArrivee() == null || reservation.getHeure() == null) {
+            return null;
+        }
+
+        String date = reservation.getDateArrivee().toLocalDateTime().toLocalDate().toString();
+        String heure = normaliserHeure(reservation.getHeure());
+        return date + " " + heure;
+    }
+
+    private void enregistrerHistoriqueDeplacementVehicule(int vehiculeId,
+                                                          Reservation reservation,
+                                                          PlanningTrajet planning) {
+        if (reservation == null || reservation.getDateArrivee() == null || reservation.getHeure() == null) {
+            return;
+        }
+
+        String dateService = reservation.getDateArrivee().toLocalDateTime().toLocalDate().toString();
+        String heureDepart = normaliserHeure(reservation.getHeure());
+        String dateHeureDepart = dateService + " " + heureDepart;
+
+        Long planningId = planning != null ? planning.getId() : null;
+        Long reservationId = (long) reservation.getId();
+
+        vehiculeDeplacementHistoriqueRepository.insertEvenement(
+                vehiculeId,
+                reservation.getLieuDepartId(),
+                planningId,
+                reservationId,
+                "RAMASSAGE",
+                dateHeureDepart,
+                "Ramassage client reservation " + reservation.getId()
+        );
+
+        String dureeTrajet = planning != null ? planning.getDureeEstimee() : null;
+        String heureArrivee = calculerHeureArriveePrevue(heureDepart, dureeTrajet);
+        String dateHeureArrivee = dateService + " " + (heureArrivee != null ? heureArrivee : heureDepart);
+
+        vehiculeDeplacementHistoriqueRepository.insertEvenement(
+                vehiculeId,
+                reservation.getLieuArriveeId(),
+                planningId,
+                reservationId,
+                "ARRIVEE",
+                dateHeureArrivee,
+                "Arrivee client reservation " + reservation.getId()
+        );
     }
 
     /**

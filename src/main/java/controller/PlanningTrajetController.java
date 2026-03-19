@@ -65,6 +65,7 @@ public class PlanningTrajetController {
 
     /**
      * Affiche la page de visualisation des trajets groupes
+     * Affiche une ligne par réservation (Sprint 3: une ligne par réservation dans le groupe)
      */
     @Url("/planning/visualisation")
     @Get
@@ -74,15 +75,32 @@ public class PlanningTrajetController {
             @RequestParam(value = "vehiculeId", required = false) String vehiculeId) {
         ModelAndView mav = new ModelAndView("/views/planning/visualisation.jsp");
 
-        List<PlanningTrajetView> plannings = planningTrajetService.getAllPlanningsForView();
-        plannings = filtrerPlannings(plannings, date, heure, vehiculeId);
-
-        List<PlanningTrajetGroupeView> groupes = buildPlanningGroupes(plannings);
+        // Récupérer les details d'assignation (une ligne par réservation)
+        Long vehiculeIdFilter = null;
+        if (vehiculeId != null && !vehiculeId.isEmpty()) {
+            try {
+                vehiculeIdFilter = Long.parseLong(vehiculeId);
+            } catch (NumberFormatException ignored) {
+                // Ignorer vehiculeId invalide
+            }
+        }
+        
+        List<model.PlanningAssignationDetail> details = planningTrajetService.getPlanningDetailsFiltered(date, heure, vehiculeIdFilter);
+        
+        // Grouper par première réservation pour une meilleure lecture
+        Map<String, model.PlanningAssignationDetail> groupesByFirstRes = new LinkedHashMap<>();
+        for (model.PlanningAssignationDetail detail : details) {
+            String grpKey = detail.getVehiculeId() + "|" + detail.getDateArrivee() + "|" + detail.getHeureArrivee();
+            if (!groupesByFirstRes.containsKey(grpKey)) {
+                groupesByFirstRes.put(grpKey, detail);
+            }
+        }
+        
         List<Vehicule> vehicules = vehiculeService.getAllVehicules();
 
         mav.addObject("pageTitle", "Visualisation des Trajets");
-        mav.addObject("plannings", plannings);
-        mav.addObject("planningGroupes", groupes);
+        mav.addObject("details", details);
+        mav.addObject("groupeSummaries", new ArrayList<>(groupesByFirstRes.values()));
         mav.addObject("vehicules", vehicules);
         mav.addObject("filterDate", date);
         mav.addObject("filterHeure", heure);

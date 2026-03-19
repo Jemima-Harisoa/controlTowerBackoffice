@@ -90,6 +90,91 @@ public class PlanningAssignationDetailRepository {
         }
     }
 
+    public java.util.List<PlanningAssignationDetail> findAll() {
+        java.util.List<PlanningAssignationDetail> details = new java.util.ArrayList<>();
+        String sql = "SELECT id, vehicule_id, date_arrivee, heure_arrivee, reservation_id, " +
+                "premiere_reservation_id, reservation_client, nombre_passagers_total, capacite_vehicule, " +
+                "places_libres, distance_estimee_km, duree_estimee, premier_point_depart, " +
+                "dernier_point_arrivee, points_depart, points_arrivee " +
+                "FROM planning_trajet_detail " +
+                "ORDER BY vehicule_id, date_arrivee, heure_arrivee, reservation_id";
+
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                PlanningAssignationDetail detail = mapResultSet(rs);
+                details.add(detail);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return details;
+    }
+
+    public java.util.List<PlanningAssignationDetail> findByFilters(String date, String heure, Long vehiculeId) {
+        java.util.List<PlanningAssignationDetail> details = new java.util.ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+                "SELECT id, vehicule_id, date_arrivee, heure_arrivee, reservation_id, " +
+                "premiere_reservation_id, reservation_client, nombre_passagers_total, capacite_vehicule, " +
+                "places_libres, distance_estimee_km, duree_estimee, premier_point_depart, " +
+                "dernier_point_arrivee, points_depart, points_arrivee " +
+                "FROM planning_trajet_detail WHERE 1=1"
+        );
+
+        java.util.List<Object> params = new java.util.ArrayList<>();
+        if (date != null && !date.isEmpty()) {
+            sql.append(" AND date_arrivee = ?::date");
+            params.add(date);
+        }
+        if (heure != null && !heure.isEmpty()) {
+            sql.append(" AND heure_arrivee = ?");
+            params.add(heure);
+        }
+        if (vehiculeId != null) {
+            sql.append(" AND vehicule_id = ?");
+            params.add(vehiculeId);
+        }
+        sql.append(" ORDER BY vehicule_id, date_arrivee, heure_arrivee, reservation_id");
+
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                stmt.setObject(i + 1, params.get(i));
+            }
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    PlanningAssignationDetail detail = mapResultSet(rs);
+                    details.add(detail);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return details;
+    }
+
+    private PlanningAssignationDetail mapResultSet(ResultSet rs) throws SQLException {
+        PlanningAssignationDetail detail = new PlanningAssignationDetail();
+        detail.setId(rs.getLong("id"));
+        detail.setVehiculeId(rs.getLong("vehicule_id"));
+        detail.setDateArrivee(rs.getString("date_arrivee"));
+        detail.setHeureArrivee(rs.getString("heure_arrivee"));
+        detail.setReservationId(rs.getLong("reservation_id"));
+        detail.setPremiereReservationId(rs.getLong("premiere_reservation_id"));
+        detail.setReservationClient(rs.getString("reservation_client"));
+        detail.setNombrePassagersTotal(rs.getInt("nombre_passagers_total"));
+        detail.setCapaciteVehicule(rs.getInt("capacite_vehicule"));
+        detail.setPlacesLibres(rs.getInt("places_libres"));
+        detail.setDistanceEstimee(rs.getDouble("distance_estimee_km"));
+        detail.setDureeEstimee(rs.getString("duree_estimee"));
+        detail.setPremierPointDepart(rs.getString("premier_point_depart"));
+        detail.setDernierPointArrivee(rs.getString("dernier_point_arrivee"));
+        detail.setPointsDepart(rs.getString("points_depart"));
+        detail.setPointsArrivee(rs.getString("points_arrivee"));
+        return detail;
+    }
+
     public boolean isVehiculeDisponibleAt(long vehiculeId, String dateService, String heureReference) {
         String sql = "SELECT COUNT(1) AS conflict_count " +
                 "FROM planning_trajet_assignation_historique " +

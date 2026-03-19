@@ -143,8 +143,8 @@
 
 <div class="page-section">
     <c:choose>
-        <c:when test="${empty planningGroupes}">
-            <div class="empty">Aucun trajet groupé à afficher.</div>
+        <c:when test="${empty details}">
+            <div class="empty">Aucun trajet à afficher.</div>
         </c:when>
         <c:otherwise>
             <table class="data-table">
@@ -153,46 +153,30 @@
                         <th>Véhicule</th>
                         <th>Date</th>
                         <th>Heure</th>
-                        <th>Réservations</th>
+                        <th>Réservation</th>
                         <th>Passagers</th>
                         <th>Capacité</th>
                         <th>Places libres</th>
-                        <th>Distance</th>
+                        <th>Distance (km)</th>
                         <th>Durée</th>
-                        <th>Départ - Arrivée</th>
-                        <th>Détail</th>
+                        <th>Départ</th>
+                        <th>Arrivée</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <c:forEach items="${planningGroupes}" var="g">
+                    <c:forEach items="${details}" var="detail">
                         <tr>
-                            <td>${g.vehiculeImmatriculation}</td>
-                            <td>${g.dateArrivee}</td>
-                            <td>${g.heureArrivee}</td>
-                            <td>
-                                <div class="chips">
-                                    <c:forEach items="${g.clients}" var="client">
-                                        <span class="chip">${client}</span>
-                                    </c:forEach>
-                                </div>
-                            </td>
-                            <td>${g.nombrePassagersTotal}</td>
-                            <td>${g.capaciteVehicule}</td>
-                            <td>${g.placesLibres}</td>
-                            <td>${g.distanceTotale} km</td>
-                            <td>${g.dureeEstimee}</td>
-                            <td>
-                                <div>${fn:join(g.pointsDepart, ', ')}</div>
-                                <div>${fn:join(g.pointsArrivee, ', ')}</div>
-                            </td>
-                            <td>
-                                <c:url var="detailUrl" value="/planning/visualisation/details">
-                                    <c:param name="vehiculeId" value="${g.vehiculeId}" />
-                                    <c:param name="date" value="${g.dateArriveeIso}" />
-                                    <c:param name="heure" value="${g.heureArrivee}" />
-                                </c:url>
-                                <a class="btn btn-info" href="${pageContext.request.contextPath}${detailUrl}">Voir</a>
-                            </td>
+                            <td>${detail.vehiculeId}</td>
+                            <td>${detail.dateArrivee}</td>
+                            <td>${detail.heureArrivee}</td>
+                            <td>${detail.reservationClient}</td>
+                            <td>-</td>
+                            <td>${detail.capaciteVehicule}</td>
+                            <td>${detail.placesLibres}</td>
+                            <td>${detail.distanceEstimee}</td>
+                            <td>${detail.dureeEstimee}</td>
+                            <td>${detail.pointsDepart}</td>
+                            <td>${detail.pointsArrivee}</td>
                         </tr>
                     </c:forEach>
                 </tbody>
