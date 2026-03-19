@@ -358,26 +358,26 @@ Ajouter la gestion du temps d'attente entre réservations lors du regroupement d
 
 ### Données de test
 
-* [ ] Réservations dans la marge (ex : 8h, 8h15 avec TA=30min)
-* [ ] Réservations hors marge (8h, 8h45 avec TA=30min)
-* [ ] Vérification de l'heure de départ ajustée
-* [ ] Respect des règles existantes
-* [ ] Cas limite : une seule réservation / TA = 0
+* [x] Réservations dans la marge (ex : 8h, 8h15 avec TA=30min)
+* [x] Réservations hors marge (8h, 8h45 avec TA=30min)
+* [x] Vérification de l'heure de départ ajustée
+* [x] Respect des règles existantes
+* [x] Cas limite : une seule réservation / TA = 0
 
 ### Interface de visualisation
 
 * [ ] Ajouter colonnes :
 
-  * Date
-  * Heure arrivée
-  * Réservations
-  * Véhicule
-  * Places
-  * Distance
-  * Durée
-  * Point départ
-  * Point arrivée
-  * Temps d'attente
+  * [x] Date
+  * [x] Heure arrivée
+  * [x] Réservations
+  * [x] Véhicule
+  * [x] Places
+  * [x] Distance
+  * [x] Durée
+  * [x] Point départ
+  * [x] Point arrivée
+  * [ ] Temps d'attente (À ajouter côté UI)
 * [ ] Afficher le temps d'attente entre réservations
 * [ ] Implémenter layout responsive
 * [ ] Ajouter sidebar toggle
