@@ -835,4 +835,225 @@ public class PlanningTrajetService {
             })
                 .collect(Collectors.toList());
     }
+
+    /**
+     * ============ NOUVELLES MÉTHODES SPRINT 4 ============
+     * Gestion du temps d'attente et regroupement de réservations
+     */
+
+    /**
+     * Calculer le temps d'attente en minutes entre deux heures
+     * @param heure1 Première heure (format HH:MM ou HH:MM:SS)
+     * @param heure2 Deuxième heure (format HH:MM ou HH:MM:SS)
+     * @return Différence en minutes (heure2 - heure1)
+     */
+    public int calculerTempsAttente(String heure1, String heure2) {
+        if (heure1 == null || heure2 == null || heure1.isEmpty() || heure2.isEmpty()) {
+            return Integer.MAX_VALUE;
+        }
+
+        try {
+            LocalTime time1 = LocalTime.parse(normaliserHeure(heure1));
+            LocalTime time2 = LocalTime.parse(normaliserHeure(heure2));
+
+            // Calculer la différence en minutes (positif = heure2 après heure1)
+            long minutesDiff = java.time.temporal.ChronoUnit.MINUTES.between(time1, time2);
+            return (int) minutesDiff;
+        } catch (DateTimeParseException e) {
+            return Integer.MAX_VALUE;
+        }
+    }
+
+    /**
+     * Vérifier si deux réservations peuvent être groupées selon le temps d'attente max
+     * @param res1 Première réservation
+     * @param res2 Deuxième réservation
+     * @param tempsAttentMaxMinutes Temps d'attente maximum en minutes
+     * @return true si l'écart ≤ temps d'attente max
+     */
+    public boolean peutEtreGroupee(Reservation res1, Reservation res2, int tempsAttentMaxMinutes) {
+        if (res1 == null || res2 == null) {
+            return false;
+        }
+
+        // Même date d'arrivée requise
+        if (!res1.getDateArrivee().equals(res2.getDateArrivee())) {
+            return false;
+        }
+
+        String heure1 = res1.getHeure();
+        String heure2 = res2.getHeure();
+
+        if (heure1 == null || heure2 == null) {
+            return false;
+        }
+
+        // Calculer l'écart en minutes
+        int ecartMinutes = calculerTempsAttente(heure1, heure2);
+        
+        // Vérifier que heure2 >= heure1 (on considère l'ordre chronologique)
+        if (ecartMinutes < 0) {
+            ecartMinutes = -ecartMinutes; // Prendre la valeur absolue pour comparaison
+        }
+
+        // Groupable si écart ≤ temps d'attente max
+        return ecartMinutes <= tempsAttentMaxMinutes;
+    }
+
+    /**
+     * Grouper les réservations par temps d'attente
+     * Retourne une map : key=numéro du groupe, value=liste des réservations du groupe
+     * 
+     * @param reservations Liste des réservations à grouper
+     * @param tempsAttentMaxMinutes Temps d'attente maximum en minutes
+     * @return Map des groupes
+     */
+    public Map<Integer, List<Reservation>> grouperParTempsAttente(List<Reservation> reservations, 
+                                                                   int tempsAttentMaxMinutes) {
+        Map<Integer, List<Reservation>> groupes = new LinkedHashMap<>();
+        
+        if (reservations == null || reservations.isEmpty()) {
+            return groupes;
+        }
+
+        // Trier par date puis par heure
+        List<Reservation> reservationTriees = new ArrayList<>(reservations);
+        reservationTriees.sort(Comparator
+            .comparing(Reservation::getDateArrivee)
+            .thenComparing(Reservation::getHeure, Comparator.nullsLast(String::compareTo))
+            .thenComparingInt(Reservation::getId));
+
+        int numeroGroupe = 0;
+        List<Reservation> groupeCourant = new ArrayList<>();
+
+        for (Reservation reservation : reservationTriees) {
+            if (groupeCourant.isEmpty()) {
+                // Premier élément du groupe
+                groupeCourant.add(reservation);
+            } else {
+                // Vérifier si peut être ajoutée au groupe courant
+                Reservation derniereReservation = groupeCourant.get(groupeCourant.size() - 1);
+                
+                if (peutEtreGroupee(derniereReservation, reservation, tempsAttentMaxMinutes)) {
+                    // Peut être groupée : ajouter au groupe courant
+                    groupeCourant.add(reservation);
+                } else {
+                    // Ne peut pas être groupée : sauvegarder groupe courant et démarrer nouveau groupe
+                    if (!groupeCourant.isEmpty()) {
+                        groupes.put(numeroGroupe, new ArrayList<>(groupeCourant));
+                        numeroGroupe++;
+                    }
+                    groupeCourant.clear();
+                    groupeCourant.add(reservation);
+                }
+            }
+        }
+
+        // Sauvegarder le dernier groupe
+        if (!groupeCourant.isEmpty()) {
+            groupes.put(numeroGroupe, groupeCourant);
+        }
+
+        return groupes;
+    }
+
+    /**
+     * Calculer l'heure de départ ajustée pour un groupe
+     * = Heure de la DERNIÈRE réservation du groupe (celle qui arrive la plus tard)
+     * 
+     * @param groupe Liste de réservations du groupe
+     * @return Heure de départ ajustée (format HH:MM)
+     */
+    public String calculerHeureDepart(List<Reservation> groupe) {
+        if (groupe == null || groupe.isEmpty()) {
+            return null;
+        }
+
+        // Trouver la réservation avec l'heure la plus tard
+        Reservation derniere = groupe.stream()
+            .max(Comparator.comparing(Reservation::getHeure, Comparator.nullsLast(String::compareTo)))
+            .orElse(null);
+
+        return derniere != null ? derniere.getHeure() : null;
+    }
+
+    /**
+     * Calculer le temps d'attente total entre la première et la dernière réservation
+     * 
+     * @param groupe Liste de réservations du groupe
+     * @return Temps d'attente en minutes
+     */
+    public int calculerTempsAttenteGroupe(List<Reservation> groupe) {
+        if (groupe == null || groupe.isEmpty()) {
+            return 0;
+        }
+
+        if (groupe.size() == 1) {
+            return 0; // Pas d'attente s'il y a une seule réservation
+        }
+
+        // Trier pour avoir le min et max
+        List<String> heures = groupe.stream()
+            .map(Reservation::getHeure)
+            .filter(h -> h != null && !h.isEmpty())
+            .sorted()
+            .collect(Collectors.toList());
+
+        if (heures.isEmpty()) {
+            return 0;
+        }
+
+        // Calculer écart entre première et dernière
+        int tempsAttente = calculerTempsAttente(heures.get(0), heures.get(heures.size() - 1));
+        return tempsAttente > 0 ? tempsAttente : 0;
+    }
+
+    /**
+     * Adapter le planning pour un groupe regroupé avec temps d'attente
+     * - Mettre à jour l'heure de départ pour toutes les réservations
+     * - Recalculer la durée totale du trajet
+     * 
+     * @param groupe Groupe de réservations regroupées
+     * @param heureDepart Heure de départ ajustée du groupe
+     */
+    public void adapterPlanningGroupe(List<Reservation> groupe, String heureDepart) {
+        if (groupe == null || groupe.isEmpty() || heureDepart == null || heureDepart.isEmpty()) {
+            return;
+        }
+
+        // Mettre à jour chaque réservation du groupe avec la nouvelle heure de départ
+        for (Reservation reservation : groupe) {
+            PlanningTrajet planning = getPlanningByReservationId((int) reservation.getId());
+            
+            if (planning != null) {
+                // Mettre à jour l'heure de départ dans le planning
+                // (Note: cette info peut être stockée dans une table de configuration ou historique)
+                // Pour l'instant, juste tracer l'adaptation
+                String heureArriveeOriginal = reservation.getHeure();
+                int tempsAttente = calculerTempsAttente(heureArriveeOriginal, heureDepart);
+                
+                System.out.println("Adaptation planning - Réservation " + reservation.getId() + 
+                                 ": arrivée " + heureArriveeOriginal + 
+                                 " → départ " + heureDepart + 
+                                 " (attente: " + tempsAttente + " min)");
+            }
+        }
+    }
+
+    /**
+     * Récupérer le paramètre de temps d'attente maximum depuis la configuration
+     * Par défaut: 30 minutes si non trouvé
+     * 
+     * @return Temps d'attente maximum en minutes
+     */
+    public int obtenirTempsAttentMaxConfig() {
+        try {
+            int configValue = paramService.getParametreAsInt("TEMPS_ATTENTE_MAX_MINUTES");
+            return configValue > 0 ? configValue : 30; // Défaut 30 min
+        } catch (Exception e) {
+            System.err.println("Impossible de récupérer TEMPS_ATTENTE_MAX_MINUTES, utilisation défaut (30 min)");
+            return 30;
+        }
+    }
 }
+
