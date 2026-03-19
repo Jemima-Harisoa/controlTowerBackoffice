@@ -259,6 +259,10 @@ public class PlanningTrajetController {
         for (PlanningTrajetGroupeView groupe : groupes.values()) {
             int placesLibres = Math.max(groupe.getCapaciteVehicule() - groupe.getNombrePassagersTotal(), 0);
             groupe.setPlacesLibres(placesLibres);
+            
+            // ⭐ CORRECTION: Recalculer la durée estimée en fonction de la distance totale du groupe
+            // (La durée n'était définie que pour la première réservation du groupe)
+            groupe.setDureeEstimee(calculerDureeEstimee(groupe.getDistanceTotale()));
         }
 
         return new ArrayList<>(groupes.values());
@@ -311,6 +315,40 @@ public class PlanningTrajetController {
             return "EN_COURS";
         }
         return incoming;
+    }
+
+    /**
+     * Calcule la durée estimée en fonction de la distance (en km)
+     * Vitesse moyenne par défaut: 90 km/h
+     */
+    private String calculerDureeEstimee(double distanceKm) {
+        if (distanceKm <= 0) {
+            return "00:00:00";
+        }
+        
+        // Vitesse moyenne par défaut 90 km/h
+        int vitesseMoyenne = 90;
+        
+        try {
+            // Essayer de récupérer la vitesse configurée
+            service.ParametreConfigurationService paramService = new service.ParametreConfigurationService();
+            int configuredSpeed = paramService.getParametreAsInt("VITESSE_MOYENNE_KMH");
+            if (configuredSpeed > 0) {
+                vitesseMoyenne = configuredSpeed;
+            }
+        } catch (Exception e) {
+            // Si erreur, utiliser la vitesse par défaut
+        }
+        
+        // Calculer les heures et convertir en minutes
+        double heures = distanceKm / vitesseMoyenne;
+        int minutes = (int) Math.round(heures * 60);
+        
+        // Formater au format HH:MM:SS
+        int h = minutes / 60;
+        int m = minutes % 60;
+        int s = 0;
+        return String.format("%02d:%02d:%02d", h, m, s);
     }
 
 }
