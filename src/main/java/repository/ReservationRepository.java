@@ -41,6 +41,9 @@ public class ReservationRepository {
                 r.setHeure(rs.getString("heure"));
                 r.setNombrePersonnes(rs.getInt("nombre_personnes"));
                 r.setHotelId(rs.getInt("hotel_id"));
+                try { r.setLieuDepartId(rs.getLong("lieu_depart_id")); } catch (SQLException e) {}
+                try { r.setLieuArriveeId(rs.getLong("lieu_arrivee_id")); } catch (SQLException e) {}
+                try { r.setVehiculeId(rs.getLong("vehicule_id")); } catch (SQLException e) {}
                 r.setConfirmed(rs.getBoolean("is_confirmed"));
                 r.setCreatedAt(rs.getTimestamp("created_at"));
                 r.setUpdatedAt(rs.getTimestamp("updated_at"));
@@ -75,6 +78,9 @@ public class ReservationRepository {
                 reservation.setHeure(rs.getString("heure"));
                 reservation.setNombrePersonnes(rs.getInt("nombre_personnes"));
                 reservation.setHotelId(rs.getInt("hotel_id"));
+                try { reservation.setLieuDepartId(rs.getLong("lieu_depart_id")); } catch (SQLException e) {}
+                try { reservation.setLieuArriveeId(rs.getLong("lieu_arrivee_id")); } catch (SQLException e) {}
+                try { reservation.setVehiculeId(rs.getLong("vehicule_id")); } catch (SQLException e) {}
                 reservation.setConfirmed(rs.getBoolean("is_confirmed"));
                 reservation.setCreatedAt(rs.getTimestamp("created_at"));
                 reservation.setUpdatedAt(rs.getTimestamp("updated_at"));
@@ -172,6 +178,72 @@ public class ReservationRepository {
         return false;
     }
 
+    // ==================== PLANNING OPERATIONS ====================
+
+    /**
+     * Récupère les réservations non assignées : celles dont l'id n'apparaît pas dans planning_trajet
+     */
+    public List<Reservation> findNonAssignees() {
+        List<Reservation> reservations = new ArrayList<>();
+        String query = "SELECT * FROM reservations WHERE id NOT IN (SELECT reservation_id FROM planning_trajet) ORDER BY date_arrivee ASC";
+
+        try (Connection conn = dbConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+
+            while (rs.next()) {
+                Reservation r = new Reservation();
+                r.setId(rs.getInt("id"));
+                r.setNom(rs.getString("nom"));
+                r.setEmail(rs.getString("email"));
+                r.setDateArrivee(rs.getTimestamp("date_arrivee"));
+                r.setHeure(rs.getString("heure"));
+                r.setNombrePersonnes(rs.getInt("nombre_personnes"));
+                r.setHotelId(rs.getInt("hotel_id"));
+                try { r.setLieuDepartId(rs.getLong("lieu_depart_id")); } catch (SQLException e) {}
+                try { r.setLieuArriveeId(rs.getLong("lieu_arrivee_id")); } catch (SQLException e) {}
+                try { r.setVehiculeId(rs.getLong("vehicule_id")); } catch (SQLException e) {}
+                r.setConfirmed(rs.getBoolean("is_confirmed"));
+                r.setCreatedAt(rs.getTimestamp("created_at"));
+                r.setUpdatedAt(rs.getTimestamp("updated_at"));
+                reservations.add(r);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return reservations;
+    }
+    /**
+     * Récupère les réservations non assignées : celles dont l'id n'apparaît pas dans planning_trajet
+     */
+    public List<ReservationView> findNonAssigneesForView() {
+        List<ReservationView> reservations = new ArrayList<>();
+        
+        // Récupérer les réservations qui n'ont PAS de véhicule assigné
+        // (même si elles ont un enregistrement planning_trajet, si vehicule_id IS NULL, elles sont non assignées)
+        String query = "SELECT DISTINCT r.id, r.nom, r.email, r.date_arrivee, r.heure, r.nombre_personnes, " + 
+                        "h.nom as nom_hotel, r.is_confirmed " + 
+                        "FROM reservations r " + 
+                        "LEFT JOIN hotel h ON r.hotel_id = h.id " +
+                        "WHERE r.vehicule_id IS NULL " +
+                        "ORDER BY r.date_arrivee ASC, r.id ASC";
+
+        try (Connection conn = dbConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+                
+                while (rs.next()) {
+                    reservations.add(mapRowToReservationView(rs));
+                }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return reservations;
+    }
     // ==================== MÉTHODES D'AFFICHAGE (View) ====================
 
     /**

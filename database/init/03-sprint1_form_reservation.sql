@@ -62,7 +62,7 @@ CREATE TABLE type_clients (
 );
 
 -- Table des hotel 
-CREATE TABLE IF NOT EXISTS hotels (
+CREATE TABLE IF NOT EXISTS hotel (
     id SERIAL PRIMARY KEY,
     nom VARCHAR(255) NOT NULL,
     adresse VARCHAR(255),
@@ -88,12 +88,13 @@ CREATE TABLE IF NOT EXISTS clients (
 -- Table des reservations
 CREATE TABLE IF NOT EXISTS reservations (
     id SERIAL PRIMARY KEY, 
-    numero VARCHAR(20) UNIQUE NOT NULL,
-    contact VARCHAR(50),
-    client_id INTEGER REFERENCES clients(id) ON DELETE CASCADE,
-    hotel_id INTEGER REFERENCES hotels(id) ON DELETE CASCADE,
-    passager SMALLINT DEFAULT 1, -- nombre de passager pour le vehicule 
-    date_arrival TIMESTAMP WITH TIME ZONE,
+    nom VARCHAR(255) NOT NULL,
+    email VARCHAR(255),
+    date_arrivee TIMESTAMP WITH TIME ZONE,
+    heure VARCHAR(10),
+    nombre_personnes SMALLINT DEFAULT 1,
+    hotel_id INTEGER REFERENCES hotel(id) ON DELETE CASCADE,
+    is_confirmed BOOLEAN DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -110,12 +111,23 @@ CREATE INDEX IF NOT EXISTS idx_hotel_active ON hotel(is_active);
 -- ===========================================
 -- TRIGGERS UPDATED_AT
 -- ===========================================
-CREATE INDEX IF NOT EXISTS idx_client_sexe ON client(sexe_id);
-CREATE INDEX IF NOT EXISTS idx_client_type ON client(type_id);
-CREATE INDEX IF NOT EXISTS idx_reservation_client ON reservation(client_id);
-CREATE INDEX IF NOT EXISTS idx_reservation_hotel ON reservations(hotel_id);
-CREATE INDEX IF NOT EXISTS idx_reservation_numero ON reservations(numero);
-CREATE INDEX IF NOT EXISTS idx_reservation_date ON reservations(date_arrival);
+DROP TRIGGER IF EXISTS update_hotel_updated_at ON hotel;
+CREATE TRIGGER update_hotel_updated_at
+    BEFORE UPDATE ON hotel
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_clients_updated_at ON clients;
+CREATE TRIGGER update_clients_updated_at
+    BEFORE UPDATE ON clients
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_reservations_updated_at ON reservations;
+CREATE TRIGGER update_reservations_updated_at
+    BEFORE UPDATE ON reservations
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
 
 -- ===========================================
 -- DONNÉES DE TEST
