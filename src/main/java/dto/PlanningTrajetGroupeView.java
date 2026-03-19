@@ -5,8 +5,6 @@ import java.util.List;
 /**
  * DTO pour afficher un groupe de reservations assignees
  * au meme vehicule pour un meme creneau (date + heure).
- * 
- * Sprint 4 : Ajout des champs de temps d'attente et regroupement
  */
 public class PlanningTrajetGroupeView {
     private long vehiculeId;
@@ -24,13 +22,6 @@ public class PlanningTrajetGroupeView {
     private List<String> pointsArrivee;
     private String typeCarburantVehicule;
     private String statut;
-    
-    // === Sprint 4 : Champs de regroupement par temps d'attente ===
-    private String reservationIdsGroupees;        // CSV des IDs du groupe (ex: "7,8")
-    private int nombreReservationsGroupe;         // Nombre de réservations dans le groupe
-    private int tempsAttenteGroupeMinutes;        // Temps d'attente entre 1ère et dernière rés.
-    private String heureDeprtAjustee;             // Heure de départ = heure dernière réservation
-    private String plageHeuresGroupe;             // Affichage lisible (ex: "08:00 → 08:15")
 
     public long getVehiculeId() {
         return vehiculeId;
@@ -150,46 +141,5 @@ public class PlanningTrajetGroupeView {
 
     public void setStatut(String statut) {
         this.statut = statut;
-    }
-
-    // === Getters/Setters Sprint 4 ===
-    public String getReservationIdsGroupees() {
-        return reservationIdsGroupees;
-    }
-
-    public void setReservationIdsGroupees(String reservationIdsGroupees) {
-        this.reservationIdsGroupees = reservationIdsGroupees;
-    }
-
-    public int getNombreReservationsGroupe() {
-        return nombreReservationsGroupe;
-    }
-
-    public void setNombreReservationsGroupe(int nombreReservationsGroupe) {
-        this.nombreReservationsGroupe = nombreReservationsGroupe;
-    }
-
-    public int getTempsAttenteGroupeMinutes() {
-        return tempsAttenteGroupeMinutes;
-    }
-
-    public void setTempsAttenteGroupeMinutes(int tempsAttenteGroupeMinutes) {
-        this.tempsAttenteGroupeMinutes = tempsAttenteGroupeMinutes;
-    }
-
-    public String getHeureDeprtAjustee() {
-        return heureDeprtAjustee;
-    }
-
-    public void setHeureDeprtAjustee(String heureDeprtAjustee) {
-        this.heureDeprtAjustee = heureDeprtAjustee;
-    }
-
-    public String getPlageHeuresGroupe() {
-        return plageHeuresGroupe;
-    }
-
-    public void setPlageHeuresGroupe(String plageHeuresGroupe) {
-        this.plageHeuresGroupe = plageHeuresGroupe;
     }
 }
