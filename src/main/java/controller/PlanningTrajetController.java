@@ -1,8 +1,12 @@
 package controller;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
+import dto.PlanningTrajetGroupeView;
 import dto.PlanningTrajetView;
 import dto.ReservationView;
 import framework.ModelAndView.ModelAndView;
@@ -72,6 +76,7 @@ public class PlanningTrajetController {
         mav.addObject("reservations", reservations);
         mav.addObject("vehicules", vehicules);
         mav.addObject("plannings", plannings);
+        mav.addObject("planningGroupes", buildPlanningGroupes(plannings));
         mav.addObject("filterDate", date);
         mav.addObject("filterHeure", heure);
         mav.addObject("filterVehiculeId", vehiculeId);
@@ -113,7 +118,9 @@ public class PlanningTrajetController {
         }
         mav.addObject("reservations", reservationService.getReservationNonAssigneesViews());
         mav.addObject("vehicules", vehiculeService.getVehiculesDisponibles());
-        mav.addObject("plannings", planningTrajetService.getAllPlanningsForView());
+        List<PlanningTrajetView> plannings = planningTrajetService.getAllPlanningsForView();
+        mav.addObject("plannings", plannings);
+        mav.addObject("planningGroupes", buildPlanningGroupes(plannings));
         return mav;
     }
 
@@ -148,6 +155,76 @@ public class PlanningTrajetController {
         mav.addObject("planning", planning);
         
         return mav;
+    }
+
+    private List<PlanningTrajetGroupeView> buildPlanningGroupes(List<PlanningTrajetView> plannings) {
+        Map<String, PlanningTrajetGroupeView> groupes = new LinkedHashMap<>();
+
+        for (PlanningTrajetView planning : plannings) {
+            String dateIso = planning.getDateArriveeIso() != null ? planning.getDateArriveeIso() : "";
+            String heure = planning.getHeureArrivee() != null ? planning.getHeureArrivee() : "";
+            String key = planning.getVehiculeId() + "|" + dateIso + "|" + heure;
+
+            PlanningTrajetGroupeView groupe = groupes.get(key);
+            if (groupe == null) {
+                groupe = new PlanningTrajetGroupeView();
+                groupe.setVehiculeId(planning.getVehiculeId());
+                groupe.setVehiculeImmatriculation(planning.getVehiculeImmatriculation());
+                groupe.setDateArrivee(planning.getDateArrivee());
+                groupe.setDateArriveeIso(dateIso);
+                groupe.setHeureArrivee(heure);
+                groupe.setCapaciteVehicule(planning.getCapaciteVehicule());
+                groupe.setTypeCarburantVehicule(planning.getTypeCarburantVehicule());
+                groupe.setDureeEstimee(planning.getDureeEstimee());
+                groupe.setStatut(planning.getStatut());
+                groupe.setClients(new ArrayList<>());
+                groupe.setPointsDepart(new ArrayList<>());
+                groupe.setPointsArrivee(new ArrayList<>());
+                groupes.put(key, groupe);
+            }
+
+            groupe.setNombrePassagersTotal(groupe.getNombrePassagersTotal() + planning.getNombrePersonnes());
+            groupe.setDistanceTotale(groupe.getDistanceTotale() + planning.getDistance());
+            groupe.setStatut(prioriserStatut(groupe.getStatut(), planning.getStatut()));
+
+            String client = planning.getNomClient() + " (" + planning.getNombrePersonnes() + "p)";
+            if (!groupe.getClients().contains(client)) {
+                groupe.getClients().add(client);
+            }
+
+            if (planning.getLieuDepart() != null && !planning.getLieuDepart().isEmpty() &&
+                    !groupe.getPointsDepart().contains(planning.getLieuDepart())) {
+                groupe.getPointsDepart().add(planning.getLieuDepart());
+            }
+
+            if (planning.getLieuArrivee() != null && !planning.getLieuArrivee().isEmpty() &&
+                    !groupe.getPointsArrivee().contains(planning.getLieuArrivee())) {
+                groupe.getPointsArrivee().add(planning.getLieuArrivee());
+            }
+        }
+
+        for (PlanningTrajetGroupeView groupe : groupes.values()) {
+            int placesLibres = Math.max(groupe.getCapaciteVehicule() - groupe.getNombrePassagersTotal(), 0);
+            groupe.setPlacesLibres(placesLibres);
+        }
+
+        return new ArrayList<>(groupes.values());
+    }
+
+    private String prioriserStatut(String current, String incoming) {
+        if (incoming == null || incoming.isEmpty()) {
+            return current;
+        }
+        if (current == null || current.isEmpty()) {
+            return incoming;
+        }
+        if ("PLANIFIE".equalsIgnoreCase(current) || "PLANIFIE".equalsIgnoreCase(incoming)) {
+            return "PLANIFIE";
+        }
+        if ("EN_COURS".equalsIgnoreCase(current) || "EN_COURS".equalsIgnoreCase(incoming)) {
+            return "EN_COURS";
+        }
+        return incoming;
     }
 
 }
