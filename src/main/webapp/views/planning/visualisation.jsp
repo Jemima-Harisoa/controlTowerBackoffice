@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ include file="/views/components/header.jsp" %>
 
 <style>
@@ -158,7 +159,7 @@
                         <th>Capacité</th>
                         <th>Places libres</th>
                         <th>Distance (km)</th>
-                        <th>Durée</th>
+                        <th>Durée estimée</th>
                         <th>Départ</th>
                         <th>Arrivée</th>
                     </tr>
@@ -166,15 +167,20 @@
                 <tbody>
                     <c:forEach items="${details}" var="detail">
                         <tr>
-                            <td>${detail.vehiculeId}</td>
+                            <td><strong>Véhicule #${detail.vehiculeId}</strong></td>
                             <td>${detail.dateArrivee}</td>
                             <td>${detail.heureArrivee}</td>
-                            <td>${detail.reservationClient}</td>
+                            <td><em>${detail.reservationClient}</em></td>
                             <td>-</td>
-                            <td>${detail.capaciteVehicule}</td>
-                            <td>${detail.placesLibres}</td>
-                            <td>${detail.distanceEstimee}</td>
-                            <td>${detail.dureeEstimee}</td>
+                            <td>${detail.capaciteVehicule} pax</td>
+                            <td><strong>${detail.placesLibres}</strong></td>
+                            <td>
+                                <span style="font-weight: 700;">
+                                    <fmt:formatNumber value="${detail.distanceEstimee}" maxFractionDigits="2" minFractionDigits="2" />
+                                    km
+                                </span>
+                            </td>
+                            <td><span style="font-weight: 700; color: #0066cc;">${detail.dureeEstimee != null && !detail.dureeEstimee.isEmpty() ? detail.dureeEstimee : 'N/A'}</span></td>
                             <td>${detail.pointsDepart}</td>
                             <td>${detail.pointsArrivee}</td>
                         </tr>
