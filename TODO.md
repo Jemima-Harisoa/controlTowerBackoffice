@@ -312,21 +312,16 @@ Objectif : sachant un client = une reservation permettre l'assignation d'un mêm
 ## Reconfiguration des donnes   de test existante : 
 - A cet instant les reservation reste assigner un seul et meme vehicule vu que les heure se chevachent pas : la durre du trajet doit etre la somme des temps estimmer pour chaque trajet avec allez retour vers le point de rammassage. Ex :  reservation 1 : hotel A a aeroport B, distance 20 km, duree du trajet 30 min, reservation 2 : hotel C a aeroport B, distance 10 km, duree du trajet 15 min, disatnce hotel A a hotel C 5 km les 2 reservation arrive a la mme heure a l'aeroport B, point de rammassage donc le vehicule va pouvoir aller chercher la reservation 1 a hotel A, puis aller chercher la reservation 2 a hotel C et ensuite aller a l'aeroport B, la duree totale du trajet on va dire la voiture vient de retourvner d;une commission a pres avoir deposer qqun a hotel B, on a les disatnce entre hotel B et C 5 km, distance entre hotel B et A 20 km, distance entre hotel A et C 5 km, la duree totale du trajet va etre : 20 km (hotel B a hotel A) + 5 km (hotel A a hotel C) + 10 km (hotel C a aeroport B) + 5 km (hotel C a hotel A) = 40 km, la duree totale du trajet va etre de 1h (30 min pour le trajet hotel A a aeroport B + 15 min pour le trajet hotel C a aeroport B + 5 min pour le trajet hotel A a hotel C) => la voiture va prioriser le plus proche a  partir de sa dernieret localisation enregistrer et va faire chaque trajet en fonction de la distance et de la duree du trajet pour savoir si elle peut faire les 2 trajets dans la même journée ou pas, si oui elle va assigner les 2 reservation au meme vehicule sinon elle va assigner une reservation a un vehicule et l'autre reservation a un autre vehicule
 
-# Feuille de Route des Sprints
 
-Gestion des assignations de véhicules avec regroupement de réservations
+# Sprint 4 : Regroupement des réservations avec temps d'attente
 
----
-
-## Sprint 4 : Regroupement des réservations avec temps d'attente
-
-### Objectif
+## Objectif
 
 Ajouter la gestion du temps d'attente entre réservations lors du regroupement de véhicules. Les réservations arrivant dans la marge définie sont assignées au même véhicule avec ajustement automatique de l'heure de départ.
 
-### Données
+## Données
 
-* [ ] Table "Détail du planning" contenant :
+* [x] Table "Détail du planning" contenant :
 
   * Date
   * Heure d'arrivée
@@ -338,30 +333,30 @@ Ajouter la gestion du temps d'attente entre réservations lors du regroupement d
   * Point de départ
   * Point d'arrivée
   * Places libres après assignation
-* [ ] Temps d'attente calculé à partir des dates/heures d'arrivée
-* [ ] Paramètre de configuration :
+* [x] Temps d'attente calculé à partir des dates/heures d'arrivée
+* [x] Paramètre de configuration :
 
   * Temps d'attente maximum (ex : 30 min, 1h)
 
-### Règles de gestion
+## Règles de gestion
 
-* [ ] Regrouper les réservations dont l'écart ≤ temps d'attente max
-* [ ] Assigner un seul véhicule par groupe
-* [ ] Définir l'heure de départ = heure de la dernière réservation du groupe
-* [ ] Respecter les règles existantes (capacité, proximité, etc.)
-* [ ] Laisser non assignées les réservations hors délai
+* [x] Regrouper les réservations dont l'écart ≤ temps d'attente max
+* [x] Assigner un seul véhicule par groupe
+* [x] Définir l'heure de départ = heure de la dernière réservation du groupe
+* [x] Respecter les règles existantes (capacité, proximité, etc.)
+* [x] Laisser non assignées les réservations hors délai
 
-### Tâches de développement
+## Tâches de développement
 
-#### Refactorisation du moteur de planification
+### Refactorisation du moteur de planification
 
-* [ ] Intégrer le calcul du temps d'attente
-* [ ] Adapter la logique multi-clients (assignerVehiculeMultipleClients)
-* [ ] Ajouter le paramètre temps d'attente max
-* [ ] Implémenter l'ajustement automatique de l'heure de départ
-* [ ] Grouper les réservations selon l'écart de temps
+* [x] Intégrer le calcul du temps d'attente
+* [x] Adapter la logique multi-clients 
+* [x] Ajouter le paramètre temps d'attente max
+* [x] Implémenter l'ajustement automatique de l'heure de départ
+* [x] Grouper les réservations selon l'écart de temps
 
-#### Données de test
+### Données de test
 
 * [ ] Réservations dans la marge (ex : 8h, 8h15 avec TA=30min)
 * [ ] Réservations hors marge (8h, 8h45 avec TA=30min)
@@ -369,7 +364,7 @@ Ajouter la gestion du temps d'attente entre réservations lors du regroupement d
 * [ ] Respect des règles existantes
 * [ ] Cas limite : une seule réservation / TA = 0
 
-#### Interface de visualisation
+### Interface de visualisation
 
 * [ ] Ajouter colonnes :
 
@@ -391,13 +386,13 @@ Ajouter la gestion du temps d'attente entre réservations lors du regroupement d
 
 ---
 
-## Sprint 5 : Assignation avec priorité au nombre minimum de trajets
+# Sprint 5 : Assignation avec priorité au nombre minimum de trajets
 
-### Objectif
+## Objectif
 
 Prioriser les véhicules avec le nombre minimum de trajets, sauf si un véhicule déjà utilisé est le seul disponible.
 
-### Logique
+## Logique
 
 * [ ] Priorité d'assignation :
 
@@ -407,16 +402,16 @@ Prioriser les véhicules avec le nombre minimum de trajets, sauf si un véhicule
 * [ ] Gérer les cas d'égalité
 * [ ] Favoriser les véhicules les moins utilisés
 
-### Tâches de développement
+## Tâches de développement
 
-#### Implémentation logique
+### Implémentation logique
 
 * [ ] Ajouter le paramètre nombre de trajets par véhicule
 * [ ] Implémenter la priorité (proximité → min trajets → places)
 * [ ] Adapter la fonction d'assignation
 * [ ] Gérer les cas d'égalité
 
-#### Données de test
+### Données de test
 
 * [ ] Tous véhicules à 0 trajet
 * [ ] Cas mix : V1=2, V2=1, V3=2
@@ -428,11 +423,11 @@ Prioriser les véhicules avec le nombre minimum de trajets, sauf si un véhicule
 
 ## Sprint 6 : Séparation des clients sur plusieurs véhicules
 
-### Objectif
+## Objectif
 
 Permettre le fractionnement des réservations lorsque la capacité du véhicule est insuffisante.
 
-### Logique
+## Logique
 
 * [ ] Priorité :
 
@@ -442,30 +437,30 @@ Permettre le fractionnement des réservations lorsque la capacité du véhicule 
 * [ ] Autoriser le partage de réservation sur plusieurs véhicules
 * [ ] Trier par ancienneté de réservation
 
-### Exemple
+## Exemple
 
 * [ ] Réservation de 5 personnes
 * [ ] Véhicule avec 4 places → assigner 4 personnes
 * [ ] 1 personne restante → assignation sur autre véhicule
 * [ ] Continuer jusqu'à assignation complète
 
-### Tâches de développement
+## Tâches de développement
 
-#### Fractionnement des réservations
+### Fractionnement des réservations
 
 * [ ] Implémenter la logique de partage
 * [ ] Gérer les sous-assignations
 * [ ] Trier par ancienneté
 * [ ] Gérer les états partiellement assignés
 
-#### Adaptation du service
+### Adaptation du service
 
 * [ ] Intégrer le fractionnement dans le workflow
 * [ ] Maintenir les priorités (proximité → min trajets → places)
 * [ ] Respecter les règles Sprint 4 et 5
 * [ ] Gérer les boucles d'assignation
 
-#### Données de test
+### Données de test
 
 * [ ] Réservations multi-personnes avec capacité partielle
 * [ ] Mix ancien / nouveau
@@ -474,7 +469,7 @@ Permettre le fractionnement des réservations lorsque la capacité du véhicule 
 * [ ] Chaîne complète de réservations
 * [ ] Vérifier la traçabilité
 
-#### Mise à jour UI/UX
+### Mise à jour UI/UX
 
 * [ ] Afficher les réservations fragmentées
 * [ ] Indiquer les partages (ex : R1 [3p] / R1 [2p])
@@ -485,19 +480,19 @@ Permettre le fractionnement des réservations lorsque la capacité du véhicule 
 
 ## Résumé des étapes transversales
 
-### Sprint 4
+## Sprint 4
 
 * [ ] Backend : calcul temps d'attente
 * [ ] Tests : assignation multi-clients
 * [ ] Frontend : dashboard + affichage temps d'attente
 
-### Sprint 5
+## Sprint 5
 
 * [ ] Backend : logique min trajets
 * [ ] Tests : validation priorités
 * [ ] Frontend : aucun changement
 
-### Sprint 6
+## Sprint 6
 
 * [ ] Backend : fractionnement + ancienneté
 * [ ] Tests : partage + ordre
