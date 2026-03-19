@@ -533,30 +533,157 @@
         color: #2f3b52;
     }
 
-    @media (max-width: 1080px) {
-        .filter-row {
-            grid-template-columns: repeat(2, minmax(220px, 1fr));
+    /* === SPRINT 4 : Temps d'attente et regroupement === */
+    .wait-time-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: 600;
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+        white-space: nowrap;
+        transition: all 0.3s;
+    }
+
+    .wait-time-badge:hover {
+        box-shadow: 0 2px 8px rgba(133, 100, 4, 0.15);
+    }
+
+    .wait-time-badge.wait-time-zero {
+        background: #e8f5e9;
+        color: #2e7d32;
+        border-color: #c8e6c9;
+    }
+
+    .wait-time-badge i {
+        font-size: 12px;
+    }
+
+    .departure-time {
+        display: inline-block;
+        padding: 6px 10px;
+        border-radius: 6px;
+        background: #e3f2fd;
+        color: #1565c0;
+        font-weight: 600;
+        font-size: 13px;
+        border: 1px solid #bbdefb;
+    }
+
+    .text-muted-sm {
+        color: #999;
+        font-size: 12px;
+    }
+
+    /* === RESPONSIVE DESIGN === */
+    .hide-mobile {
+        display: table-cell;
+    }
+
+    .hide-tablet {
+        display: table-cell;
+    }
+
+    .hide-desktop {
+        display: none;
+    }
+
+    @media (max-width: 1200px) {
+        .hide-tablet {
+            display: none;
         }
 
-        .filter-actions {
-            grid-column: 1 / -1;
+        .plannings-table {
+            font-size: 12px;
+        }
+
+        .plannings-table td,
+        .plannings-table th {
+            padding: 10px 12px;
         }
     }
 
-    @media (max-width: 720px) {
+    @media (max-width: 768px) {
+        .hide-mobile {
+            display: none;
+        }
+
+        .hide-desktop {
+            display: table-cell;
+        }
+
+        .data-table,
+        .reservations-table {
+            font-size: 11px;
+        }
+
+        .data-table td,
+        .data-table th,
+        .reservations-table td,
+        .reservations-table th {
+            padding: 8px 6px;
+        }
+
+        .chips {
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .chip {
+            padding: 2px 6px;
+            font-size: 10px;
+        }
+
+        .wait-time-badge {
+            padding: 4px 8px;
+            font-size: 11px;
+            gap: 4px;
+        }
+
+        .departure-time {
+            padding: 4px 8px;
+            font-size: 11px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .planning-header {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .planning-header h2 {
+            font-size: 20px;
+        }
+
+        .btn-group {
+            width: 100%;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary,
+        .btn-success,
+        .btn-warning {
+            flex: 1;
+            min-width: 120px;
+        }
+
         .filter-row {
             grid-template-columns: 1fr;
         }
 
         .filter-actions {
+            grid-column: 1 / -1;
             width: 100%;
-            justify-content: stretch;
         }
 
         .btn-filter,
         .btn-reset {
             flex: 1;
-            justify-content: center;
         }
     }
 </style>
@@ -757,14 +884,16 @@
                         <th>Date arrivée</th>
                         <th>Heure arrivée</th>
                         <th>Réservations assignées</th>
-                        <th>Passagers total</th>
-                        <th>Capacité</th>
-                        <th>Places libres</th>
-                        <th>Départs</th>
-                        <th>Arrivées</th>
-                        <th>Distance totale (km)</th>
-                        <th>Durée estimée</th>
-                        <th>Carburant</th>
+                        <th><span title="Plage horaire du groupe avec temps d'attente">Temps d'attente</span></th>
+                        <th><span title="Heure de départ ajustée (dernière réservation du groupe)">Heure départ</span></th>
+                        <th class="hide-mobile">Passagers total</th>
+                        <th class="hide-tablet">Capacité</th>
+                        <th class="hide-mobile">Places libres</th>
+                        <th class="hide-tablet">Départs</th>
+                        <th class="hide-tablet">Arrivées</th>
+                        <th class="hide-tablet">Distance totale (km)</th>
+                        <th class="hide-desktop">Durée</th>
+                        <th class="hide-tablet">Carburant</th>
                         <th>Statut</th>
                     </tr>
                 </thead>
@@ -781,31 +910,51 @@
                                     </c:forEach>
                                 </div>
                             </td>
-                            <td><span class="metric-inline">${groupe.nombrePassagersTotal}</span></td>
-                            <td>${groupe.capaciteVehicule}</td>
-                            <td><span class="metric-inline">${groupe.placesLibres}</span></td>
                             <td>
+                                <c:if test="${not empty groupe.plageHeuresGroupe}">
+                                    <span class="wait-time-badge" title="${groupe.plageHeuresGroupe}">
+                                        <i class="fas fa-hourglass-half"></i> ${groupe.tempsAttenteGroupeMinutes} min
+                                    </span>
+                                </c:if>
+                                <c:if test="${empty groupe.plageHeuresGroupe}">
+                                    <span class="wait-time-badge wait-time-zero">N/A</span>
+                                </c:if>
+                            </td>
+                            <td>
+                                <c:if test="${not empty groupe.heureDeprtAjustee}">
+                                    <span class="departure-time" title="Heure ajustée selon dernière réservation">
+                                        ${groupe.heureDeprtAjustee}
+                                    </span>
+                                </c:if>
+                                <c:if test="${empty groupe.heureDeprtAjustee}">
+                                    <span class="text-muted-sm">-</span>
+                                </c:if>
+                            </td>
+                            <td class="hide-mobile"><span class="metric-inline">${groupe.nombrePassagersTotal}</span></td>
+                            <td class="hide-tablet">${groupe.capaciteVehicule}</td>
+                            <td class="hide-mobile"><span class="metric-inline">${groupe.placesLibres}</span></td>
+                            <td class="hide-tablet">
                                 <div class="chips">
                                     <c:forEach items="${groupe.pointsDepart}" var="pointDepart">
                                         <span class="chip chip-place">${pointDepart}</span>
                                     </c:forEach>
                                 </div>
                             </td>
-                            <td>
+                            <td class="hide-tablet">
                                 <div class="chips">
                                     <c:forEach items="${groupe.pointsArrivee}" var="pointArrivee">
                                         <span class="chip chip-place">${pointArrivee}</span>
                                     </c:forEach>
                                 </div>
                             </td>
-                            <td>
+                            <td class="hide-tablet">
                                 <span style="font-weight: 700;">
                                     <fmt:formatNumber value="${groupe.distanceTotale}" maxFractionDigits="2" minFractionDigits="2" />
                                     km
                                 </span>
                             </td>
-                            <td><span style="font-weight: 700; color: #0066cc;">${groupe.dureeEstimee != null && !groupe.dureeEstimee.isEmpty() ? groupe.dureeEstimee : 'N/A'}</span></td>
-                            <td>${groupe.typeCarburantVehicule}</td>
+                            <td class="hide-desktop"><span style="font-weight: 700; color: #0066cc;">${groupe.dureeEstimee != null && !groupe.dureeEstimee.isEmpty() ? groupe.dureeEstimee : 'N/A'}</span></td>
+                            <td class="hide-tablet">${groupe.typeCarburantVehicule}</td>
                             <td>
                                 <c:choose>
                                     <c:when test="${groupe.statut == 'VALIDE'}">
