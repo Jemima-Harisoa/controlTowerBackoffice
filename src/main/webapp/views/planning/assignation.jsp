@@ -837,8 +837,48 @@
         document.getElementById('vehicule-' + vehiculeId).classList.add('selected');
     }
 
+    function showLoadingSpinner(message = 'Traitement en cours...') {
+        const spinner = document.createElement('div');
+        spinner.id = 'loadingSpinner';
+        spinner.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        `;
+        spinner.innerHTML = `
+            <div style="background: white; padding: 30px; border-radius: 10px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+                <div style="border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 15px;"></div>
+                <p style="margin: 0; color: #333; font-weight: 500;">${message}</p>
+            </div>
+            <style>
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            </style>
+        `;
+        document.body.appendChild(spinner);
+        return spinner;
+    }
+
+    function hideLoadingSpinner() {
+        const spinner = document.getElementById('loadingSpinner');
+        if (spinner) {
+            spinner.remove();
+        }
+    }
+
     function genererPlanning() {
         if (confirm('Êtes-vous sûr de vouloir générer le planning automatiquement ?\nCette action assignera les réservations non assignées aux véhicules disponibles.')) {
+            const spinner = showLoadingSpinner('Génération du planning en cours...');
+            
             fetch('${pageContext.request.contextPath}/planning/assignation/generer', {
                 method: 'POST'
             })
@@ -863,14 +903,18 @@
                 };
             })
             .then(data => {
+                hideLoadingSpinner();
                 if (data.ok) {
-                    alert(data.message || 'Planning généré avec succès !');
-                    location.href = '${pageContext.request.contextPath}/planning/assignation#statutPlanningSection';
+                    // Recharger la page pour afficher les nouvelles données
+                    setTimeout(() => {
+                        location.reload();
+                    }, 500);
                 } else {
                     alert('Erreur: ' + (data && data.message ? data.message : 'Une erreur inconnue est survenue'));
                 }
             })
             .catch(error => {
+                hideLoadingSpinner();
                 console.error('Error:', error);
                 alert('Erreur lors de la génération du planning');
             });
@@ -879,6 +923,8 @@
 
     function validerPlanning() {
         if (confirm('Êtes-vous sûr de vouloir valider le planning ?\nCette action finalisera toutes les assignations.')) {
+            const spinner = showLoadingSpinner('Validation du planning en cours...');
+            
             fetch('${pageContext.request.contextPath}/planning/assignation/valider', {
                 method: 'POST',
                 headers: {
@@ -906,14 +952,18 @@
                 };
             })
             .then(data => {
+                hideLoadingSpinner();
                 if (data.ok) {
-                    alert(data.message || 'Planning validé avec succès !');
-                    location.href = '${pageContext.request.contextPath}/planning/assignation#statutPlanningSection';
+                    // Recharger la page pour afficher les données mises à jour
+                    setTimeout(() => {
+                        location.reload();
+                    }, 500);
                 } else {
                     alert('Erreur: ' + (data && data.message ? data.message : 'Une erreur inconnue est survenue'));
                 }
             })
             .catch(error => {
+                hideLoadingSpinner();
                 console.error('Error:', error);
                 alert('Erreur lors de la validation du planning');
             });

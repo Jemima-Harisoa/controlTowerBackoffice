@@ -762,8 +762,16 @@ public class PlanningTrajetService {
      * 3. Prioriser par diesel
      * 4. Retourner le premier disponible
      */
+    /**
+     * ⭐ SPRINT 5 : Trouver le meilleur véhicule avec sélection par priorité
+     * 
+     * Priorité d'assignation :
+     * 1. Proximité (type carburant: Diesel prioritaire)
+     * 2. Nombre MINIMUM de trajets (favoriser les véhicules les moins utilisés)
+     * 3. Nombre de places disponibles
+     */
     private Vehicule trouverMeilleurVehicule(Reservation reservation) {
-        // Filtrer par capacité passagers
+        // ÉTAPE 1 : Filtrer par capacité passagers et disponibilité
         List<Vehicule> vehiculesAptes = vehiculeService
                 .getVehiculesByCapacite(reservation.getNombrePersonnes());
 
@@ -776,14 +784,67 @@ public class PlanningTrajetService {
                 .collect(Collectors.toList());
         }
 
-        // Prioriser les diesel
-        List<Vehicule> diesels = vehiculesAptes.stream()
-                .filter(v -> v.getTypeCarburant() != null && 
-                           v.getTypeCarburant().equalsIgnoreCase("Diesel"))
-                .collect(Collectors.toList());
+        if (vehiculesAptes.isEmpty()) {
+            return null;
+        }
 
-        return diesels.isEmpty() ? (vehiculesAptes.isEmpty() ? null : vehiculesAptes.get(0))
-                                 : diesels.get(0);
+        // ÉTAPE 2 : Score des véhicules selon priorités Sprint 5
+        return vehiculesAptes.stream()
+            .min(Comparator
+                // Priorité 1: Proximité (Diesel prioritaire)
+                .comparingInt((Vehicule v) -> {
+                    boolean isDiesel = v.getTypeCarburant() != null && 
+                                      v.getTypeCarburant().equalsIgnoreCase("Diesel");
+                    return isDiesel ? 0 : 1;  // 0 pour diesel, 1 pour autres
+                })
+                // Priorité 2: Nombre MINIMUM de trajets (Sprint 5)
+                .thenComparingInt(this::compterTrajetsVehicule)
+                // Priorité 3: Places disponibles (plus on en a, meilleur c'est)
+                .thenComparingInt((Vehicule v) -> -v.getCapacitePassagers())
+                // Fallback: ID du véhicule
+                .thenComparingInt((Vehicule v) -> (int) v.getId()))
+            .orElse(null);
+    }
+
+    /**
+     * ⭐ SPRINT 5 : Compter le nombre de trajets (créneau date+heure différent) pour un véhicule
+     * 
+     * Utilité: Favoriser les véhicules les moins utilisés lors de la sélection
+     * - V1 avec 2 trajets → score: 2
+     * - V2 avec 1 trajet → score: 1
+     * - V3 avec 0 trajet → score: 0 (favorisé ✅)
+     * 
+     * @param vehicule Véhicule à scorer
+     * @return Nombre de créneau date+heure différents assignés
+     */
+    private int compterTrajetsVehicule(Vehicule vehicule) {
+        if (vehicule == null || vehicule.getId() <= 0) {
+            return 0;
+        }
+
+        // Récupérer tous les plannings du véhicule
+        List<PlanningTrajet> planningsVehicule = getPlanningsByVehicule((int) vehicule.getId());
+        
+        if (planningsVehicule == null || planningsVehicule.isEmpty()) {
+            return 0;
+        }
+
+        // Compter les CRÉNEAU UNIQUES (date + heure différents)
+        // Deux réservations au même moment = 1 seul trajet
+        return (int) planningsVehicule.stream()
+            .map(p -> {
+                Reservation r = reservationService.getReservationById((int) p.getReservationId());
+                if (r == null || r.getDateArrivee() == null || r.getHeure() == null) {
+                    return null;
+                }
+                // Clé unique par créneau
+                String dateIso = r.getDateArrivee().toLocalDateTime().toLocalDate().toString();
+                String heureNormalisee = normaliserHeure(r.getHeure());
+                return dateIso + "|" + heureNormalisee;
+            })
+            .filter(key -> key != null)
+            .distinct()
+            .count();
     }
 
     /**
