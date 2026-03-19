@@ -330,3 +330,46 @@ DO UPDATE SET
     heure_arrivee_prevue = EXCLUDED.heure_arrivee_prevue,
     statut = EXCLUDED.statut,
     updated_at = NOW();
+
+-- =============================================================
+-- DONNEES DE TEST SPRINT 3
+-- Cas cible: 2 reservations meme heure, nombres de passagers differents,
+-- plusieurs vehicules disponibles.
+-- =============================================================
+
+INSERT INTO vehicules (immatriculation, marque, modele, annee, type_carburant_id, capacite_passagers, is_available)
+VALUES
+    ('CT-SP3-010', 'Mercedes', 'Vito', 2024, (SELECT id FROM type_carburant WHERE libelle = 'Diesel'), 6, true),
+    ('CT-SP3-011', 'Renault', 'Trafic', 2023, (SELECT id FROM type_carburant WHERE libelle = 'Essence'), 4, true)
+ON CONFLICT (immatriculation) DO NOTHING;
+
+INSERT INTO reservations (nom, email, date_arrivee, heure, nombre_personnes, hotel_id, is_confirmed)
+SELECT 'Test Sprint3 Groupe 4P', 'test.s3.g1.4p@controltower.local', '2026-06-10 09:00:00+00', '09:00', 4, 1, false
+WHERE NOT EXISTS (
+    SELECT 1 FROM reservations WHERE email = 'test.s3.g1.4p@controltower.local'
+);
+
+INSERT INTO reservations (nom, email, date_arrivee, heure, nombre_personnes, hotel_id, is_confirmed)
+SELECT 'Test Sprint3 Groupe 2P', 'test.s3.g1.2p@controltower.local', '2026-06-10 09:00:00+00', '09:00', 2, 2, false
+WHERE NOT EXISTS (
+    SELECT 1 FROM reservations WHERE email = 'test.s3.g1.2p@controltower.local'
+);
+
+UPDATE reservations r
+SET
+    lieu_arrivee_id = (
+        SELECT l.id
+        FROM lieux l
+        WHERE l.hotel_id = r.hotel_id
+        LIMIT 1
+    ),
+    lieu_depart_id = CASE
+        WHEN r.email = 'test.s3.g1.4p@controltower.local' THEN (
+            SELECT l.id FROM lieux l WHERE l.nom = 'Gare de Lyon' LIMIT 1
+        )
+        WHEN r.email = 'test.s3.g1.2p@controltower.local' THEN (
+            SELECT l.id FROM lieux l WHERE l.nom = 'Aéroport Paris-Charles de Gaulle' LIMIT 1
+        )
+        ELSE r.lieu_depart_id
+    END
+WHERE r.email IN ('test.s3.g1.4p@controltower.local', 'test.s3.g1.2p@controltower.local');

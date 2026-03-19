@@ -1,11 +1,13 @@
 package service;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -132,17 +134,88 @@ public class PlanningTrajetService {
             List<Reservation> reservationsNonAssignees = 
                     reservationService.getReservationNonAssignees();
 
-            for (Reservation reservation : reservationsNonAssignees) {
-                // Trouver le meilleur véhicule pour cette réservation
-                Vehicule meilleurVehicule = trouverMeilleurVehicule(reservation);
+            Map<String, List<Reservation>> groupesParCreneau = reservationsNonAssignees.stream()
+                    .filter(r -> r.getDateArrivee() != null && r.getHeure() != null && !r.getHeure().isEmpty())
+                    .collect(Collectors.groupingBy(
+                            this::buildCreneauKey,
+                            LinkedHashMap::new,
+                            Collectors.toList()
+                    ));
 
-                if (meilleurVehicule != null) {
-                    assignerVehicule(reservation.getId(), (int) meilleurVehicule.getId());
-                }
+            for (List<Reservation> groupe : groupesParCreneau.values()) {
+                assignerGroupeReservations(groupe);
             }
         } catch (Exception e) {
             throw new Exception("Erreur lors de la génération du planning: " + e.getMessage());
         }
+    }
+
+    private void assignerGroupeReservations(List<Reservation> reservationsMemeCreneau) throws Exception {
+        if (reservationsMemeCreneau == null || reservationsMemeCreneau.isEmpty()) {
+            return;
+        }
+
+        List<Reservation> restantes = new ArrayList<>(reservationsMemeCreneau);
+        restantes.sort(Comparator
+                .comparingInt(Reservation::getNombrePersonnes).reversed()
+                .thenComparing(Reservation::getHeure, Comparator.nullsLast(String::compareTo))
+                .thenComparingInt(Reservation::getId));
+
+        while (!restantes.isEmpty()) {
+            Reservation reservationPivot = restantes.remove(0);
+            Vehicule vehicule = trouverMeilleurVehicule(reservationPivot);
+
+            if (vehicule == null) {
+                continue;
+            }
+
+            assignerVehicule(reservationPivot.getId(), (int) vehicule.getId());
+
+            int placesRestantes = vehicule.getCapacitePassagers() - reservationPivot.getNombrePersonnes();
+            if (placesRestantes <= 0 || restantes.isEmpty()) {
+                continue;
+            }
+
+            List<Reservation> candidats = new ArrayList<>(restantes);
+            candidats.sort(Comparator
+                    .comparingDouble((Reservation r) -> calculerProximiteRamassage(reservationPivot, r))
+                    .thenComparing(Comparator.comparingInt(Reservation::getNombrePersonnes).reversed())
+                    .thenComparingInt(Reservation::getId));
+
+            for (Reservation candidat : candidats) {
+                if (candidat.getNombrePersonnes() <= placesRestantes) {
+                    assignerVehicule(candidat.getId(), (int) vehicule.getId());
+                    placesRestantes -= candidat.getNombrePersonnes();
+                    restantes.removeIf(r -> r.getId() == candidat.getId());
+
+                    if (placesRestantes <= 0) {
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    private String buildCreneauKey(Reservation reservation) {
+        LocalDate date = reservation.getDateArrivee().toLocalDateTime().toLocalDate();
+        return date + "|" + normaliserHeure(reservation.getHeure());
+    }
+
+    private double calculerProximiteRamassage(Reservation pivot, Reservation candidate) {
+        if (pivot.getLieuDepartId() == null || candidate.getLieuDepartId() == null) {
+            return Double.MAX_VALUE;
+        }
+
+        if (pivot.getLieuDepartId().longValue() == candidate.getLieuDepartId().longValue()) {
+            return 0.0;
+        }
+
+        double distance = distanceService.calculerDistance(
+                pivot.getLieuDepartId(),
+                candidate.getLieuDepartId()
+        );
+
+        return distance > 0 ? distance : Double.MAX_VALUE;
     }
 
     /**
