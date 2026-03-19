@@ -164,8 +164,54 @@ public class PlanningTrajetService {
             for (List<Reservation> groupe : groupesParCreneau.values()) {
                 assignerGroupeReservations(groupe);
             }
+            
+            // ⭐ SynchroNIZER LES DÉTAILS D'ASSIGNATION
+            // Après avoir assigné tous les réservations, remplir la table planning_trajet_detail
+            reconstructirePlanningDetailsAprèsAssignation();
         } catch (Exception e) {
             throw new Exception("Erreur lors de la génération du planning: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Reconstruire et remplir la table planning_trajet_detail après les assignations
+     * Cette méthode synchronise les assignations effectuées avec la vue de visualisation
+     */
+    private void reconstructirePlanningDetailsAprèsAssignation() {
+        try {
+            // Récupérer tous les plannings 
+            List<PlanningTrajet> tousLesPlannings = getAllPlannings();
+            
+            if (tousLesPlannings == null || tousLesPlannings.isEmpty()) {
+                return;
+            }
+            
+            // Grouper par véhicule et date
+            Map<String, List<PlanningTrajet>> planningsGroupes = tousLesPlannings.stream()
+                .filter(p -> p.getVehiculeId() != null && p.getVehiculeId() > 0)
+                .collect(Collectors.groupingBy(p -> {
+                    Reservation r = reservationService.getReservationById((int) p.getReservationId());
+                    if (r == null || r.getDateArrivee() == null) {
+                        return null;
+                    }
+                    String date = r.getDateArrivee().toLocalDateTime().toLocalDate().toString();
+                    return p.getVehiculeId() + "|" + date;
+                }, Collectors.toList()));
+            
+            // Externaliser les détails pour chaque groupe
+            for (Map.Entry<String, List<PlanningTrajet>> entry : planningsGroupes.entrySet()) {
+                if (entry.getKey() == null) continue;
+                
+                for (PlanningTrajet planning : entry.getValue()) {
+                    Reservation reservation = reservationService.getReservationById((int) planning.getReservationId());
+                    if (reservation != null && planning.getVehiculeId() != null) {
+                        externaliserDetailAssignationVehicule(planning.getVehiculeId().intValue(), reservation);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Erreur lors de la synchronisation des détails: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 

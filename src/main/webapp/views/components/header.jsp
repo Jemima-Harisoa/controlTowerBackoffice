@@ -31,6 +31,123 @@
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
+
+        /* CSS Header avec badges ETU - Sticky et moderne */
+        .main-header-new {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            position: sticky;
+            top: 10px;
+            z-index: 1000;
+            background: #f5f7fb;
+            padding: 12px;
+            border-radius: 10px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+        }
+
+        .etu-badge-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .etu-label {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #667eea;
+            letter-spacing: 1px;
+        }
+
+        .etu-numbers {
+            display: flex;
+            gap: 6px;
+        }
+
+        .etu-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .main-header-new h1 {
+            margin: 0;
+            color: #333;
+            font-size: 28px;
+            flex: 1;
+            text-align: center;
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .welcome-text {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .welcome-text strong {
+            color: #333;
+            font-weight: 700;
+        }
+
+        .btn-logout {
+            padding: 10px 16px;
+            background: #dc3545;
+            color: white;
+            text-decoration: none;
+            border: none;
+            border-radius: 6px;
+            transition: all 0.3s;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+        }
+
+        .btn-logout:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(220, 53, 69, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            .main-header-new {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .main-header-new h1 {
+                font-size: 20px;
+            }
+
+            .user-section {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .welcome-text {
+                font-size: 12px;
+            }
+
+            .etu-numbers {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
     </style>
 </head>
 <body>
