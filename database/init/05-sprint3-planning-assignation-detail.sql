@@ -331,6 +331,89 @@ DO UPDATE SET
     statut = EXCLUDED.statut,
     updated_at = NOW();
 
+-- Historique de deplacement pour connaitre la localisation d'un vehicule a t.
+CREATE TABLE IF NOT EXISTS vehicule_deplacement_historique (
+    id SERIAL PRIMARY KEY,
+    vehicule_id INT NOT NULL REFERENCES vehicules(id) ON DELETE CASCADE,
+    lieu_id INT NOT NULL REFERENCES lieux(id) ON DELETE RESTRICT,
+    planning_trajet_id INT REFERENCES planning_trajet(id) ON DELETE SET NULL,
+    reservation_id INT REFERENCES reservations(id) ON DELETE SET NULL,
+    type_evenement VARCHAR(20) NOT NULL,
+    date_mouvement TIMESTAMP NOT NULL,
+    commentaire TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_vehicule_deplacement_event UNIQUE (vehicule_id, date_mouvement, type_evenement, reservation_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_vehicule_deplacement_vehicule_date
+    ON vehicule_deplacement_historique(vehicule_id, date_mouvement DESC);
+
+CREATE INDEX IF NOT EXISTS idx_vehicule_deplacement_lieu
+    ON vehicule_deplacement_historique(lieu_id);
+
+DROP TRIGGER IF EXISTS update_vehicule_deplacement_historique_updated_at ON vehicule_deplacement_historique;
+CREATE TRIGGER update_vehicule_deplacement_historique_updated_at
+    BEFORE UPDATE ON vehicule_deplacement_historique
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Backfill initial : depart au lieu_depart puis arrivee au lieu_arrivee.
+INSERT INTO vehicule_deplacement_historique (
+    vehicule_id,
+    lieu_id,
+    planning_trajet_id,
+    reservation_id,
+    type_evenement,
+    date_mouvement,
+    commentaire
+)
+SELECT
+    p.vehicule_id,
+    p.lieu_depart_id,
+    p.id,
+    p.reservation_id,
+    'RAMASSAGE',
+    COALESCE(r.date_arrivee, p.date_planification),
+    'Backfill ramassage depuis planning_trajet'
+FROM planning_trajet p
+JOIN reservations r ON r.id = p.reservation_id
+WHERE p.vehicule_id IS NOT NULL
+  AND p.lieu_depart_id IS NOT NULL
+ON CONFLICT (vehicule_id, date_mouvement, type_evenement, reservation_id)
+DO UPDATE SET
+    lieu_id = EXCLUDED.lieu_id,
+    planning_trajet_id = EXCLUDED.planning_trajet_id,
+    commentaire = EXCLUDED.commentaire,
+    updated_at = NOW();
+
+INSERT INTO vehicule_deplacement_historique (
+    vehicule_id,
+    lieu_id,
+    planning_trajet_id,
+    reservation_id,
+    type_evenement,
+    date_mouvement,
+    commentaire
+)
+SELECT
+    p.vehicule_id,
+    p.lieu_arrivee_id,
+    p.id,
+    p.reservation_id,
+    'ARRIVEE',
+    COALESCE(r.date_arrivee, p.date_planification) + COALESCE(p.duree_estimee, INTERVAL '0 minute'),
+    'Backfill arrivee depuis planning_trajet'
+FROM planning_trajet p
+JOIN reservations r ON r.id = p.reservation_id
+WHERE p.vehicule_id IS NOT NULL
+  AND p.lieu_arrivee_id IS NOT NULL
+ON CONFLICT (vehicule_id, date_mouvement, type_evenement, reservation_id)
+DO UPDATE SET
+    lieu_id = EXCLUDED.lieu_id,
+    planning_trajet_id = EXCLUDED.planning_trajet_id,
+    commentaire = EXCLUDED.commentaire,
+    updated_at = NOW();
+
 -- =============================================================
 -- DONNEES DE TEST SPRINT 3
 -- Cas cible: 2 reservations meme heure, nombres de passagers differents,
@@ -373,3 +456,96 @@ SET
         ELSE r.lieu_depart_id
     END
 WHERE r.email IN ('test.s3.g1.4p@controltower.local', 'test.s3.g1.2p@controltower.local');
+
+-- =============================================================
+-- BACKFILL FINAL : remplir planning_trajet_detail apres les donnees test
+-- =============================================================
+WITH base AS (
+    SELECT
+        p.id AS planning_trajet_id,
+        p.vehicule_id,
+        r.id AS reservation_id,
+        COALESCE(r.date_arrivee::date, p.date_planification::date) AS date_arrivee,
+        COALESCE(NULLIF(r.heure, ''), to_char(p.date_planification, 'HH24:MI:SS')) AS heure_arrivee,
+        COALESCE(r.nom, 'Client') || '(' || COALESCE(r.nombre_personnes, 0) || 'p)' AS reservation_client,
+        COALESCE(r.nombre_personnes, 0) AS nombre_personnes,
+        COALESCE(v.capacite_passagers, 0) AS capacite_vehicule,
+        p.distance_estimee AS distance_estimee_km,
+        p.duree_estimee,
+        ld.nom AS point_depart,
+        la.nom AS point_arrivee
+    FROM planning_trajet p
+    JOIN reservations r ON r.id = p.reservation_id
+    LEFT JOIN vehicules v ON v.id = p.vehicule_id
+    LEFT JOIN lieux ld ON ld.id = p.lieu_depart_id
+    LEFT JOIN lieux la ON la.id = p.lieu_arrivee_id
+    WHERE p.vehicule_id IS NOT NULL
+), enrichi AS (
+    SELECT
+        b.*,
+        SUM(b.nombre_personnes) OVER (
+            PARTITION BY b.vehicule_id, b.date_arrivee, b.heure_arrivee
+        ) AS nombre_passagers_total,
+        MIN(b.reservation_id) OVER (
+            PARTITION BY b.vehicule_id, b.date_arrivee, b.heure_arrivee
+        ) AS premiere_reservation_id,
+        FIRST_VALUE(b.point_depart) OVER (
+            PARTITION BY b.vehicule_id, b.date_arrivee, b.heure_arrivee
+            ORDER BY b.heure_arrivee, b.reservation_id
+            ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+        ) AS premier_point_depart,
+        LAST_VALUE(b.point_arrivee) OVER (
+            PARTITION BY b.vehicule_id, b.date_arrivee, b.heure_arrivee
+            ORDER BY b.heure_arrivee, b.reservation_id
+            ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+        ) AS dernier_point_arrivee
+    FROM base b
+)
+INSERT INTO planning_trajet_detail (
+    vehicule_id,
+    date_arrivee,
+    heure_arrivee,
+    reservation_id,
+    premiere_reservation_id,
+    reservation_client,
+    nombre_passagers_total,
+    capacite_vehicule,
+    places_libres,
+    distance_estimee_km,
+    duree_estimee,
+    premier_point_depart,
+    dernier_point_arrivee,
+    points_depart,
+    points_arrivee
+)
+SELECT
+    e.vehicule_id,
+    e.date_arrivee,
+    e.heure_arrivee,
+    e.reservation_id,
+    e.premiere_reservation_id,
+    e.reservation_client,
+    e.nombre_passagers_total,
+    e.capacite_vehicule,
+    GREATEST(e.capacite_vehicule - e.nombre_passagers_total, 0) AS places_libres,
+    e.distance_estimee_km,
+    e.duree_estimee,
+    e.premier_point_depart,
+    e.dernier_point_arrivee,
+    e.point_depart,
+    e.point_arrivee
+FROM enrichi e
+ON CONFLICT (vehicule_id, date_arrivee, heure_arrivee, reservation_id)
+DO UPDATE SET
+    premiere_reservation_id = EXCLUDED.premiere_reservation_id,
+    reservation_client = EXCLUDED.reservation_client,
+    nombre_passagers_total = EXCLUDED.nombre_passagers_total,
+    capacite_vehicule = EXCLUDED.capacite_vehicule,
+    places_libres = EXCLUDED.places_libres,
+    distance_estimee_km = EXCLUDED.distance_estimee_km,
+    duree_estimee = EXCLUDED.duree_estimee,
+    premier_point_depart = EXCLUDED.premier_point_depart,
+    dernier_point_arrivee = EXCLUDED.dernier_point_arrivee,
+    points_depart = EXCLUDED.points_depart,
+    points_arrivee = EXCLUDED.points_arrivee,
+    updated_at = NOW();
