@@ -369,6 +369,138 @@ public class PlanningTrajetService {
         }
 
         /**
+         * NOUVELLE MÉTHODE SPRINT 3 : Calculer un trajet optimisé pour un groupe de réservations
+         * 
+         * Problème : Avant, on calculait la distance individuellement par réservation
+         * Solution : Calculer le trajet COMPLET du véhicule qui dessert PLUSIEURS réservations
+         * 
+         * Ordre du trajet : Position véhicule → Ramassage 1 → Ramassage 2 → ... → Dépôt 1 → Dépôt 2
+         * 
+         * @param vehiculeId ID du véhicule
+         * @param reservationsGroupe Liste de toutes les réservations assignées au même véhicule
+         * @param planningByReservationId Map des plannings par réservation pour accéder aux lieux
+         * @return distance totale en km
+         */
+        private double calculerTrajetOptimiseGroupe(int vehiculeId, List<Reservation> reservationsGroupe,
+                Map<Long, PlanningTrajet> planningByReservationId) {
+            if (reservationsGroupe == null || reservationsGroupe.isEmpty()) {
+                return 0.0;
+            }
+
+            try {
+                // ÉTAPE 1 : Récupérer la position actuelle du véhicule
+                //           (dernière localisation depuis l'historique de déplacement)
+                Long positionActuelleVehiculeId = vehiculeDeplacementHistoriqueRepository
+                    .getDerniereLieuDuVehicule(vehiculeId);
+                
+                if (positionActuelleVehiculeId == null || positionActuelleVehiculeId <= 0) {
+                    // Si pas d'historique, utiliser le premier point de ramassage comme référence
+                    positionActuelleVehiculeId = null;
+                }
+
+                // ÉTAPE 2 : Extraire tous les points de visite du groupe
+                //          - Points de départ (ramassages)
+                //          - Points d'arrivée (dépôts)
+                List<Long> pointsDepart = new ArrayList<>();
+                List<Long> pointsArrivee = new ArrayList<>();
+
+                for (Reservation r : reservationsGroupe) {
+                    PlanningTrajet p = planningByReservationId.get((long) r.getId());
+                    if (p != null) {
+                        if (p.getLieuDepartId() != null && p.getLieuDepartId() > 0) {
+                            pointsDepart.add(p.getLieuDepartId());
+                        }
+                        if (p.getLieuArriveeId() != null && p.getLieuArriveeId() > 0) {
+                            pointsArrivee.add(p.getLieuArriveeId());
+                        }
+                    }
+                }
+
+                // ÉTAPE 3 : Calculer les distances intermédiaires
+                //          avec optimisation des trajets (points les plus proches en priorité)
+                double distanceTotale = 0.0;
+                Long lieuActuel = positionActuelleVehiculeId;
+
+                // Traiter d'abord les ramassages (départs)
+                List<Long> dePartNonVisites = new ArrayList<>(pointsDepart);
+                while (!dePartNonVisites.isEmpty()) {
+                    // Trouver le point de ramassage le plus proche du point actuel
+                    Long pointLePlusPrche = dePartNonVisites.get(0);
+                    double distanceMin = Double.MAX_VALUE;
+
+                    if (lieuActuel != null && lieuActuel > 0) {
+                        for (Long lieu : dePartNonVisites) {
+                            double dist = distanceService.calculerDistance(lieuActuel, lieu);
+                            if (dist < distanceMin) {
+                                distanceMin = dist;
+                                pointLePlusPrche = lieu;
+                            }
+                        }
+                    }
+
+                    // Ajouter cette distance au total
+                    if (lieuActuel != null && lieuActuel > 0) {
+                        double distanceAuPoint = distanceService.calculerDistance(lieuActuel, pointLePlusPrche);
+                        if (distanceAuPoint > 0) {
+                            distanceTotale += distanceAuPoint;
+                        }
+                    }
+
+                    // Enregistrer cet événement de ramassage dans l'historique
+                    if (lieuActuel != null && lieuActuel > 0) {
+                        // Optionnel : enregistrer le déplacement vers ce point de ramassage
+                    }
+
+                    // Mettre à jour la position actuelle et continuer
+                    lieuActuel = pointLePlusPrche;
+                    dePartNonVisites.remove(pointLePlusPrche);
+                }
+
+                // Traiter ensuite les dépôts (arrivées)
+                List<Long> depotsNonVisites = new ArrayList<>(pointsArrivee);
+                while (!depotsNonVisites.isEmpty()) {
+                    // Trouver le point de dépôt le plus proche du point actuel
+                    Long pointLePlusPrche = depotsNonVisites.get(0);
+                    double distanceMin = Double.MAX_VALUE;
+
+                    if (lieuActuel != null && lieuActuel > 0) {
+                        for (Long lieu : depotsNonVisites) {
+                            double dist = distanceService.calculerDistance(lieuActuel, lieu);
+                            if (dist < distanceMin) {
+                                distanceMin = dist;
+                                pointLePlusPrche = lieu;
+                            }
+                        }
+                    }
+
+                    // Ajouter cette distance au total
+                    if (lieuActuel != null && lieuActuel > 0) {
+                        double distanceAuPoint = distanceService.calculerDistance(lieuActuel, pointLePlusPrche);
+                        if (distanceAuPoint > 0) {
+                            distanceTotale += distanceAuPoint;
+                        }
+                    }
+
+                    // Enregistrer cet événement de dépôt dans l'historique
+                    if (lieuActuel != null && lieuActuel > 0) {
+                        // Optionnel : enregistrer le dépôt
+                    }
+
+                    // Mettre à jour la position actuelle et continuer
+                    lieuActuel = pointLePlusPrche;
+                    depotsNonVisites.remove(pointLePlusPrche);
+                }
+
+                return distanceTotale;
+
+            } catch (Exception e) {
+                System.err.println("Erreur lors du calcul du trajet optimisé: " + e.getMessage());
+                e.printStackTrace();
+                return 0.0;
+            }
+        }
+
+        /**
          * Formater une durée en minutes au format HH:MM:SS pour INTERVAL PostgreSQL
          */
         private String formatDureeForInterval(int minutes) {
@@ -429,6 +561,24 @@ public class PlanningTrajetService {
                 planningByReservationId.put(planning.getReservationId(), planning);
                 }
 
+                // ⭐ CORRECTION SPRINT 3 : Calculer le TRAJET OPTIMISÉ DU GROUPE (au lieu du trajet individuel)
+                double distanceOptimiseeGroupe = calculerTrajetOptimiseGroupe(
+                    vehiculeId, 
+                    reservationsGroupe, 
+                    planningByReservationId
+                );
+                
+                // Calculer la durée estimée totale pour le groupe
+                int dureeEstimeeGroupeMinutes = 0;
+                if (distanceOptimiseeGroupe > 0) {
+                    int vitesseMoyenne = paramService.getParametreAsInt("VITESSE_MOYENNE_KMH");
+                    if (vitesseMoyenne > 0) {
+                        double heures = distanceOptimiseeGroupe / vitesseMoyenne;
+                        dureeEstimeeGroupeMinutes = (int) Math.round(heures * 60);
+                    }
+                }
+                String dureeOptimiseeGroup = formatDureeForInterval(dureeEstimeeGroupeMinutes);
+
                 Reservation premiereReservation = reservationsGroupe.get(0);
                 Reservation derniereReservation = reservationsGroupe.get(reservationsGroupe.size() - 1);
                 PlanningTrajet planningPremiereReservation = planningByReservationId.get((long) premiereReservation.getId());
@@ -447,8 +597,10 @@ public class PlanningTrajetService {
                 String nomClient = reservation.getNom() == null ? "" : reservation.getNom();
                 String pointsDepart = planningReservation != null ? planningReservation.getLieuDepart() : null;
                 String pointsArrivee = planningReservation != null ? planningReservation.getLieuArrivee() : null;
-                double distanceEstimee = planningReservation != null ? planningReservation.getDistanceEstimee() : 0;
-                String dureeEstimee = planningReservation != null ? planningReservation.getDureeEstimee() : null;
+                
+                // ⭐ UTILISER LA DISTANCE DU GROUPE OPTIMISÉ AU LIEU DE LA DISTANCE INDIVIDUELLE
+                double distanceEstimee = distanceOptimiseeGroupe;
+                String dureeEstimee = dureeOptimiseeGroup;
 
                 PlanningAssignationDetail detail = new PlanningAssignationDetail();
                 detail.setVehiculeId(vehiculeId);

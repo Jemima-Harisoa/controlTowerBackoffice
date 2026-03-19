@@ -45,6 +45,36 @@ public class VehiculeDeplacementHistoriqueRepository {
     }
 
     /**
+     * Retourne le dernier lieu connu d'un vehicule (globalement, sans date limite).
+     * Utilisé pour obtenir la position actuelle du véhicule.
+     */
+    public Long getDerniereLieuDuVehicule(long vehiculeId) {
+        String sql = "SELECT lieu_id " +
+                "FROM vehicule_deplacement_historique " +
+                "WHERE vehicule_id = ? " +
+                "ORDER BY date_mouvement DESC " +
+                "LIMIT 1";
+
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, vehiculeId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    long lieuId = rs.getLong("lieu_id");
+                    if (!rs.wasNull()) {
+                        return lieuId;
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    /**
      * Enregistre un evenement de deplacement (depart, ramassage, arrivee).
      */
     public void insertEvenement(long vehiculeId,
