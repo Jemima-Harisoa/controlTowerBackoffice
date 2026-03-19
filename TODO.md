@@ -394,32 +394,32 @@ Prioriser les véhicules avec le nombre minimum de trajets, sauf si un véhicule
 
 ## Logique
 
-* [ ] Priorité d'assignation :
+* [x] Priorité d'assignation :
 
-  * Proximité
-  * Nombre minimum de trajets
-  * Nombre de places disponibles
-* [ ] Gérer les cas d'égalité
-* [ ] Favoriser les véhicules les moins utilisés
+  * Proximité (Diesel = 0, Essence = 1)
+  * Nombre minimum de trajets (count distinct date|heure)
+  * Nombre de places disponibles (negative for min sorting)
+* [x] Gérer les cas d'égalité (Comparator chain with tiebreakers)
+* [x] Favoriser les véhicules les moins utilisés (compterTrajetsVehicule)
 
 ## Tâches de développement
 
 ### Implémentation logique
 
-* [ ] Ajouter le paramètre nombre de trajets par véhicule
-* [ ] Implémenter la priorité (proximité → min trajets → places)
-* [ ] Adapter la fonction d'assignation
-* [ ] Gérer les cas d'égalité
+* [x] Ajouter le paramètre nombre de trajets par véhicule (compterTrajetsVehicule method)
+* [x] Implémenter la priorité (proximité → min trajets → places) (3-tier Comparator)
+* [x] Adapter la fonction d'assignation (trouverMeilleurVehicule refactored)
+* [x] Gérer les cas d'égalité (thenComparingInt chain)
 
 ### Données de test
 
-* [ ] Tous véhicules à 0 trajet
-* [ ] Cas mix : V1=2, V2=1, V3=2
-* [ ] Cas égalité : V1=2, V2=2, V3=2
-* [ ] Cas égalité : V1=1, V2=1, V3=1
-* [ ] Vérifier l'ordre de priorité complet
+* [x] Tous véhicules à 0 trajet (CAS1 ✓ créé)
+* [x] Cas mix : V1=2, V2=1, V3=2 (CAS2 ✓ créé avec SETUP)
+* [x] Cas égalité : V1=2, V2=2, V3=2 (CAS3 ✓ créé - TiebreakerDiesel)
+* [x] Cas égalité : V1=1, V2=1, V3=1 (CAS4 ✓ créé - 3 réservations)
+* [x] Contrainte capacité (CAS5 ✓ créé - 4 personnes)
+* [ ] Vérifier l'ordre de priorité complet (✗ besoin exécution Docker réelle)
 
----
 
 ## Sprint 6 : Séparation des clients sur plusieurs véhicules
 
