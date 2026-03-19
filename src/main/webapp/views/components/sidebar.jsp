@@ -93,5 +93,26 @@
             </ul>
         </li>
 
+        <!-- PLANNING DES TRAJETS (SPRINT 2) -->
+        <li data-page="planning">
+            <a href="#">
+                <i class="fas fa-route"></i>
+                <span>Planning des trajets</span>
+                <i class="fas fa-chevron-down submenu-arrow"></i>
+            </a>
+            <ul class="submenu">
+                <li>
+                    <a href="${pageContext.request.contextPath}/planning/assignation">
+                        <i class="fas fa-clipboard-list"></i> Assignation v&#233;hicules
+                    </a>
+                </li>
+                <li>
+                    <a href="${pageContext.request.contextPath}/planning/visualisation">
+                        <i class="fas fa-map"></i> Visualisation des trajets
+                    </a>
+                </li>
+            </ul>
+        </li>
+
     </ul>
 </div>

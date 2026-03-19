@@ -3,6 +3,9 @@
 <%-- Liste des réservations : inclut header (sidebar+layout) et footer automatiquement --%>
 <%@ include file="/views/components/header.jsp" %>
 
+<!-- CSS spécifique à cette page -->
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/reservation.css">
+
 <style>
     .reservations-header {
         display: flex;
@@ -252,7 +255,7 @@
 
 <!-- En-tête avec bouton -->
 <div class="reservations-header">
-    <h2><i class="fas fa-calendar-alt"></i> Mes Reservations</h2>
+    <h2><i class="fas fa-calendar-alt"></i> Les Reservations</h2>
     <a href="${pageContext.request.contextPath}/reservations/create" class="btn-primary">
         <i class="fas fa-plus"></i> Nouvelle Reservation
     </a>

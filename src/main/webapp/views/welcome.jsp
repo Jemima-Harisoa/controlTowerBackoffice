@@ -4,6 +4,9 @@
 <%-- Header commun : sidebar + barre de navigation --%>
 <%@ include file="/views/components/header.jsp" %>
 
+<!-- CSS spécifique à cette page -->
+<link rel="stylesheet" href="${pageContext.request.contextPath}/css/welcome.css">
+
 <div class="container">
     <h1>Tableau de Bord</h1>
     <p class="subtitle">Bienvenue, ${sessionScope.userName}</p>

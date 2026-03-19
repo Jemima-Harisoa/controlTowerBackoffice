@@ -19,64 +19,12 @@
     <!-- Font Awesome (icones) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     
-    <!-- CSS externes -->
+    <!-- CSS seuls le layout global -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/sidebar.css">
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/welcome.css">
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/reservation.css">
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/hotel.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/header.css">
     
     <style>
-        /* Layout principal : sidebar fixe à gauche + contenu à droite */
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f5f5;
-        }
-        
-        .main-content {
-            margin-left: 250px;   /* largeur de la sidebar */
-            min-height: 100vh;
-            padding: 20px;
-            transition: margin-left 0.3s;
-        }
-        
-        .main-header {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .main-header h1 {
-            margin: 0;
-            color: #333;
-            font-size: 24px;
-        }
-        
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .user-info span { color: #666; }
-        
-        .btn-logout {
-            padding: 8px 16px;
-            background: #dc3545;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-            transition: background 0.3s;
-        }
-        
-        .btn-logout:hover { background: #c82333; }
-        
+        /* Footer et petits ajustements supplémentaires si nécessaire */
         .content-wrapper {
             background: white;
             padding: 20px;
@@ -91,11 +39,23 @@
     
     <!-- Contenu principal -->
     <div class="main-content">
-        <!-- Barre du haut : titre + info utilisateur -->
-        <div class="main-header">
-            <h1>${pageTitle}</h1>
-            <div class="user-info">
-                <span>Bienvenue, <strong>${sessionScope.userName}</strong></span>
+        <!-- Header redesigné -->
+        <div class="main-header-new">
+            <div class="etu-badge-section">
+                <div class="etu-label">ETU</div>
+                <div class="etu-numbers">
+                    <span class="etu-badge">3078</span>
+                    <span class="etu-badge">3370</span>
+                    <span class="etu-badge">3525</span>
+                </div>
+            </div>
+            
+            <div class="header-content">
+                <h1>${pageTitle}</h1>
+            </div>
+            
+            <div class="user-section">
+                <span class="welcome-text">Bienvenue, <strong>${sessionScope.userName}</strong></span>
                 <a href="${pageContext.request.contextPath}/logout" class="btn-logout">
                     <i class="fas fa-sign-out-alt"></i> D&#233;connexion
                 </a>

@@ -262,29 +262,49 @@ Probleme : le filtre date ne fonctionne pas correctement, il retourne des résul
 - page de planning des trajets
 #### affichage :
 - Page assignation des vehicules aux reservations
-  [] liste :  vehicule 
-  [] table :  date, heure arrivee, reservations
-  [] filtre : date, heure arrivee
-  [] action : afficher les reservation non assignees, valider le planning, voir reservation  a la date, assigneer un voiture manuellement a une reservation, generer le planning automatiquement
+  [X] liste :  vehicule 
+  [X] table :  date, heure arrivee, reservations
+  [X] filtre : date, heure arrivee
+  [X] action : afficher les reservation non assignees, valider le planning, voir reservation  a la date, assigneer un voiture manuellement a une reservation, generer le planning automatiquement
 
 - Page de visualisation du planning des trajets - considerons les reservation comme des trajets a planifier (1 reservation = 1 tarajet a planifier)
   
-  [] table :  date, heure arrivee, reservations, vehicule , nb places, distance a parcourir, duree du trajet, point arrive  - point depart
-  [] filtre : date, heure arrivee, vehicule
+  [X] table :  date, heure arrivee, reservations, vehicule , nb places, distance a parcourir, duree du trajet, point arrive  - point depart
+  [X] filtre : date, heure arrivee, vehicule
   
 #### fonctionnalité :
-[] afficher les reservation non assignees : getReservationNonAssignees() - classe ReservationService - > requete sql : select * from reservation where vehicule_id is null (ReservationRepository)
-[] generer le planning : genererPlanning() - classe PlanningTrajetService - > fonction de planification des trajets (PlanningTrajetService) - > assignation des reservations aux vehicules (PlanningTrajetRepository)
+[X] afficher les reservation non assignees : getReservationNonAssignees() - classe ReservationService - > requete sql : select * from reservation where vehicule_id is null (ReservationRepository)
+[X] generer le planning : genererPlanning() - classe PlanningTrajetService - > fonction de planification des trajets (PlanningTrajetService) - > assignation des reservations aux vehicules (PlanningTrajetRepository)
 - Prioriser par date ancienne
 - Voir les distance la plus courte a parcourir -> table distance 
 - Assignation de voiture nb>= nb places 
 - Si 2 vehicule correspondent au condition enonce precedement, prioriser les vehicule diesel
 
-[] valider le planning : validerPlanning() - classe PlanningTrajetService - > fonction de planification des trajets (PlanningTrajetService) - > assignation des reservations aux vehicules (PlanningTrajetRepository)
+[X] valider le planning : validerPlanning() - classe PlanningTrajetService - > fonction de planification des trajets (PlanningTrajetService) - > assignation des reservations aux vehicules (PlanningTrajetRepository)
 
-[] caluler la durer du trajet : calculerDureeTrajet() - classe PlanningTrajetService - > fonction de planification des trajets (PlanningTrajetService) - > assignation des reservations aux vehicules (PlanningTrajetRepository) - > calcul de la distance a parcourir (table distance) / vitesse moyenne (table parametre de configuration)
+[X] caluler la durer du trajet : calculerDureeTrajet() - classe PlanningTrajetService - > fonction de planification des trajets (PlanningTrajetService) - > assignation des reservations aux vehicules (PlanningTrajetRepository) - > calcul de la distance a parcourir (table distance) / vitesse moyenne (table parametre de configuration)
 
-[] securite asignation de vehicule : seul ceux avec autorisation peuve acceder a la page de planning des trajets et faire l'assignation des vehicules aux reservations => les session utilisateur serons gerer avec des token - base de donnée utilisateur (table user) - login / mot de passe - token d'authentification 
+[X] securite asignation de vehicule : seul ceux avec autorisation peuve acceder a la page de planning des trajets et faire l'assignation des vehicules aux reservations => les session utilisateur serons gerer avec des token - base de donnée utilisateur (table user) - login / mot de passe - token d'authentification 
 
 ## 3. Modif code existant : 
 Ajout des token pour les logins des utilisateurs du backoffice - classe UserService - table user (id, username, password, role) - session (date connexion, token, user permission) - dans param mettre la duree d'un token (ex 30 min, 1j)  fonction de generation de token d'authentification (UserService) - securisation de l'interface de planification des trajets (PlanningTrajetController) - verification du token d'authentification dans les requetes vers l'interface de planification des trajets (PlanningTrajetController)
+
+# Sprint 3 – Feature de planning des assignation de vehicule avec plusieurs clients
+Objectif : sachant un client = une reservation permettre l'assignation d'un même vehicule a plusieurs reservations pour le même trajet , en respectant les règles de gestion suivantes :
+  - prioriser les reservation avec le plus de places demandes ex reservation 1 : 4 places, reservation 2 : 2 places, reservation 3 : 1 place => assigner d'abord la reservation 1 au vehicule puis les autres reservation en fonction du nombre de place restante dans le vehicule 
+  - assigner d'autre reservation a ce meme vehicule pour le reste des places disponibles dans le vehicule
+  - le nombre de personne dans une meme reservation ne peuvent pas encore etre separer dans plusieurs vehicules different, ex reservation 1 : 4 places => assigner la reservation 1 a un seul vehicule qui a au moins 4 places disponibles
+  - le trajet sera contitue de l'ensemble des points de depart et d'arrivee (hotel, aeroport, gare) de l'ensemble des reservations assignées a ce vehicule pour ce trajet 
+  - point de ramassage les plus proche du point de depart du trajet seront prioriser pour l'assignation au vehicule. Si un vehicule a 4 places disponibles et 2 reservation de 2 places chacune, la reservation avec le point de depart le plus proche du vehicule sera prioriser pour l'assignation supposant que le vehicule fait une commission et est proche de la gare pour le ramassage de la reservation 1 et loin de l'hotel pour le ramassage de la reservation 2, la reservation 1 sera prioriser pour l'assignation au vehicule.
+  - Les reservation meme jour mme heure peuvenet etre automatiquement regrouper si il y des vehicule disponible
+
+## Data :
+  - table detail planning assignation : date, heure arrivee, reservations (afficher l'ensemble des reservations assignées a un même vehicule pour le même trajet), vehicule , nb places, distance a parcourir, duree du trajet, point arrive  - point depart, nplace libre dans le vehicule apres assignation
+  nplace libre sera pris en compte pour l'ajout des reservation suivante dans le meme vehicule pour le meme trajet, si nplace libre = 0 alors le vehicule ne sera plus disponible pour l'assignation d'autre reservation pour le meme trajet
+  
+
+## To do :
+  - [] refactoriser la fonction de planification des trajets pour prendre en compte l'assignation de plusieurs reservation a un même vehicule pour le même trajet - classe PlanningTrajetService - fonction de planification des trajets (PlanningTrajetService) - > assignation des reservations aux vehicules (PlanningTrajetRepository) - > regle de gestion : prioriser les reservation avec le plus de places demandes, assigner d'autre reservation a ce meme vehicule pour le reste des places disponibles dans le vehicule, le nombre de personne dans une meme reservation ne peuvent pas encore etre separer dans plusieurs vehicules different, le trajet sera contitue de l'ensemble des points de depart et d'arrivee (hotel, aeroport, gare) de l'ensemble des reservations assignées a ce vehicule pour ce trajet, point de ramassage les plus proche du point de depart du trajet seront prioriser pour l'assignation au vehicule
+  - [] refactoriser la page de visualisation du planning des trajets pour afficher l'ensemble des reservations assignées a un même vehicule pour le même trajet - classe PlanningTrajetController - page de visualisation du planning des trajets - table : date, heure arrivee, reservations (afficher l'ensemble des reservations assignées a un même vehicule pour le même trajet), vehicule , nb places, distance a parcourir, duree du trajet, point arrive  - point depart
+  - [] considere la durer de chaque trajet pour savoir si le vehicule peut etre assigner a une autre reservation pour un autre trajet dans la même journée ou pas - classe PlanningTrajetService - fonction de planification des trajets (PlanningTrajetService) - > assignation des reservations aux vehicules (PlanningTrajetRepository) - > regle de gestion : considerer la durer de chaque trajet pour savoir si le vehicule peut etre assigner a une autre reservation pour un autre trajet dans la même journée ou pas
+
