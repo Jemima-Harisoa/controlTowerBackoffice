@@ -127,7 +127,7 @@
                 <select id="vehiculeId" name="vehiculeId">
                     <option value="">Tous les véhicules</option>
                     <c:forEach items="${vehicules}" var="v">
-                        <option value="${v.id}" <c:if test="${filterVehiculeId == v.id || filterVehiculeId == fn:toString(v.id)}">selected</c:if>>
+                        <option value="${v.id}" <c:if test="${filterVehiculeId == v.id}">selected</c:if>>
                             ${v.immatriculation} - ${v.marque} ${v.modele}
                         </option>
                     </c:forEach>

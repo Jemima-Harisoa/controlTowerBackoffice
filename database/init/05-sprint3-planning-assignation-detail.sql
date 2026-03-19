@@ -426,18 +426,21 @@ VALUES
     ('CT-SP3-011', 'Renault', 'Trafic', 2023, (SELECT id FROM type_carburant WHERE libelle = 'Essence'), 4, true)
 ON CONFLICT (immatriculation) DO NOTHING;
 
+-- ========================================================================================================
+-- EXEMPLE DE REGROUPEMENT : 2 réservations au même créneau pour tester Sprint 3
+-- Cas : Sophie Leclerc (4 places) et un nouveau groupe au même créneau (2 places)
+-- Logique attendue : 2 réservations regroupées => 1 véhicule, 1 groupe d'assignation
+-- ========================================================================================================
+
+-- Ajouter UNE réservation de test au même créneau que Sophie (2026-06-15 09:00)
+-- pour démontrer le regroupement (elle + le nouveau groupe = 1 véhicule)
 INSERT INTO reservations (nom, email, date_arrivee, heure, nombre_personnes, hotel_id, is_confirmed)
-SELECT 'Test Sprint3 Groupe 4P', 'test.s3.g1.4p@controltower.local', '2026-06-10 09:00:00+00', '09:00', 4, 1, false
+SELECT 'Client Groupe Sprint3', 'client.groupe.s3@controltower.local', '2026-06-15 09:00:00+00', '09:00', 2, 2, false
 WHERE NOT EXISTS (
-    SELECT 1 FROM reservations WHERE email = 'test.s3.g1.4p@controltower.local'
+    SELECT 1 FROM reservations WHERE email = 'client.groupe.s3@controltower.local'
 );
 
-INSERT INTO reservations (nom, email, date_arrivee, heure, nombre_personnes, hotel_id, is_confirmed)
-SELECT 'Test Sprint3 Groupe 2P', 'test.s3.g1.2p@controltower.local', '2026-06-10 09:00:00+00', '09:00', 2, 2, false
-WHERE NOT EXISTS (
-    SELECT 1 FROM reservations WHERE email = 'test.s3.g1.2p@controltower.local'
-);
-
+-- Attribuer lieu départ/arrivée au nouveau client
 UPDATE reservations r
 SET
     lieu_arrivee_id = (
@@ -446,21 +449,20 @@ SET
         WHERE l.hotel_id = r.hotel_id
         LIMIT 1
     ),
-    lieu_depart_id = CASE
-        WHEN r.email = 'test.s3.g1.4p@controltower.local' THEN (
-            SELECT l.id FROM lieux l WHERE l.nom = 'Gare de Lyon' LIMIT 1
-        )
-        WHEN r.email = 'test.s3.g1.2p@controltower.local' THEN (
-            SELECT l.id FROM lieux l WHERE l.nom = 'Aéroport Paris-Charles de Gaulle' LIMIT 1
-        )
-        ELSE r.lieu_depart_id
-    END
-WHERE r.email IN ('test.s3.g1.4p@controltower.local', 'test.s3.g1.2p@controltower.local');
+    lieu_depart_id = (
+        SELECT l.id FROM lieux l WHERE l.nom = 'Aéroport Paris-Charles de Gaulle' LIMIT 1
+    )
+WHERE r.email = 'client.groupe.s3@controltower.local';
 
 -- =============================================================
 -- BACKFILL FINAL : remplir planning_trajet_detail apres les donnees test
+-- Recalcule la duree de maniere coherente : duree = distance / vitesse_moyenne
 -- =============================================================
-WITH base AS (
+WITH vitesse AS (
+    SELECT COALESCE(MAX(NULLIF(valeur, '')::numeric), 75) AS kmh
+    FROM parametres_configuration
+    WHERE cle = 'VITESSE_MOYENNE_KMH'
+), base AS (
     SELECT
         p.id AS planning_trajet_id,
         p.vehicule_id,
@@ -470,8 +472,12 @@ WITH base AS (
         COALESCE(r.nom, 'Client') || '(' || COALESCE(r.nombre_personnes, 0) || 'p)' AS reservation_client,
         COALESCE(r.nombre_personnes, 0) AS nombre_personnes,
         COALESCE(v.capacite_passagers, 0) AS capacite_vehicule,
-        p.distance_estimee AS distance_estimee_km,
-        p.duree_estimee,
+        COALESCE(p.distance_estimee, 0) AS distance_estimee_km,
+        CASE
+            WHEN COALESCE(p.distance_estimee, 0) > 0
+                THEN INTERVAL '1 minute' * ((COALESCE(p.distance_estimee, 0) / NULLIF(vit.kmh, 0)) * 60.0)
+            ELSE INTERVAL '0 minute'
+        END AS duree_estimee_calculee,
         ld.nom AS point_depart,
         la.nom AS point_arrivee
     FROM planning_trajet p
@@ -479,6 +485,7 @@ WITH base AS (
     LEFT JOIN vehicules v ON v.id = p.vehicule_id
     LEFT JOIN lieux ld ON ld.id = p.lieu_depart_id
     LEFT JOIN lieux la ON la.id = p.lieu_arrivee_id
+    CROSS JOIN vitesse vit
     WHERE p.vehicule_id IS NOT NULL
 ), enrichi AS (
     SELECT
@@ -529,7 +536,7 @@ SELECT
     e.capacite_vehicule,
     GREATEST(e.capacite_vehicule - e.nombre_passagers_total, 0) AS places_libres,
     e.distance_estimee_km,
-    e.duree_estimee,
+    e.duree_estimee_calculee,
     e.premier_point_depart,
     e.dernier_point_arrivee,
     e.point_depart,
