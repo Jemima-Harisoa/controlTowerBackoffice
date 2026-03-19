@@ -100,9 +100,160 @@
         color: #888;
     }
 
-    @media (max-width: 900px) {
+    /* === SPRINT 4 : Temps d'attente et regroupement === */
+    .wait-time-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: 600;
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+        white-space: nowrap;
+        transition: all 0.3s;
+    }
+
+    .wait-time-badge:hover {
+        box-shadow: 0 2px 8px rgba(133, 100, 4, 0.15);
+    }
+
+    .wait-time-badge.wait-time-zero {
+        background: #e8f5e9;
+        color: #2e7d32;
+        border-color: #c8e6c9;
+    }
+
+    .wait-time-badge i {
+        font-size: 12px;
+    }
+
+    .departure-time {
+        display: inline-block;
+        padding: 6px 10px;
+        border-radius: 6px;
+        background: #e3f2fd;
+        color: #1565c0;
+        font-weight: 600;
+        font-size: 13px;
+        border: 1px solid #bbdefb;
+    }
+
+    .reservation-text {
+        display: block;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        max-width: 200px;
+    }
+
+    .text-muted-sm {
+        color: #999;
+        font-size: 12px;
+    }
+
+    /* === RESPONSIVE DESIGN === */
+    .hide-mobile {
+        display: table-cell;
+    }
+
+    .hide-tablet {
+        display: table-cell;
+    }
+
+    .hide-desktop {
+        display: none;
+    }
+
+    @media (max-width: 1200px) {
+        .hide-tablet {
+            display: none;
+        }
+
+        .data-table {
+            font-size: 12px;
+        }
+
+        .data-table td,
+        .data-table th {
+            padding: 10px 12px;
+        }
+
+        .filter-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .hide-mobile {
+            display: none;
+        }
+
+        .hide-desktop {
+            display: table-cell;
+        }
+
+        .data-table {
+            font-size: 11px;
+        }
+
+        .data-table td,
+        .data-table th {
+            padding: 8px 6px;
+        }
+
+        .wait-time-badge {
+            padding: 4px 8px;
+            font-size: 11px;
+            gap: 4px;
+        }
+
+        .departure-time {
+            padding: 4px 8px;
+            font-size: 11px;
+        }
+
+        .reservation-text {
+            max-width: 150px;
+        }
+
         .filter-grid {
             grid-template-columns: 1fr;
+        }
+
+        .page-title {
+            font-size: 20px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .data-table {
+            font-size: 10px;
+        }
+
+        .data-table td,
+        .data-table th {
+            padding: 6px 4px;
+        }
+
+        .page-title {
+            font-size: 18px;
+        }
+
+        .wait-time-badge {
+            padding: 3px 6px;
+            font-size: 10px;
+        }
+
+        .departure-time {
+            padding: 3px 6px;
+            font-size: 10px;
+        }
+
+        .reservation-text {
+            max-width: 120px;
+            font-size: 10px;
         }
     }
 </style>
@@ -155,13 +306,15 @@
                         <th>Date</th>
                         <th>Heure</th>
                         <th>Réservation</th>
-                        <th>Passagers</th>
-                        <th>Capacité</th>
-                        <th>Places libres</th>
-                        <th>Distance (km)</th>
-                        <th>Durée estimée</th>
-                        <th>Départ</th>
-                        <th>Arrivée</th>
+                        <th><span title="Plage horaire du groupe avec temps d'attente">Temps attente</span></th>
+                        <th><span title="Heure départ ajustée">Heure départ</span></th>
+                        <th class="hide-mobile">Passagers</th>
+                        <th class="hide-tablet">Capacité</th>
+                        <th class="hide-mobile">Places libres</th>
+                        <th class="hide-tablet">Distance (km)</th>
+                        <th class="hide-tablet">Durée estimée</th>
+                        <th class="hide-mobile">Départ</th>
+                        <th class="hide-desktop">Arrivée</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -170,19 +323,39 @@
                             <td><strong>Véhicule #${detail.vehiculeId}</strong></td>
                             <td>${detail.dateArrivee}</td>
                             <td>${detail.heureArrivee}</td>
-                            <td><em>${detail.reservationClient}</em></td>
-                            <td>-</td>
-                            <td>${detail.capaciteVehicule} pax</td>
-                            <td><strong>${detail.placesLibres}</strong></td>
                             <td>
+                                <em class="reservation-text">${detail.reservationClient}</em>
+                            </td>
+                            <td>
+                                <c:if test="${detail.tempsAttenteGroupeMinutes > 0}">
+                                    <span class="wait-time-badge" title="${detail.plageHeuresGroupe}">
+                                        <i class="fas fa-hourglass-half"></i> ${detail.tempsAttenteGroupeMinutes} min
+                                    </span>
+                                </c:if>
+                                <c:if test="${detail.tempsAttenteGroupeMinutes == 0}">
+                                    <span class="wait-time-badge wait-time-zero">Seul</span>
+                                </c:if>
+                            </td>
+                            <td>
+                                <c:if test="${not empty detail.heureDeprtAjustee}">
+                                    <span class="departure-time">${detail.heureDeprtAjustee}</span>
+                                </c:if>
+                                <c:if test="${empty detail.heureDeprtAjustee}">
+                                    <span class="text-muted-sm">-</span>
+                                </c:if>
+                            </td>
+                            <td class="hide-mobile">-</td>
+                            <td class="hide-tablet">${detail.capaciteVehicule} pax</td>
+                            <td class="hide-mobile"><strong>${detail.placesLibres}</strong></td>
+                            <td class="hide-tablet">
                                 <span style="font-weight: 700;">
                                     <fmt:formatNumber value="${detail.distanceEstimee}" maxFractionDigits="2" minFractionDigits="2" />
                                     km
                                 </span>
                             </td>
-                            <td><span style="font-weight: 700; color: #0066cc;">${detail.dureeEstimee != null && !detail.dureeEstimee.isEmpty() ? detail.dureeEstimee : 'N/A'}</span></td>
-                            <td>${detail.pointsDepart}</td>
-                            <td>${detail.pointsArrivee}</td>
+                            <td class="hide-tablet"><span style="font-weight: 700; color: #0066cc;">${detail.dureeEstimee != null && !detail.dureeEstimee.isEmpty() ? detail.dureeEstimee : 'N/A'}</span></td>
+                            <td class="hide-mobile">${detail.pointsDepart}</td>
+                            <td class="hide-desktop">${detail.pointsArrivee}</td>
                         </tr>
                     </c:forEach>
                 </tbody>
