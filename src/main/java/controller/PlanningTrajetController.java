@@ -45,28 +45,7 @@ public class PlanningTrajetController {
         List<ReservationView> reservations = reservationService.getReservationNonAssigneesViews();
         List<PlanningTrajetView> plannings = planningTrajetService.getAllPlanningsForView();
 
-        // Filtre par date (sur table planning)
-        if (date != null && !date.isEmpty()) {
-            plannings = plannings.stream()
-                    .filter(p -> p.getDateArriveeIso() != null && p.getDateArriveeIso().startsWith(date))
-                    .collect(Collectors.toList());
-        }
-
-        // Filtre par heure (sur table planning)
-        if (heure != null && !heure.isEmpty()) {
-            final String filterHeure = heure;
-            plannings = plannings.stream()
-                    .filter(p -> p.getHeureArrivee() != null && p.getHeureArrivee().startsWith(filterHeure))
-                    .collect(Collectors.toList());
-        }
-
-        // Filtre par véhicule assigné (sur table planning)
-        if (vehiculeId != null && !vehiculeId.isEmpty()) {
-            final long filterVehiculeId = Long.parseLong(vehiculeId);
-            plannings = plannings.stream()
-                    .filter(p -> p.getVehiculeId() == filterVehiculeId)
-                    .collect(Collectors.toList());
-        }
+        plannings = filtrerPlannings(plannings, date, heure, vehiculeId);
         
         // Récupérer tous les véhicules disponibles
         List<Vehicule> vehicules = vehiculeService.getVehiculesDisponibles();
@@ -81,6 +60,62 @@ public class PlanningTrajetController {
         mav.addObject("filterHeure", heure);
         mav.addObject("filterVehiculeId", vehiculeId);
         
+        return mav;
+    }
+
+    /**
+     * Affiche la page de visualisation des trajets groupes
+     */
+    @Url("/planning/visualisation")
+    @Get
+    public ModelAndView afficherVisualisation(
+            @RequestParam(value = "date", required = false) String date,
+            @RequestParam(value = "heure", required = false) String heure,
+            @RequestParam(value = "vehiculeId", required = false) String vehiculeId) {
+        ModelAndView mav = new ModelAndView("/views/planning/visualisation.jsp");
+
+        List<PlanningTrajetView> plannings = planningTrajetService.getAllPlanningsForView();
+        plannings = filtrerPlannings(plannings, date, heure, vehiculeId);
+
+        List<PlanningTrajetGroupeView> groupes = buildPlanningGroupes(plannings);
+        List<Vehicule> vehicules = vehiculeService.getAllVehicules();
+
+        mav.addObject("pageTitle", "Visualisation des Trajets");
+        mav.addObject("plannings", plannings);
+        mav.addObject("planningGroupes", groupes);
+        mav.addObject("vehicules", vehicules);
+        mav.addObject("filterDate", date);
+        mav.addObject("filterHeure", heure);
+        mav.addObject("filterVehiculeId", vehiculeId);
+
+        return mav;
+    }
+
+    /**
+     * Affiche le detail d'un groupe de trajet (vehicule + date + heure)
+     */
+    @Url("/planning/visualisation/details")
+    @Get
+    public ModelAndView afficherDetailsVisualisation(
+            @RequestParam("vehiculeId") long vehiculeId,
+            @RequestParam("date") String date,
+            @RequestParam("heure") String heure) {
+        ModelAndView mav = new ModelAndView("/views/planning/visualisation-details.jsp");
+
+        List<PlanningTrajetView> plannings = planningTrajetService.getAllPlanningsForView();
+        List<PlanningTrajetView> planningsFiltres = plannings.stream()
+                .filter(p -> p.getVehiculeId() == vehiculeId)
+                .filter(p -> p.getDateArriveeIso() != null && p.getDateArriveeIso().equals(date))
+                .filter(p -> p.getHeureArrivee() != null && p.getHeureArrivee().startsWith(heure))
+                .collect(Collectors.toList());
+
+        List<PlanningTrajetGroupeView> groupes = buildPlanningGroupes(planningsFiltres);
+        PlanningTrajetGroupeView groupe = groupes.isEmpty() ? null : groupes.get(0);
+
+        mav.addObject("pageTitle", "Detail Visualisation Trajet");
+        mav.addObject("groupe", groupe);
+        mav.addObject("plannings", planningsFiltres);
+
         return mav;
     }
     /**
@@ -209,6 +244,39 @@ public class PlanningTrajetController {
         }
 
         return new ArrayList<>(groupes.values());
+    }
+
+    private List<PlanningTrajetView> filtrerPlannings(List<PlanningTrajetView> plannings,
+                                                      String date,
+                                                      String heure,
+                                                      String vehiculeId) {
+        List<PlanningTrajetView> filtres = plannings;
+
+        if (date != null && !date.isEmpty()) {
+            filtres = filtres.stream()
+                    .filter(p -> p.getDateArriveeIso() != null && p.getDateArriveeIso().startsWith(date))
+                    .collect(Collectors.toList());
+        }
+
+        if (heure != null && !heure.isEmpty()) {
+            final String filterHeure = heure;
+            filtres = filtres.stream()
+                    .filter(p -> p.getHeureArrivee() != null && p.getHeureArrivee().startsWith(filterHeure))
+                    .collect(Collectors.toList());
+        }
+
+        if (vehiculeId != null && !vehiculeId.isEmpty()) {
+            try {
+                final long filterVehiculeId = Long.parseLong(vehiculeId);
+                filtres = filtres.stream()
+                        .filter(p -> p.getVehiculeId() == filterVehiculeId)
+                        .collect(Collectors.toList());
+            } catch (NumberFormatException ignored) {
+                // Ignorer un vehiculeId invalide et ne pas casser la page
+            }
+        }
+
+        return filtres;
     }
 
     private String prioriserStatut(String current, String incoming) {
