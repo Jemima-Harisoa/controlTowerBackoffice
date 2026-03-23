@@ -194,6 +194,23 @@ public class PlanningTrajetController {
     }
 
     /**
+     * Sprint 6: modifier l'heure de disponibilité d'un véhicule.
+     */
+    @Url("/planning/vehicules/disponibilite")
+    @Post
+    @RestAPI
+    public ApiResponse modifierDisponibiliteVehicule(
+            @RequestParam("vehiculeId") long vehiculeId,
+            @RequestParam("heureDisponible") String heureDisponible) {
+        try {
+            vehiculeService.updateHeureDisponibilite(vehiculeId, heureDisponible);
+            return ApiResponse.success("Disponibilité du véhicule mise à jour");
+        } catch (Exception e) {
+            return ApiResponse.error(500, e.getMessage());
+        }
+    }
+
+    /**
      * Voir les détails d'un trajet planifié
      */
     @Url("/planning/assignation/{reservationId}/details")

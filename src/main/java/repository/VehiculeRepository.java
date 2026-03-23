@@ -28,6 +28,8 @@ public class VehiculeRepository {
         v.setTypeCarburant(rs.getString("type_carburant"));
         v.setCapacitePassagers(rs.getInt("capacite_passagers"));
         v.setAvailable(rs.getBoolean("is_available"));
+        v.setHeureDisponibleDebut(rs.getString("heure_disponible_debut"));
+        v.setHeureDisponibleCourante(rs.getString("heure_disponible_courante"));
         return v;
     }
 
@@ -108,8 +110,8 @@ public class VehiculeRepository {
 
     public void create(Vehicule vehicule) {
         String sql = "INSERT INTO vehicules (immatriculation, marque, modele, annee, " +
-                     "type_carburant_id, capacite_passagers, is_available) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?)";
+                     "type_carburant_id, capacite_passagers, is_available, heure_disponible_debut, heure_disponible_courante) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?::time, ?::time)";
         try (Connection conn = dbConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, vehicule.getImmatriculation());
@@ -119,6 +121,8 @@ public class VehiculeRepository {
             stmt.setLong(5, vehicule.getTypeCarburantId());
             stmt.setInt(6, vehicule.getCapacitePassagers());
             stmt.setBoolean(7, vehicule.isAvailable());
+            stmt.setString(8, vehicule.getHeureDisponibleDebut() != null ? vehicule.getHeureDisponibleDebut() : "00:00:00");
+            stmt.setString(9, vehicule.getHeureDisponibleCourante() != null ? vehicule.getHeureDisponibleCourante() : "00:00:00");
             stmt.executeUpdate();
             ResultSet keys = stmt.getGeneratedKeys();
             if (keys.next()) vehicule.setId(keys.getLong(1));
@@ -128,6 +132,7 @@ public class VehiculeRepository {
     public void update(Vehicule vehicule) {
         String sql = "UPDATE vehicules SET immatriculation = ?, marque = ?, modele = ?, annee = ?, " +
                      "type_carburant_id = ?, capacite_passagers = ?, is_available = ?, " +
+                     "heure_disponible_debut = ?::time, heure_disponible_courante = ?::time, " +
                      "updated_at = NOW() WHERE id = ?";
         try (Connection conn = dbConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -138,7 +143,9 @@ public class VehiculeRepository {
             stmt.setLong(5, vehicule.getTypeCarburantId());
             stmt.setInt(6, vehicule.getCapacitePassagers());
             stmt.setBoolean(7, vehicule.isAvailable());
-            stmt.setLong(8, vehicule.getId());
+            stmt.setString(8, vehicule.getHeureDisponibleDebut() != null ? vehicule.getHeureDisponibleDebut() : "00:00:00");
+            stmt.setString(9, vehicule.getHeureDisponibleCourante() != null ? vehicule.getHeureDisponibleCourante() : "00:00:00");
+            stmt.setLong(10, vehicule.getId());
             stmt.executeUpdate();
         } catch (SQLException e) { e.printStackTrace(); }
     }
