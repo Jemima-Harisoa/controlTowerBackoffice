@@ -141,6 +141,21 @@ public class ReservationService {
     public List<ReservationView> getReservationNonAssigneesViews(){
         return  reservationRepository.findNonAssigneesForView();
     }
+
+    /**
+     * Nombre total de personnes encore non assignées (côté métier).
+     */
+    public int getTotalPersonnesNonAssignees() {
+        return reservationRepository.countPersonnesNonAssignees();
+    }
+
+    /**
+     * Nombre total de réservations non assignées (côté métier).
+     */
+    public int getTotalReservationsNonAssignees() {
+        return reservationRepository.countReservationsNonAssignees();
+    }
+
     /**
      * Mettre à jour une réservation (notamment le vehiculeId lors d'une assignation)
      */

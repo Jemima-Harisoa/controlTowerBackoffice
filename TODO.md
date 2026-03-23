@@ -429,36 +429,36 @@ Permettre le fractionnement des réservations lorsque la capacité du véhicule 
 
 ## Logique
 
-* [ ] Priorité :
+* [x] Priorité :
 
   * Proximité
   * Nombre minimum de trajets
-  * Nombre de places disponibles
-* [ ] Autoriser le partage de réservation sur plusieurs véhicules
+  * Nombre de places disponibles (capacité minimale suffisante)
+* [x] Autoriser le partage de réservation sur plusieurs véhicules
 * [ ] Trier par ancienneté de réservation
 
 ## Exemple
 
-* [ ] Réservation de 5 personnes
-* [ ] Véhicule avec 4 places → assigner 4 personnes
-* [ ] 1 personne restante → assignation sur autre véhicule
-* [ ] Continuer jusqu'à assignation complète
+* [x] Réservation de 5 personnes
+* [x] Véhicule avec 4 places → assigner 4 personnes
+* [x] 1 personne restante → assignation sur autre véhicule
+* [x] Continuer jusqu'à assignation complète
 
 ## Tâches de développement
 
 ### Fractionnement des réservations
 
-* [ ] Implémenter la logique de partage
-* [ ] Gérer les sous-assignations
+* [x] Implémenter la logique de partage
+* [x] Gérer les sous-assignations
 * [ ] Trier par ancienneté
-* [ ] Gérer les états partiellement assignés
+* [x] Gérer les états partiellement assignés
 
 ### Adaptation du service
 
-* [ ] Intégrer le fractionnement dans le workflow
-* [ ] Maintenir les priorités (proximité → min trajets → places)
-* [ ] Respecter les règles Sprint 4 et 5
-* [ ] Gérer les boucles d'assignation
+* [x] Intégrer le fractionnement dans le workflow
+* [x] Maintenir les priorités (proximité → min trajets → places)
+* [x] Respecter les règles Sprint 4 et 5
+* [x] Gérer les boucles d'assignation
 
 ### Données de test
 

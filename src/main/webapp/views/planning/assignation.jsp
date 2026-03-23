@@ -764,6 +764,7 @@
                         <th>Arrivées</th>
                         <th>Distance totale (km)</th>
                         <th>Durée estimée</th>
+                        <th>Heure retour</th>
                         <th>Carburant</th>
                         <th>Statut</th>
                     </tr>
@@ -805,6 +806,7 @@
                                 </span>
                             </td>
                             <td><span style="font-weight: 700; color: #0066cc;">${groupe.dureeEstimee != null && !groupe.dureeEstimee.isEmpty() ? groupe.dureeEstimee : 'N/A'}</span></td>
+                            <td><span style="font-weight: 700; color: #2f3b52;">${groupe.heureRetour != null && !groupe.heureRetour.isEmpty() ? groupe.heureRetour : 'N/A'}</span></td>
                             <td>${groupe.typeCarburantVehicule}</td>
                             <td>
                                 <c:choose>

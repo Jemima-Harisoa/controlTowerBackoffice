@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import java.util.stream.Collectors;
 
 import dto.PlanningTrajetGroupeView;
@@ -53,6 +55,8 @@ public class PlanningTrajetController {
         String pageTitle = "Plannification des R&#233;servations";
         mav.addObject("pageTitle", pageTitle);
         mav.addObject("reservations", reservations);
+        mav.addObject("totalReservationsNonAssignees", reservationService.getTotalReservationsNonAssignees());
+        mav.addObject("totalPersonnesRestantes", reservationService.getTotalPersonnesNonAssignees());
         mav.addObject("vehicules", vehicules);
         mav.addObject("plannings", plannings);
         mav.addObject("planningGroupes", buildPlanningGroupes(plannings));
@@ -170,6 +174,8 @@ public class PlanningTrajetController {
             mav.addObject("erreur", e.getMessage());
         }
         mav.addObject("reservations", reservationService.getReservationNonAssigneesViews());
+        mav.addObject("totalReservationsNonAssignees", reservationService.getTotalReservationsNonAssignees());
+        mav.addObject("totalPersonnesRestantes", reservationService.getTotalPersonnesNonAssignees());
         mav.addObject("vehicules", vehiculeService.getVehiculesDisponibles());
         List<PlanningTrajetView> plannings = planningTrajetService.getAllPlanningsForView();
         mav.addObject("plannings", plannings);
@@ -280,6 +286,7 @@ public class PlanningTrajetController {
             // ⭐ CORRECTION: Recalculer la durée estimée en fonction de la distance totale du groupe
             // (La durée n'était définie que pour la première réservation du groupe)
             groupe.setDureeEstimee(calculerDureeEstimee(groupe.getDistanceTotale()));
+            groupe.setHeureRetour(calculerHeureRetour(groupe.getHeureArrivee(), groupe.getDureeEstimee()));
         }
 
         return new ArrayList<>(groupes.values());
@@ -366,6 +373,37 @@ public class PlanningTrajetController {
         int m = minutes % 60;
         int s = 0;
         return String.format("%02d:%02d:%02d", h, m, s);
+    }
+
+    private String calculerHeureRetour(String heureDepart, String dureeEstimee) {
+        if (heureDepart == null || heureDepart.trim().isEmpty() || dureeEstimee == null || dureeEstimee.trim().isEmpty()) {
+            return "N/A";
+        }
+
+        try {
+            String heureNormalisee = heureDepart.trim();
+            if (heureNormalisee.matches("^\\d{2}:\\d{2}$")) {
+                heureNormalisee = heureNormalisee + ":00";
+            }
+
+            String[] parts = dureeEstimee.trim().split(":");
+            if (parts.length < 2) {
+                return "N/A";
+            }
+
+            int heures = Integer.parseInt(parts[0]);
+            int minutes = Integer.parseInt(parts[1]);
+            int secondes = parts.length > 2 ? Integer.parseInt(parts[2]) : 0;
+
+            LocalTime retour = LocalTime.parse(heureNormalisee)
+                    .plusHours(heures)
+                    .plusMinutes(minutes)
+                    .plusSeconds(secondes);
+
+            return retour.toString();
+        } catch (DateTimeParseException | NumberFormatException e) {
+            return "N/A";
+        }
     }
 
 }
