@@ -244,6 +244,47 @@ public class ReservationRepository {
 
         return reservations;
     }
+
+    /**
+     * Compte le nombre total de personnes encore non assignées.
+     */
+    public int countPersonnesNonAssignees() {
+        String query = "SELECT COALESCE(SUM(nombre_personnes), 0) AS total_personnes " +
+                      "FROM reservations WHERE vehicule_id IS NULL";
+
+        try (Connection conn = dbConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+
+            if (rs.next()) {
+                return rs.getInt("total_personnes");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
+
+    /**
+     * Compte le nombre de réservations non assignées.
+     */
+    public int countReservationsNonAssignees() {
+        String query = "SELECT COUNT(*) AS total_reservations FROM reservations WHERE vehicule_id IS NULL";
+
+        try (Connection conn = dbConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+
+            if (rs.next()) {
+                return rs.getInt("total_reservations");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
     // ==================== MÉTHODES D'AFFICHAGE (View) ====================
 
     /**
