@@ -153,6 +153,9 @@ public class PlanningTrajetService {
             List<Reservation> reservationsNonAssignees = 
                     reservationService.getReservationNonAssignees();
 
+            // Sprint 6: démarrage journalier de la disponibilité à l'heure de début configurée.
+            vehiculeService.resetDisponibilitesCourantes();
+
             Map<String, List<Reservation>> groupesParCreneau = reservationsNonAssignees.stream()
                     .filter(r -> r.getDateArrivee() != null && r.getHeure() != null && !r.getHeure().isEmpty())
                     .collect(Collectors.groupingBy(
@@ -221,10 +224,7 @@ public class PlanningTrajetService {
         }
 
         List<Reservation> restantes = new ArrayList<>(reservationsMemeCreneau);
-        restantes.sort(Comparator
-                .comparingInt(Reservation::getNombrePersonnes).reversed()
-                .thenComparing(Reservation::getHeure, Comparator.nullsLast(String::compareTo))
-                .thenComparingInt(Reservation::getId));
+        trierReservationsPourAssignation(restantes);
 
         while (!restantes.isEmpty()) {
             Reservation reservationPivot = restantes.remove(0);
@@ -234,18 +234,33 @@ public class PlanningTrajetService {
                 continue;
             }
 
+            int passagersReservationPivot = reservationPivot.getNombrePersonnes();
+            int placesVehicule = vehicule.getCapacitePassagers();
+
+            // Sprint 6: si la réservation dépasse la capacité du véhicule, on fractionne.
+            if (passagersReservationPivot > placesVehicule) {
+                Reservation fragmentReste = reservationService.fractionnerReservation(reservationPivot, placesVehicule);
+                if (fragmentReste != null) {
+                    restantes.add(fragmentReste);
+                    trierReservationsPourAssignation(restantes);
+                    reservationPivot = reservationService.getReservationById(reservationPivot.getId());
+                    passagersReservationPivot = reservationPivot != null ? reservationPivot.getNombrePersonnes() : placesVehicule;
+                }
+            }
+
             String dateHeureCreneau = construireDateHeureReservation(reservationPivot);
             Long localisationCouranteVehicule = dateHeureCreneau != null
                     ? vehiculeDeplacementHistoriqueRepository.getDernierLieuIdAvant(vehicule.getId(), dateHeureCreneau)
                     : null;
 
             assignerVehicule(reservationPivot.getId(), (int) vehicule.getId());
+            actualiserDisponibiliteVehiculeApresAssignation((int) vehicule.getId(), reservationPivot);
 
             if (reservationPivot.getLieuDepartId() != null && reservationPivot.getLieuDepartId() > 0) {
                 localisationCouranteVehicule = reservationPivot.getLieuDepartId();
             }
 
-            int placesRestantes = vehicule.getCapacitePassagers() - reservationPivot.getNombrePersonnes();
+            int placesRestantes = placesVehicule - passagersReservationPivot;
             if (placesRestantes <= 0 || restantes.isEmpty()) {
                 continue;
             }
@@ -254,27 +269,125 @@ public class PlanningTrajetService {
             while (placesRestantes > 0 && !candidats.isEmpty()) {
                 final Long lieuCourant = localisationCouranteVehicule;
                 final int placesDisponibles = placesRestantes;
+
                 Reservation prochainCandidat = candidats.stream()
-                    .filter(r -> r.getNombrePersonnes() <= placesDisponibles)
+                        .filter(r -> r.getNombrePersonnes() <= placesDisponibles)
                         .min(Comparator
                                 .comparingDouble((Reservation r) -> calculerProximiteDepuisLieu(lieuCourant, r))
-                                .thenComparing(Comparator.comparingInt(Reservation::getNombrePersonnes).reversed())
+                                .thenComparingInt(Reservation::getNombrePersonnes)
                                 .thenComparingInt(Reservation::getId))
                         .orElse(null);
 
+                // Sprint 6: aucun candidat exact -> fractionner celui le plus proche des places restantes.
                 if (prochainCandidat == null) {
-                    break;
+                    Reservation candidatAFractionner = candidats.stream()
+                            .filter(r -> r.getNombrePersonnes() > placesDisponibles)
+                            .min(Comparator
+                                    .comparingInt((Reservation r) -> Math.abs(r.getNombrePersonnes() - placesDisponibles))
+                                    .thenComparingInt(Reservation::getNombrePersonnes)
+                                    .thenComparingInt(Reservation::getId))
+                            .orElse(null);
+
+                    if (candidatAFractionner == null || placesDisponibles <= 0) {
+                        break;
+                    }
+
+                    Reservation fragmentReste = reservationService.fractionnerReservation(candidatAFractionner, placesDisponibles);
+                    if (fragmentReste == null) {
+                        break;
+                    }
+
+                    prochainCandidat = reservationService.getReservationById(candidatAFractionner.getId());
+                    if (prochainCandidat == null) {
+                        break;
+                    }
+
+                    restantes.add(fragmentReste);
+                    candidats.add(fragmentReste);
                 }
 
                 assignerVehicule(prochainCandidat.getId(), (int) vehicule.getId());
+                actualiserDisponibiliteVehiculeApresAssignation((int) vehicule.getId(), prochainCandidat);
+
                 placesRestantes -= prochainCandidat.getNombrePersonnes();
-                restantes.removeIf(r -> r.getId() == prochainCandidat.getId());
-                candidats.removeIf(r -> r.getId() == prochainCandidat.getId());
+                final int prochainCandidatId = prochainCandidat.getId();
+                restantes.removeIf(r -> r.getId() == prochainCandidatId);
+                candidats.removeIf(r -> r.getId() == prochainCandidatId);
 
                 if (prochainCandidat.getLieuDepartId() != null && prochainCandidat.getLieuDepartId() > 0) {
                     localisationCouranteVehicule = prochainCandidat.getLieuDepartId();
                 }
             }
+        }
+    }
+
+    private void trierReservationsPourAssignation(List<Reservation> reservations) {
+        reservations.sort(Comparator
+                .comparingInt(Reservation::getNombrePersonnes).reversed()
+                .thenComparing(Reservation::getHeure, Comparator.nullsLast(String::compareTo))
+                .thenComparingInt(Reservation::getId));
+    }
+
+    private void actualiserDisponibiliteVehiculeApresAssignation(int vehiculeId, Reservation reservation) {
+        if (reservation == null || reservation.getHeure() == null || reservation.getHeure().trim().isEmpty()) {
+            return;
+        }
+
+        Vehicule vehicule = vehiculeService.getVehiculeById(vehiculeId);
+        if (vehicule == null) {
+            return;
+        }
+
+        LocalTime heureCourante = parseHeureSafe(vehicule.getHeureDisponibleCourante(), LocalTime.MIN);
+        LocalTime heureDebutReservation = parseHeureSafe(reservation.getHeure(), LocalTime.MIN);
+
+        PlanningTrajet planning = getPlanningByReservationId(reservation.getId());
+        LocalTime heureArrivee = null;
+        if (planning != null && planning.getDureeEstimee() != null) {
+            String heureArriveeStr = calculerHeureArriveePrevue(normaliserHeure(reservation.getHeure()), planning.getDureeEstimee());
+            heureArrivee = parseHeureSafe(heureArriveeStr, null);
+        }
+
+        if (heureArrivee == null) {
+            heureArrivee = heureDebutReservation.plusHours(1);
+        }
+
+        LocalTime nouvelleDispo = heureArrivee.isAfter(heureCourante) ? heureArrivee : heureCourante;
+        vehiculeService.updateHeureDisponibiliteCourante(vehiculeId, nouvelleDispo.toString());
+    }
+
+    private boolean estVehiculeDisponibleParHeure(Vehicule vehicule, String heureReference) {
+        if (vehicule == null || heureReference == null || heureReference.trim().isEmpty()) {
+            return true;
+        }
+
+        String heureSource = vehicule.getHeureDisponibleCourante();
+        if (heureSource == null || heureSource.trim().isEmpty()) {
+            heureSource = vehicule.getHeureDisponibleDebut();
+        }
+        if (heureSource == null || heureSource.trim().isEmpty()) {
+            heureSource = "00:00:00";
+        }
+
+        LocalTime heureDisponible = parseHeureSafe(heureSource, LocalTime.MIN);
+        LocalTime heureDemande = parseHeureSafe(heureReference, LocalTime.MIN);
+        return !heureDemande.isBefore(heureDisponible);
+    }
+
+    private LocalTime parseHeureSafe(String heure, LocalTime defaultValue) {
+        if (heure == null || heure.trim().isEmpty()) {
+            return defaultValue;
+        }
+
+        String normalisee = heure.trim();
+        if (normalisee.matches("^\\d{2}:\\d{2}$")) {
+            normalisee = normalisee + ":00";
+        }
+
+        try {
+            return LocalTime.parse(normalisee);
+        } catch (DateTimeParseException e) {
+            return defaultValue;
         }
     }
 
@@ -817,7 +930,11 @@ public class PlanningTrajetService {
      * 3. Nombre de places disponibles
      */
     private Vehicule trouverMeilleurVehicule(Reservation reservation) {
-        // ÉTAPE 1 : Filtrer par capacité passagers et disponibilité
+        if (reservation == null) {
+            return null;
+        }
+
+        // ÉTAPE 1 : Filtrer par capacité passagers et disponibilité.
         List<Vehicule> vehiculesAptes = vehiculeService
                 .getVehiculesByCapacite(reservation.getNombrePersonnes());
 
@@ -826,28 +943,48 @@ public class PlanningTrajetService {
             String heureReference = reservation.getHeure();
 
             vehiculesAptes = vehiculesAptes.stream()
+                .filter(v -> estVehiculeDisponibleParHeure(v, heureReference))
                 .filter(v -> planningAssignationDetailRepository.isVehiculeDisponibleAt(v.getId(), dateService, heureReference))
                 .collect(Collectors.toList());
         }
 
+        // Sprint 6 : si aucun véhicule ne couvre toute la réservation, on tente un véhicule partiel.
         if (vehiculesAptes.isEmpty()) {
-            return null;
+            List<Vehicule> vehiculesPartiels = vehiculeService.getVehiculesDisponibles();
+            if (reservation.getDateArrivee() != null && reservation.getHeure() != null && !reservation.getHeure().isEmpty()) {
+                String dateService = reservation.getDateArrivee().toLocalDateTime().toLocalDate().toString();
+                String heureReference = reservation.getHeure();
+                vehiculesPartiels = vehiculesPartiels.stream()
+                    .filter(v -> estVehiculeDisponibleParHeure(v, heureReference))
+                    .filter(v -> planningAssignationDetailRepository.isVehiculeDisponibleAt(v.getId(), dateService, heureReference))
+                    .collect(Collectors.toList());
+            }
+
+            if (vehiculesPartiels.isEmpty()) {
+                return null;
+            }
+
+            return vehiculesPartiels.stream()
+                .max(Comparator
+                    .comparingInt(Vehicule::getCapacitePassagers)
+                    .thenComparingInt(v -> -compterTrajetsVehicule(v))
+                    .thenComparingInt(v -> (int) -v.getId()))
+                .orElse(null);
         }
 
-        // ÉTAPE 2 : Score des véhicules selon priorités Sprint 5
+        // ÉTAPE 2 : Score des véhicules selon priorités Sprint 5 + Sprint 6.
         return vehiculesAptes.stream()
             .min(Comparator
                 // Priorité 1: Proximité (Diesel prioritaire)
                 .comparingInt((Vehicule v) -> {
                     boolean isDiesel = v.getTypeCarburant() != null && 
                                       v.getTypeCarburant().equalsIgnoreCase("Diesel");
-                    return isDiesel ? 0 : 1;  // 0 pour diesel, 1 pour autres
+                    return isDiesel ? 0 : 1;
                 })
-                // Priorité 2: Nombre MINIMUM de trajets (Sprint 5)
+                // Priorité 2: Nombre MINIMUM de trajets
                 .thenComparingInt(this::compterTrajetsVehicule)
-                // Priorité 3: Places disponibles (plus on en a, meilleur c'est)
-                .thenComparingInt((Vehicule v) -> -v.getCapacitePassagers())
-                // Fallback: ID du véhicule
+                // Priorité 3 (Sprint 6): capacité minimale suffisante pour limiter le gaspillage de places
+                .thenComparingInt(Vehicule::getCapacitePassagers)
                 .thenComparingInt((Vehicule v) -> (int) v.getId()))
             .orElse(null);
     }
