@@ -265,12 +265,22 @@ public class PlanningTrajetService {
                 continue;
             }
 
+            // ⭐ Récupérer le temps d'attente max configuré
+            final int tempsAttentMaxMinutes = obtenirTempsAttentMaxConfig();
+            final Reservation pivotPourLambda = reservationPivot; // Capturer la valeur pour les lambdas
+
             List<Reservation> candidats = new ArrayList<>(restantes);
             while (placesRestantes > 0 && !candidats.isEmpty()) {
                 final Long lieuCourant = localisationCouranteVehicule;
                 final int placesDisponibles = placesRestantes;
 
-                Reservation prochainCandidat = candidats.stream()
+                // ⭐ SPRINT 6 : Filtrer les candidats qui sont dans la fenêtre de temps d'attente
+                // Si le temps d'attente dépasse le max, ne pas ajouter au groupe (le véhicule décolle)
+                List<Reservation> candidatsDansTempsAttente = candidats.stream()
+                        .filter(r -> peutEtreGroupee(pivotPourLambda, r, tempsAttentMaxMinutes))
+                        .collect(Collectors.toList());
+
+                Reservation prochainCandidat = candidatsDansTempsAttente.stream()
                         .filter(r -> r.getNombrePersonnes() <= placesDisponibles)
                         .min(Comparator
                                 .comparingDouble((Reservation r) -> calculerProximiteDepuisLieu(lieuCourant, r))
@@ -279,8 +289,9 @@ public class PlanningTrajetService {
                         .orElse(null);
 
                 // Sprint 6: aucun candidat exact -> fractionner celui le plus proche des places restantes.
+                // ⭐ Mais seulement parmi les candidats dans la fenêtre de temps d'attente
                 if (prochainCandidat == null) {
-                    Reservation candidatAFractionner = candidats.stream()
+                    Reservation candidatAFractionner = candidatsDansTempsAttente.stream()
                             .filter(r -> r.getNombrePersonnes() > placesDisponibles)
                             .min(Comparator
                                     .comparingInt((Reservation r) -> Math.abs(r.getNombrePersonnes() - placesDisponibles))
@@ -712,15 +723,18 @@ public class PlanningTrajetService {
                 return;
             }
 
-            // ⭐ GROUPER PAR TEMPS D'ATTENTE (Sprint 4)
+            // Récupérer le véhicule et sa capacité
+            Vehicule vehicule = vehiculeService.getVehiculeById(vehiculeId);
+            int capaciteVehicule = vehicule != null ? vehicule.getCapacitePassagers() : 0;
+
+            // ⭐ GROUPER PAR TEMPS D'ATTENTE ET CAPACITÉ (Sprint 4 + Sprint 6)
+            // Si le véhicule est plein, il décolle immédiatement
             int tempsAttentMaxMinutes = obtenirTempsAttentMaxConfig();
             Map<Integer, List<Reservation>> groupesParTempsAttente = grouperParTempsAttente(
                 reservationsVehiculeDate,
-                tempsAttentMaxMinutes
+                tempsAttentMaxMinutes,
+                capaciteVehicule
             );
-
-            Vehicule vehicule = vehiculeService.getVehiculeById(vehiculeId);
-            int capaciteVehicule = vehicule != null ? vehicule.getCapacitePassagers() : 0;
 
             // Exporter chaque GROUPE en UNE SEULE LIGNE
             for (Map.Entry<Integer, List<Reservation>> entryGroupe : groupesParTempsAttente.entrySet()) {
@@ -1184,17 +1198,21 @@ public class PlanningTrajetService {
     }
 
     /**
-     * Grouper les réservations par temps d'attente
+     * Grouper les réservations par temps d'attente ET capacité du véhicule
      * Retourne une map : key=numéro du groupe, value=liste des réservations du groupe
-     * 
+     *
+     * ⭐ SPRINT 6 : Si le véhicule est plein, il décolle immédiatement sans attendre
+     *
      * @param reservations Liste des réservations à grouper
      * @param tempsAttentMaxMinutes Temps d'attente maximum en minutes
+     * @param capaciteVehicule Capacité maximale du véhicule (nombre de passagers)
      * @return Map des groupes
      */
-    public Map<Integer, List<Reservation>> grouperParTempsAttente(List<Reservation> reservations, 
-                                                                   int tempsAttentMaxMinutes) {
+    public Map<Integer, List<Reservation>> grouperParTempsAttente(List<Reservation> reservations,
+                                                                   int tempsAttentMaxMinutes,
+                                                                   int capaciteVehicule) {
         Map<Integer, List<Reservation>> groupes = new LinkedHashMap<>();
-        
+
         if (reservations == null || reservations.isEmpty()) {
             return groupes;
         }
@@ -1208,19 +1226,25 @@ public class PlanningTrajetService {
 
         int numeroGroupe = 0;
         List<Reservation> groupeCourant = new ArrayList<>();
+        int passagersTotauxGroupe = 0;
 
         for (Reservation reservation : reservationTriees) {
             if (groupeCourant.isEmpty()) {
                 // Premier élément du groupe
                 groupeCourant.add(reservation);
+                passagersTotauxGroupe = reservation.getNombrePersonnes();
             } else {
                 // Vérifier si peut être ajoutée au groupe courant
                 Reservation derniereReservation = groupeCourant.get(groupeCourant.size() - 1);
-                
-                if (peutEtreGroupee(derniereReservation, reservation, tempsAttentMaxMinutes)) {
-                    // Peut être groupée : ajouter au groupe courant
-                    groupeCourant.add(reservation);
-                } else {
+                int nouveauTotalPassagers = passagersTotauxGroupe + reservation.getNombrePersonnes();
+
+                // ⭐ LOGIQUE : La voiture décolle si :
+                // 1. Le temps d'attente est dépassé OU
+                // 2. La capacité du véhicule serait dépassée (le véhicule est plein)
+                boolean depasseTempsAttente = !peutEtreGroupee(derniereReservation, reservation, tempsAttentMaxMinutes);
+                boolean vehiculePlein = (capaciteVehicule > 0) && (nouveauTotalPassagers > capaciteVehicule);
+
+                if (depasseTempsAttente || vehiculePlein) {
                     // Ne peut pas être groupée : sauvegarder groupe courant et démarrer nouveau groupe
                     if (!groupeCourant.isEmpty()) {
                         groupes.put(numeroGroupe, new ArrayList<>(groupeCourant));
@@ -1228,6 +1252,11 @@ public class PlanningTrajetService {
                     }
                     groupeCourant.clear();
                     groupeCourant.add(reservation);
+                    passagersTotauxGroupe = reservation.getNombrePersonnes();
+                } else {
+                    // Peut être groupée : ajouter au groupe courant
+                    groupeCourant.add(reservation);
+                    passagersTotauxGroupe = nouveauTotalPassagers;
                 }
             }
         }
