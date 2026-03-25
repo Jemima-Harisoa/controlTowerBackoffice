@@ -103,7 +103,8 @@ diesel AS (SELECT id FROM type_carburant WHERE libelle = 'Diesel' LIMIT 1),
 essence AS (SELECT id FROM type_carburant WHERE libelle = 'Essence' LIMIT 1)
 INSERT INTO vehicules (
 	immatriculation, marque, modele, annee, type_carburant_id, capacite_passagers, is_available,
-	heure_disponible_debut, heure_disponible_courante
+	heure_disponible_deb
+	.3ut, heure_disponible_courante
 )
 SELECT 'EXM-VEH-001', 'Renault', 'Trafic', 2023, diesel.id, 5, true, TIME '09:00:00', TIME '09:00:00' FROM diesel
 UNION ALL
