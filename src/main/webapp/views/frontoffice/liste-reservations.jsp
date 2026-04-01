@@ -399,58 +399,58 @@
         
         <!-- Tableau des réservations -->
         
-<!-- Tableau des réservations -->
-<c:choose>
-    <c:when test="${empty reservations}">
-        <div class="empty-state">
-            <div class="empty-state-icon"><i class="fas fa-clipboard-list"></i></div>
-            <h3>Aucune réservation</h3>
-            <p>Aucune réservation ne correspond aux critères actuels.</p>
-        </div>
-    </c:when>
-    <c:otherwise>
-        <table class="reservations-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Client</th>
-                    <th>Email</th>
-                    <th>Date d'arrivée</th>
-                    <th>Heure</th>
-                    <th>Personnes</th>
-                    <th>Hôtel</th>
-                    <th>Statut</th>
-                </tr>
-            </thead>
-            <tbody>
-                <c:forEach items="${reservations}" var="reservation">
+    <!-- Tableau des réservations -->
+    <c:choose>
+        <c:when test="${empty reservations}">
+            <div class="empty-state">
+                <div class="empty-state-icon"><i class="fas fa-clipboard-list"></i></div>
+                <h3>Aucune réservation</h3>
+                <p>Aucune réservation ne correspond aux critères actuels.</p>
+            </div>
+        </c:when>
+        <c:otherwise>
+            <table class="reservations-table">
+                <thead>
                     <tr>
-                        <td><strong>#${reservation.id}</strong></td>
-                        <td>${reservation.nomFormate}</td>
-                        <td>${reservation.email}</td>
-                        <td>${reservation.dateAffichee}</td>
-                        <td>${reservation.heureAffichee}</td>
-                        <td>
-                            <strong>${reservation.nombrePersonnes}</strong>
-                            <span class="text-muted-sm">pers.</span>
-                        </td>
-                        <td>${reservation.nomHotel}</td>
-                        <td>
-                            <c:choose>
-                                <c:when test="${reservation.confirmed}">
-                                    <span class="badge badge-success"><i class="fas fa-check"></i> Confirmee</span>
-                                </c:when>
-                                <c:otherwise>
-                                    <span class="badge badge-warning"><i class="fas fa-hourglass-half"></i> En attente</span>
-                                </c:otherwise>
-                            </c:choose>
-                        </td>
+                        <th>ID</th>
+                        <th>Client</th>
+                        <th>Email</th>
+                        <th>Date d'arrivée</th>
+                        <th>Heure</th>
+                        <th>Personnes</th>
+                        <th>Hôtel</th>
+                        <th>Statut</th>
                     </tr>
-                </c:forEach>
-            </tbody>
-        </table>
-    </c:otherwise>
-</c:choose>
+                </thead>
+                <tbody>
+                    <c:forEach items="${reservations}" var="reservation">
+                        <tr>
+                            <td><strong>#${reservation.id}</strong></td>
+                            <td>${reservation.nomFormate}</td>
+                            <td>${reservation.email}</td>
+                            <td>${reservation.dateAffichee}</td>
+                            <td>${reservation.heureAffichee}</td>
+                            <td>
+                                <strong>${reservation.nombrePersonnes}</strong>
+                                <span class="text-muted-sm">pers.</span>
+                            </td>
+                            <td>${reservation.nomHotel}</td>
+                            <td>
+                                <c:choose>
+                                    <c:when test="${reservation.confirmed}">
+                                        <span class="badge badge-success"><i class="fas fa-check"></i> Confirmee</span>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <span class="badge badge-warning"><i class="fas fa-hourglass-half"></i> En attente</span>
+                                    </c:otherwise>
+                                </c:choose>
+                            </td>
+                        </tr>
+                    </c:forEach>
+                </tbody>
+            </table>
+        </c:otherwise>
+    </c:choose>
 
     </div>
     

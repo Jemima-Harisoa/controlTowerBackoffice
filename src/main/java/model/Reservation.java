@@ -10,6 +10,9 @@ public class Reservation {
     private String heure;
     private int nombrePersonnes;
     private int hotelId;
+    private Long lieuDepartId;
+    private Long lieuArriveeId;
+    private Long vehiculeId;
     private boolean isConfirmed;
     private Timestamp createdAt;
     private Timestamp updatedAt;
@@ -82,6 +85,30 @@ public class Reservation {
 
     public void setHotelId(int hotelId) {
         this.hotelId = hotelId;
+    }
+
+    public Long getLieuDepartId() {
+        return lieuDepartId;
+    }
+
+    public void setLieuDepartId(Long lieuDepartId) {
+        this.lieuDepartId = lieuDepartId;
+    }
+
+    public Long getLieuArriveeId() {
+        return lieuArriveeId;
+    }
+
+    public void setLieuArriveeId(Long lieuArriveeId) {
+        this.lieuArriveeId = lieuArriveeId;
+    }
+
+    public Long getVehiculeId() {
+        return vehiculeId;
+    }
+
+    public void setVehiculeId(Long vehiculeId) {
+        this.vehiculeId = vehiculeId;
     }
 
     public boolean isConfirmed() {
