@@ -77,6 +77,8 @@ public class PlanningAssignationDetailRepository {
                                             String heureDepartPrevue,
                                             String heureArriveePrevue,
                                             String statut) {
+        String sqlDelete = "DELETE FROM planning_trajet_assignation_historique " +
+            "WHERE vehicule_id = ? AND reservation_id = ? AND date_service = ?::date";
         String sql = "INSERT INTO planning_trajet_assignation_historique " +
                 "(vehicule_id, reservation_id, planning_trajet_id, date_service, heure_depart_prevue, heure_arrivee_prevue, statut) " +
                 "VALUES (?, ?, ?, ?::date, ?, ?, ?) " +
@@ -87,7 +89,13 @@ public class PlanningAssignationDetailRepository {
                 "updated_at = NOW()";
 
         try (Connection conn = dbConnection.getConnection();
+             PreparedStatement stmtDelete = conn.prepareStatement(sqlDelete);
              PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmtDelete.setLong(1, vehiculeId);
+            stmtDelete.setLong(2, reservationId);
+            stmtDelete.setString(3, dateService);
+            stmtDelete.executeUpdate();
+
             stmt.setLong(1, vehiculeId);
             stmt.setLong(2, reservationId);
             if (planningTrajetId != null) {

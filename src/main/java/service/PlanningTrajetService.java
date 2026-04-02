@@ -132,10 +132,8 @@ public class PlanningTrajetService {
                 updatePlanning(planning);
             }
 
-            // Mettre a jour les metadonnees de trajet et externaliser un detail agrege
+            // Mettre a jour les metadonnees de trajet
             remplirDetailsPlanification(reservation);
-            Vehicule vehiculeAssigne = vehiculeService.getVehiculeById(vehiculeId);
-            externaliserDetailAssignationVehicule(vehiculeId, reservation, vehiculeAssigne);
 
             PlanningTrajet planningMisAJour = getPlanningByReservationId(reservationId);
             enregistrerHistoriqueDeplacementVehicule(vehiculeId, reservation, planningMisAJour);
@@ -207,16 +205,20 @@ public class PlanningTrajetService {
                     return p.getVehiculeId() + "|" + date;
                 }, Collectors.toList()));
             
-            // Externaliser les détails pour chaque groupe
+            // Externaliser les détails pour chaque groupe (une seule fois par véhicule/date)
             for (Map.Entry<String, List<PlanningTrajet>> entry : planningsGroupes.entrySet()) {
                 if (entry.getKey() == null) continue;
-                
-                for (PlanningTrajet planning : entry.getValue()) {
-                    Reservation reservation = reservationService.getReservationById((int) planning.getReservationId());
-                    if (reservation != null && planning.getVehiculeId() != null) {
-                        Vehicule vehicule = vehiculeService.getVehiculeById(planning.getVehiculeId().intValue());
-                        externaliserDetailAssignationVehicule(planning.getVehiculeId().intValue(), reservation, vehicule);
-                    }
+
+                List<PlanningTrajet> planningsGroupe = entry.getValue();
+                if (planningsGroupe == null || planningsGroupe.isEmpty()) {
+                    continue;
+                }
+
+                PlanningTrajet planningReference = planningsGroupe.get(0);
+                Reservation reservationReference = reservationService.getReservationById((int) planningReference.getReservationId());
+                if (reservationReference != null && planningReference.getVehiculeId() != null) {
+                    Vehicule vehicule = vehiculeService.getVehiculeById(planningReference.getVehiculeId().intValue());
+                    externaliserDetailAssignationVehicule(planningReference.getVehiculeId().intValue(), reservationReference, vehicule);
                 }
             }
         } catch (Exception e) {
@@ -804,8 +806,8 @@ public class PlanningTrajetService {
 
                 // Calculer temps d'attente du groupe
                 int tempsAttenteGroupeMinutes = calculerTempsAttenteGroupe(reservationsGroupeTriees);
-                // ⭐ FIX: Utiliser l'heure disponible courante du véhicule, pas l'heure de la dernière réservation
-                String heureDeprtAjustee = calculerHeureDeprtAjustee(vehicule, reservationsGroupeTriees);
+                // Sprint 4: départ aligné sur la réservation la plus tardive du groupe.
+                String heureDeprtAjustee = calculerHeureDepart(reservationsGroupeTriees);
                 String plageHeuresGroupe = premiereReservation.getHeure() + " → " + heureDeprtAjustee
                     + " (attente: " + tempsAttenteGroupeMinutes + " min)";
 
@@ -839,14 +841,13 @@ public class PlanningTrajetService {
                 // Sprint 6-bis: l'indisponibilité court jusqu'à la fin de mission complète (aller + retour).
                 LocalTime heureDepartPlanifiee = parseHeureSafe(heureDeprtAjustee, parseHeureSafe(premiereReservation.getHeure(), LocalTime.MIN));
                 LocalTime heureDisponibilitePrevue = calculerHeureDisponibiliteMission(heureDepartPlanifiee, dureeOptimiseeGroup);
-                String heureArriveePrevue = calculerHeureArriveePrevue(heureDepartPlanifiee.toString(), dureeOptimiseeGroup);
                 planningAssignationDetailRepository.upsertHistoriqueAssignation(
                         vehiculeId,
                         premiereReservation.getId(),
                         planningPremiereRes != null ? planningPremiereRes.getId() : null,
                         dateArrivee,
                         heureDepartPlanifiee.toString(),
-                        heureArriveePrevue,
+                    heureDisponibilitePrevue.toString(),
                         "PLANIFIE"
                 );
             }
