@@ -279,7 +279,7 @@ public class PlanningTrajetController {
             int placesLibres = Math.max(groupe.getCapaciteVehicule() - groupe.getNombrePassagersTotal(), 0);
             groupe.setPlacesLibres(placesLibres);
             
-            // ⭐ CORRECTION: Recalculer la durée estimée en fonction de la distance totale du groupe
+            //  CORRECTION: Recalculer la durée estimée en fonction de la distance totale du groupe
             // (La durée n'était définie que pour la première réservation du groupe)
             groupe.setDureeEstimee(calculerDureeEstimee(groupe.getDistanceTotale()));
             groupe.setHeureRetour(calculerHeureRetour(groupe.getHeureArrivee(), groupe.getDureeEstimee()));

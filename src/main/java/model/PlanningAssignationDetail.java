@@ -20,7 +20,7 @@ public class PlanningAssignationDetail {
     private String createdAt;
     private String updatedAt;
     
-    // ⭐ SPRINT 4 : Champs pour groupement par temps d'attente
+    //  SPRINT 4 : Champs pour groupement par temps d'attente
     private String reservationIdsGroupees;        // CSV des IDs du groupe (ex: "7,8")
     private int nombreReservationsGroupe;         // Nombre de réservations dans le groupe
     private int tempsAttenteGroupeMinutes;        // Temps d'attente total entre 1ère et dernière
@@ -173,7 +173,7 @@ public class PlanningAssignationDetail {
         this.updatedAt = updatedAt;
     }
 
-    // ⭐ SPRINT 4 : Getters et Setters pour groupement par temps d'attente
+    //  SPRINT 4 : Getters et Setters pour groupement par temps d'attente
     
     public String getReservationIdsGroupees() {
         return reservationIdsGroupees;

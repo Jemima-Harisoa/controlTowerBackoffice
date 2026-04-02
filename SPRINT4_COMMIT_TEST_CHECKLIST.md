@@ -89,7 +89,7 @@ Responsabilité:
 - Boucle chaque réservation → crée 1 ligne par réservation
 - Distance/Durée partagées mais création multiple ligne
 
-**Après (Sprint 4):** ⭐ CHANGEMENT CRITIQUE
+**Après (Sprint 4):**  CHANGEMENT CRITIQUE
 ```java
 // Étape 1: Récupérer toutes les réservations du véhicule pour la date
 List<Reservation> reservationsVehiculeDate = getPlanningsByVehicule(...)

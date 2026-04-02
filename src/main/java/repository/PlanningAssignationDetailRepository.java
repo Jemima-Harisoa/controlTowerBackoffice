@@ -14,7 +14,7 @@ public class PlanningAssignationDetailRepository {
     private DatabaseConnection dbConnection = DatabaseConnection.getInstance();
 
     public void upsert(PlanningAssignationDetail detail) {
-        // ⭐ SPRINT 4 : Inclure les colonnes de groupement par temps d'attente
+        //  SPRINT 4 : Inclure les colonnes de groupement par temps d'attente
         String sql = "INSERT INTO planning_trajet_detail " +
                 "(vehicule_id, date_arrivee, heure_arrivee, reservation_id, premiere_reservation_id, reservation_client, " +
                 "nombre_passagers_total, capacite_vehicule, places_libres, distance_estimee_km, " +
@@ -58,7 +58,7 @@ public class PlanningAssignationDetailRepository {
             stmt.setString(13, detail.getDernierPointArrivee());
             stmt.setString(14, detail.getPointsDepart());
             stmt.setString(15, detail.getPointsArrivee());
-            // ⭐ SPRINT 4 : Ajouter les champs de groupement
+            //  SPRINT 4 : Ajouter les champs de groupement
             stmt.setString(16, detail.getReservationIdsGroupees());
             stmt.setInt(17, detail.getNombreReservationsGroupe());
             stmt.setInt(18, detail.getTempsAttenteGroupeMinutes());
@@ -200,7 +200,7 @@ public class PlanningAssignationDetailRepository {
         detail.setPointsDepart(rs.getString("points_depart"));
         detail.setPointsArrivee(rs.getString("points_arrivee"));
         
-        // ⭐ SPRINT 4 : Ajouter les champs de groupement par temps d'attente
+        //  SPRINT 4 : Ajouter les champs de groupement par temps d'attente
         detail.setReservationIdsGroupees(rs.getString("reservation_ids_groupees"));
         detail.setNombreReservationsGroupe(rs.getInt("nombre_reservations_groupe"));
         detail.setTempsAttenteGroupeMinutes(rs.getInt("temps_attente_groupe_minutes"));

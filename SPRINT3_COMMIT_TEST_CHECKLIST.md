@@ -85,7 +85,7 @@ Après:  Durée RECALCULÉE après accumulation de distance groupe = CORRECT POU
         for (PlanningTrajetGroupeView groupe : groupes.values()) {
             ...
             groupe.setPlacesLibres(...);
-            // ⭐ CORRECTION: Recalculer durée en fonction distance totale du groupe
+            //  CORRECTION: Recalculer durée en fonction distance totale du groupe
             groupe.setDureeEstimee(calculerDureeEstimee(groupe.getDistanceTotale()));
         }
 ```
