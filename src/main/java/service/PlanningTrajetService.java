@@ -160,12 +160,16 @@ public class PlanningTrajetService {
             // Sprint 6: démarrage journalier de la disponibilité à l'heure de début configurée.
             vehiculeService.resetDisponibilitesCourantes();
 
-            Map<String, List<Reservation>> groupesParCreneau = reservationsNonAssignees.stream()
+                Map<String, List<Reservation>> groupesParCreneau = reservationsNonAssignees.stream()
                     .filter(r -> r.getDateArrivee() != null && r.getHeure() != null && !r.getHeure().isEmpty())
+                    .sorted(Comparator
+                        .comparing((Reservation r) -> r.getDateArrivee().toLocalDateTime().toLocalDate())
+                        .thenComparing(Reservation::getHeure, Comparator.nullsLast(String::compareTo))
+                        .thenComparingInt(Reservation::getId))
                     .collect(Collectors.groupingBy(
-                            this::buildCreneauKey,
-                            LinkedHashMap::new,
-                            Collectors.toList()
+                        r -> r.getDateArrivee().toLocalDateTime().toLocalDate().toString(),
+                        LinkedHashMap::new,
+                        Collectors.toList()
                     ));
 
             for (List<Reservation> groupe : groupesParCreneau.values()) {
@@ -343,8 +347,8 @@ public class PlanningTrajetService {
 
     private void trierReservationsPourAssignation(List<Reservation> reservations) {
         reservations.sort(Comparator
-                .comparingInt(Reservation::getNombrePersonnes).reversed()
-                .thenComparing(Reservation::getHeure, Comparator.nullsLast(String::compareTo))
+                .comparing(Reservation::getHeure, Comparator.nullsLast(String::compareTo))
+                .thenComparing(Comparator.comparingInt(Reservation::getNombrePersonnes).reversed())
                 .thenComparingInt(Reservation::getId));
     }
 
@@ -560,10 +564,18 @@ public class PlanningTrajetService {
             }
 
             try {
-                // ÉTAPE 1 : Récupérer la position actuelle du véhicule
-                //           (dernière localisation depuis l'historique de déplacement)
-                Long positionActuelleVehiculeId = vehiculeDeplacementHistoriqueRepository
-                    .getDerniereLieuDuVehicule(vehiculeId);
+                // ÉTAPE 1 : Récupérer la position du véhicule AVANT ce groupe (et non globale).
+                Reservation premiereReservationParHeure = reservationsGroupe.stream()
+                    .sorted(Comparator
+                        .comparing(Reservation::getHeure, Comparator.nullsLast(String::compareTo))
+                        .thenComparingInt(Reservation::getId))
+                    .findFirst()
+                    .orElse(null);
+
+                String dateHeureReference = construireDateHeureReservation(premiereReservationParHeure);
+                Long positionActuelleVehiculeId = dateHeureReference != null
+                    ? vehiculeDeplacementHistoriqueRepository.getDernierLieuIdAvant(vehiculeId, dateHeureReference)
+                    : null;
                 
                 if (positionActuelleVehiculeId == null || positionActuelleVehiculeId <= 0) {
                     // Si pas d'historique, utiliser le premier point de ramassage comme référence
@@ -575,12 +587,16 @@ public class PlanningTrajetService {
                 //          - Points d'arrivée (dépôts)
                 List<Long> pointsDepart = new ArrayList<>();
                 List<Long> pointsArrivee = new ArrayList<>();
+                Long pointDepartReference = null;
 
                 for (Reservation r : reservationsGroupe) {
                     PlanningTrajet p = planningByReservationId.get((long) r.getId());
                     if (p != null) {
                         if (p.getLieuDepartId() != null && p.getLieuDepartId() > 0) {
                             pointsDepart.add(p.getLieuDepartId());
+                            if (pointDepartReference == null) {
+                                pointDepartReference = p.getLieuDepartId();
+                            }
                         }
                         if (p.getLieuArriveeId() != null && p.getLieuArriveeId() > 0) {
                             pointsArrivee.add(p.getLieuArriveeId());
@@ -661,6 +677,16 @@ public class PlanningTrajetService {
                     // Mettre à jour la position actuelle et continuer
                     lieuActuel = pointLePlusPrche;
                     depotsNonVisites.remove(pointLePlusPrche);
+                }
+
+                // Sprint 6-bis: retour direct au point de départ (aéroport) après le dernier dépôt.
+                if (pointDepartReference != null && lieuActuel != null
+                        && pointDepartReference > 0 && lieuActuel > 0
+                        && !pointDepartReference.equals(lieuActuel)) {
+                    double distanceRetour = distanceService.calculerDistance(lieuActuel, pointDepartReference);
+                    if (distanceRetour > 0) {
+                        distanceTotale += distanceRetour;
+                    }
                 }
 
                 return distanceTotale;
@@ -836,20 +862,21 @@ public class PlanningTrajetService {
 
                 planningAssignationDetailRepository.upsert(detail);
 
-                // Enregistrer l'historique d'assignation pour la PREMIÈRE réservation du groupe
-                PlanningTrajet planningPremiereRes = planningByReservationId.get((long) premiereReservation.getId());
-                // Sprint 6-bis: l'indisponibilité court jusqu'à la fin de mission complète (aller + retour).
+                // Enregistrer l'historique d'assignation pour chaque réservation du groupe.
                 LocalTime heureDepartPlanifiee = parseHeureSafe(heureDeprtAjustee, parseHeureSafe(premiereReservation.getHeure(), LocalTime.MIN));
-                LocalTime heureDisponibilitePrevue = calculerHeureDisponibiliteMission(heureDepartPlanifiee, dureeOptimiseeGroup);
-                planningAssignationDetailRepository.upsertHistoriqueAssignation(
-                        vehiculeId,
-                        premiereReservation.getId(),
-                        planningPremiereRes != null ? planningPremiereRes.getId() : null,
-                        dateArrivee,
-                        heureDepartPlanifiee.toString(),
-                    heureDisponibilitePrevue.toString(),
-                        "PLANIFIE"
-                );
+                LocalTime heureDisponibilitePrevue = calculerHeureFinMissionDepuisDureeComplete(heureDepartPlanifiee, dureeOptimiseeGroup);
+                for (Reservation reservationDuGroupe : reservationsGroupeTriees) {
+                    PlanningTrajet planningReservation = planningByReservationId.get((long) reservationDuGroupe.getId());
+                    planningAssignationDetailRepository.upsertHistoriqueAssignation(
+                            vehiculeId,
+                            reservationDuGroupe.getId(),
+                            planningReservation != null ? planningReservation.getId() : null,
+                            dateArrivee,
+                            heureDepartPlanifiee.toString(),
+                            heureDisponibilitePrevue.toString(),
+                            "PLANIFIE"
+                    );
+                }
             }
         }
 
@@ -874,6 +901,22 @@ public class PlanningTrajetService {
             } catch (DateTimeParseException | NumberFormatException e) {
                 return null;
             }
+        }
+
+        /**
+         * Fin de mission quand la durée fournie représente déjà la mission complète.
+         */
+        private LocalTime calculerHeureFinMissionDepuisDureeComplete(LocalTime heureDepart, String dureeMissionCompleteInterval) {
+            if (heureDepart == null) {
+                heureDepart = LocalTime.MIN;
+            }
+
+            int dureeMissionMinutes = extraireMinutesDepuisInterval(dureeMissionCompleteInterval);
+            if (dureeMissionMinutes <= 0) {
+                return heureDepart.plusHours(2);
+            }
+
+            return heureDepart.plusMinutes(dureeMissionMinutes);
         }
 
         /**
