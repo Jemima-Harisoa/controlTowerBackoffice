@@ -1,8 +1,19 @@
+# ===========================================
+# DOCKER COMPOSE - DÉVELOPPEMENT LOCAL
+# ===========================================
+# Usage: docker-compose -f docker-compose.dev.yml up
+# 
+# Caractéristiques:
+# - Volume monté pour hot-reload
+# - Build local du WAR
+# - Adminer activé par défaut
+# - Logs détaillés
+
 services:
   # === Base de données PostgreSQL ===
   db:
     image: postgres:15-alpine
-    container_name: controltower_db
+    container_name: controltower_db_dev
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-controltower}
@@ -12,8 +23,8 @@ services:
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./database/init:/docker-entrypoint-initdb.d
+      - postgres_data_dev:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d  # Initialisation de la base : les script du projet sont dans script/
       - ./database/backups:/backups
     networks:
       - controltower_network
@@ -23,12 +34,10 @@ services:
       timeout: 5s
       retries: 5
 
-  # === Application Control Tower ===
+  # === Application Control Tower (MODE DEV) ===
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: controltower_app
+    image: tomcat:10.1-jdk11
+    container_name: controltower_app_dev
     restart: unless-stopped
     ports:
       - "${APP_PORT:-8080}:8080"
@@ -41,8 +50,8 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD:-controltower_pass}
       
       # Configuration de l'application
-      APP_ENV: ${APP_ENV:-development}
-      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      APP_ENV: development
+      LOG_LEVEL: DEBUG
       
       # Configuration Tomcat
       CATALINA_OPTS: "-Djava.awt.headless=true -server"
@@ -51,23 +60,23 @@ services:
       db:
         condition: service_healthy
     volumes:
-      # Mount pour les logs
-      - app_logs:/usr/local/tomcat/logs
-      # Mount pour le développement hot-reload (optionnel)
-      - ./${HOT_RELOAD_PATH:-/dev/null}:/usr/local/tomcat/webapps/ROOT
+      # Volume partagé : ton WAR local → Tomcat webapps
+      - ./target/ControlTowerBackoffice.war:/usr/local/tomcat/webapps/ROOT.war
+      # Logs accessibles depuis l'hôte
+      - ./dev/logs:/usr/local/tomcat/logs
     networks:
       - controltower_network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/ || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
 
-  # === Adminer pour la gestion de base (développement) ===
+  # === Adminer pour la gestion de base ===
   adminer:
     image: adminer:4-standalone
-    container_name: controltower_adminer
+    container_name: controltower_adminer_dev
     restart: unless-stopped
     ports:
       - "${ADMINER_PORT:-8081}:8080"
@@ -78,20 +87,15 @@ services:
       - db
     networks:
       - controltower_network
-    profiles:
-      - dev  # Seulement activé avec --profile dev
 
 # === Volumes ===
 volumes:
-  postgres_data:
+  postgres_data_dev:
     driver: local
-    name: controltower_postgres_data
-  app_logs:
-    driver: local
-    name: controltower_app_logs
+    name: controltower_postgres_data_dev
 
 # === Réseau ===
 networks:
   controltower_network:
     driver: bridge
-    name: controltower_network
+    name: controltower_network_dev
