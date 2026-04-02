@@ -220,15 +220,11 @@ public class ReservationRepository {
      */
     public List<ReservationView> findNonAssigneesForView() {
         List<ReservationView> reservations = new ArrayList<>();
-        
-        // Récupérer les réservations qui n'ont PAS de véhicule assigné
-        // (même si elles ont un enregistrement planning_trajet, si vehicule_id IS NULL, elles sont non assignées)
-        String query = "SELECT DISTINCT r.id, r.nom, r.email, r.date_arrivee, r.heure, r.nombre_personnes, " + 
+        String query = "SELECT r.id, r.nom, r.email, r.date_arrivee, r.heure, r.nombre_personnes, " + 
                         "h.nom as nom_hotel, r.is_confirmed " + 
                         "FROM reservations r " + 
-                        "LEFT JOIN hotel h ON r.hotel_id = h.id " +
-                        "WHERE r.vehicule_id IS NULL " +
-                        "ORDER BY r.date_arrivee ASC, r.id ASC";
+                        "JOIN hotel h ON r.hotel_id = h.id "  +
+                        "WHERE r.id NOT IN (SELECT reservation_id FROM planning_trajet) ORDER BY date_arrivee ASC";
 
         try (Connection conn = dbConnection.getConnection();
              Statement stmt = conn.createStatement();

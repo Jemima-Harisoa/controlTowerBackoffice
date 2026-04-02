@@ -13,14 +13,11 @@ public class PlanningAssignationDetailRepository {
     private DatabaseConnection dbConnection = DatabaseConnection.getInstance();
 
     public void upsert(PlanningAssignationDetail detail) {
-        // ⭐ SPRINT 4 : Inclure les colonnes de groupement par temps d'attente
         String sql = "INSERT INTO planning_trajet_detail " +
                 "(vehicule_id, date_arrivee, heure_arrivee, reservation_id, premiere_reservation_id, reservation_client, " +
                 "nombre_passagers_total, capacite_vehicule, places_libres, distance_estimee_km, " +
-                "duree_estimee, premier_point_depart, dernier_point_arrivee, points_depart, points_arrivee, " +
-                "reservation_ids_groupees, nombre_reservations_groupe, temps_attente_groupe_minutes, " +
-                "heure_depart_ajustee, plage_heures_groupe) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::interval, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+                "duree_estimee, premier_point_depart, dernier_point_arrivee, points_depart, points_arrivee) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::interval, ?, ?, ?, ?) " +
                 "ON CONFLICT (vehicule_id, date_arrivee, heure_arrivee, reservation_id) " +
                 "DO UPDATE SET premiere_reservation_id = EXCLUDED.premiere_reservation_id, " +
                 "reservation_client = EXCLUDED.reservation_client, " +
@@ -33,11 +30,6 @@ public class PlanningAssignationDetailRepository {
                 "dernier_point_arrivee = EXCLUDED.dernier_point_arrivee, " +
                 "points_depart = EXCLUDED.points_depart, " +
                 "points_arrivee = EXCLUDED.points_arrivee, " +
-                "reservation_ids_groupees = EXCLUDED.reservation_ids_groupees, " +
-                "nombre_reservations_groupe = EXCLUDED.nombre_reservations_groupe, " +
-                "temps_attente_groupe_minutes = EXCLUDED.temps_attente_groupe_minutes, " +
-                "heure_depart_ajustee = EXCLUDED.heure_depart_ajustee, " +
-                "plage_heures_groupe = EXCLUDED.plage_heures_groupe, " +
                 "updated_at = NOW()";
 
         try (Connection conn = dbConnection.getConnection();
@@ -57,12 +49,6 @@ public class PlanningAssignationDetailRepository {
             stmt.setString(13, detail.getDernierPointArrivee());
             stmt.setString(14, detail.getPointsDepart());
             stmt.setString(15, detail.getPointsArrivee());
-            // ⭐ SPRINT 4 : Ajouter les champs de groupement
-            stmt.setString(16, detail.getReservationIdsGroupees());
-            stmt.setInt(17, detail.getNombreReservationsGroupe());
-            stmt.setInt(18, detail.getTempsAttenteGroupeMinutes());
-            stmt.setString(19, detail.getHeureDeprtAjustee());
-            stmt.setString(20, detail.getPlageHeuresGroupe());
             stmt.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -109,9 +95,7 @@ public class PlanningAssignationDetailRepository {
         String sql = "SELECT id, vehicule_id, date_arrivee, heure_arrivee, reservation_id, " +
                 "premiere_reservation_id, reservation_client, nombre_passagers_total, capacite_vehicule, " +
                 "places_libres, distance_estimee_km, duree_estimee, premier_point_depart, " +
-                "dernier_point_arrivee, points_depart, points_arrivee, " +
-                "reservation_ids_groupees, nombre_reservations_groupe, temps_attente_groupe_minutes, " +
-                "heure_depart_ajustee, plage_heures_groupe " +
+                "dernier_point_arrivee, points_depart, points_arrivee " +
                 "FROM planning_trajet_detail " +
                 "ORDER BY vehicule_id, date_arrivee, heure_arrivee, reservation_id";
 
@@ -134,9 +118,7 @@ public class PlanningAssignationDetailRepository {
                 "SELECT id, vehicule_id, date_arrivee, heure_arrivee, reservation_id, " +
                 "premiere_reservation_id, reservation_client, nombre_passagers_total, capacite_vehicule, " +
                 "places_libres, distance_estimee_km, duree_estimee, premier_point_depart, " +
-                "dernier_point_arrivee, points_depart, points_arrivee, " +
-                "reservation_ids_groupees, nombre_reservations_groupe, temps_attente_groupe_minutes, " +
-                "heure_depart_ajustee, plage_heures_groupe " +
+                "dernier_point_arrivee, points_depart, points_arrivee " +
                 "FROM planning_trajet_detail WHERE 1=1"
         );
 
@@ -190,14 +172,6 @@ public class PlanningAssignationDetailRepository {
         detail.setDernierPointArrivee(rs.getString("dernier_point_arrivee"));
         detail.setPointsDepart(rs.getString("points_depart"));
         detail.setPointsArrivee(rs.getString("points_arrivee"));
-        
-        // ⭐ SPRINT 4 : Ajouter les champs de groupement par temps d'attente
-        detail.setReservationIdsGroupees(rs.getString("reservation_ids_groupees"));
-        detail.setNombreReservationsGroupe(rs.getInt("nombre_reservations_groupe"));
-        detail.setTempsAttenteGroupeMinutes(rs.getInt("temps_attente_groupe_minutes"));
-        detail.setHeureDeprtAjustee(rs.getString("heure_depart_ajustee"));
-        detail.setPlageHeuresGroupe(rs.getString("plage_heures_groupe"));
-        
         return detail;
     }
 

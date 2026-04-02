@@ -1,7 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
-<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%-- Page d'assignation des véhicules aux réservations : inclut header et footer automatiquement --%>
 <%@ include file="/views/components/header.jsp" %>
 
@@ -506,33 +505,6 @@
         color: #856404;
     }
 
-    .chips {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-    }
-
-    .chip {
-        padding: 4px 10px;
-        border-radius: 14px;
-        font-size: 12px;
-        font-weight: 600;
-        background: #eef2ff;
-        color: #3f51b5;
-        border: 1px solid #dbe3ff;
-    }
-
-    .chip-place {
-        background: #f1f8e9;
-        color: #33691e;
-        border: 1px solid #dcedc8;
-    }
-
-    .metric-inline {
-        font-weight: 700;
-        color: #2f3b52;
-    }
-
     @media (max-width: 1080px) {
         .filter-row {
             grid-template-columns: repeat(2, minmax(220px, 1fr));
@@ -566,11 +538,6 @@
     <div class="stat-card">
         <h3>${fn:length(reservations)}</h3>
         <p>Réservations à planifier</p>
-    </div>
-
-    <div class="stat-card stat-card-unassigned">
-        <h3>${fn:length(planningGroupes)}</h3>
-        <p>Trajets groupés (véhicule + créneau)</p>
     </div>
 
     <div class="stat-card stat-card-vehicles">
@@ -739,10 +706,9 @@
 </div>
 
 <div class="vehicules-section" id="statutPlanningSection">
-    <h3><i class="fas fa-list-check"></i> Statut de Planification Groupée des Trajets</h3>
-    <p style="color: #666; font-size: 13px; margin-bottom: 15px;">Affichage : Une ligne par groupe (véhicule + date + heure)</p>
+    <h3><i class="fas fa-list-check"></i> Statut de Planification des Trajets</h3>
     <c:choose>
-        <c:when test="${empty planningGroupes}">
+        <c:when test="${empty plannings}">
             <div class="empty-state">
                 <div class="empty-state-icon"><i class="fas fa-route"></i></div>
                 <h3>Aucun trajet planifié</h3>
@@ -753,66 +719,39 @@
             <table class="reservations-table">
                 <thead>
                     <tr>
-                        <th>Véhicule</th>
+                        <th>Client</th>
+                        <th>Passagers</th>
                         <th>Date arrivée</th>
                         <th>Heure arrivée</th>
-                        <th>Réservations assignées</th>
-                        <th>Passagers total</th>
-                        <th>Capacité</th>
-                        <th>Places libres</th>
-                        <th>Départs</th>
-                        <th>Arrivées</th>
-                        <th>Distance totale (km)</th>
-                        <th>Durée estimée</th>
+                        <th>Temps estimé</th>
+                        <th>Départ</th>
+                        <th>Arrivée</th>
                         <th>Carburant</th>
+                        <th>Places véhicule</th>
+                        <th>Véhicule</th>
                         <th>Statut</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <c:forEach items="${planningGroupes}" var="groupe">
+                    <c:forEach items="${plannings}" var="planning">
                         <tr>
-                            <td><strong>${groupe.vehiculeImmatriculation}</strong></td>
-                            <td>${groupe.dateArrivee}</td>
-                            <td>${groupe.heureArrivee}</td>
-                            <td>
-                                <div class="chips">
-                                    <c:forEach items="${groupe.clients}" var="client">
-                                        <span class="chip">${client}</span>
-                                    </c:forEach>
-                                </div>
-                            </td>
-                            <td><span class="metric-inline">${groupe.nombrePassagersTotal}</span></td>
-                            <td>${groupe.capaciteVehicule}</td>
-                            <td><span class="metric-inline">${groupe.placesLibres}</span></td>
-                            <td>
-                                <div class="chips">
-                                    <c:forEach items="${groupe.pointsDepart}" var="pointDepart">
-                                        <span class="chip chip-place">${pointDepart}</span>
-                                    </c:forEach>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="chips">
-                                    <c:forEach items="${groupe.pointsArrivee}" var="pointArrivee">
-                                        <span class="chip chip-place">${pointArrivee}</span>
-                                    </c:forEach>
-                                </div>
-                            </td>
-                            <td>
-                                <span style="font-weight: 700;">
-                                    <fmt:formatNumber value="${groupe.distanceTotale}" maxFractionDigits="2" minFractionDigits="2" />
-                                    km
-                                </span>
-                            </td>
-                            <td><span style="font-weight: 700; color: #0066cc;">${groupe.dureeEstimee != null && !groupe.dureeEstimee.isEmpty() ? groupe.dureeEstimee : 'N/A'}</span></td>
-                            <td>${groupe.typeCarburantVehicule}</td>
+                            <td>${planning.nomClient}</td>
+                            <td>${planning.nombrePersonnes}</td>
+                            <td>${planning.dateArrivee}</td>
+                            <td>${planning.heureArrivee}</td>
+                            <td>${planning.dureeEstimee}</td>
+                            <td>${planning.lieuDepart}</td>
+                            <td>${planning.lieuArrivee}</td>
+                            <td>${planning.typeCarburantVehicule}</td>
+                            <td>${planning.capaciteVehicule}</td>
+                            <td>${planning.vehiculeImmatriculation}</td>
                             <td>
                                 <c:choose>
-                                    <c:when test="${groupe.statut == 'VALIDE'}">
-                                        <span class="badge badge-success">${groupe.statut}</span>
+                                    <c:when test="${planning.statut == 'VALIDE'}">
+                                        <span class="badge badge-success">${planning.statut}</span>
                                     </c:when>
                                     <c:otherwise>
-                                        <span class="badge badge-warning">${groupe.statut}</span>
+                                        <span class="badge badge-warning">${planning.statut}</span>
                                     </c:otherwise>
                                 </c:choose>
                             </td>
@@ -842,29 +781,22 @@
             fetch('${pageContext.request.contextPath}/planning/assignation/generer', {
                 method: 'POST'
             })
-            .then(async response => {
-                let data = null;
-                try {
-                    data = await response.json();
-                } catch (e) {
-                    data = null;
-                }
-
-                if (!response.ok) {
-                    return {
-                        ok: false,
-                        message: (data && data.message) ? data.message : ('Erreur serveur (' + response.status + ')')
-                    };
-                }
-
-                return {
-                    ok: isApiSuccess(data),
-                    message: (data && data.message) ? data.message : 'Planning généré.'
-                };
-            })
+            .then(response =>
+                response.json()
+                    .then(data => {
+                        if (!response.ok && (!data || !data.message)) {
+                            return { success: false, message: 'Erreur serveur (' + response.status + ')' };
+                        }
+                        return data;
+                    })
+                    .catch(() => ({
+                        success: false,
+                        message: 'Réponse invalide du serveur'
+                    }))
+            )
             .then(data => {
-                if (data.ok) {
-                    alert(data.message || 'Planning généré avec succès !');
+                if (data.status === 'success') {
+                    alert('Planning généré avec succès !');
                     location.href = '${pageContext.request.contextPath}/planning/assignation#statutPlanningSection';
                 } else {
                     alert('Erreur: ' + (data && data.message ? data.message : 'Une erreur inconnue est survenue'));
@@ -885,29 +817,22 @@
                     'Content-Type': 'application/json'
                 }
             })
-            .then(async response => {
-                let data = null;
-                try {
-                    data = await response.json();
-                } catch (e) {
-                    data = null;
-                }
-
-                if (!response.ok) {
-                    return {
-                        ok: false,
-                        message: (data && data.message) ? data.message : ('Erreur serveur (' + response.status + ')')
-                    };
-                }
-
-                return {
-                    ok: isApiSuccess(data),
-                    message: (data && data.message) ? data.message : 'Planning validé.'
-                };
-            })
+            .then(response =>
+                response.json()
+                    .then(data => {
+                        if (!response.ok && (!data || !data.message)) {
+                            return { success: false, message: 'Erreur serveur (' + response.status + ')' };
+                        }
+                        return data;
+                    })
+                    .catch(() => ({
+                        success: false,
+                        message: 'Réponse invalide du serveur'
+                    }))
+            )
             .then(data => {
-                if (data.ok) {
-                    alert(data.message || 'Planning validé avec succès !');
+                if (data.status === 'success') {
+                    alert('Planning validé avec succès !');
                     location.href = '${pageContext.request.contextPath}/planning/assignation#statutPlanningSection';
                 } else {
                     alert('Erreur: ' + (data && data.message ? data.message : 'Une erreur inconnue est survenue'));
@@ -918,26 +843,6 @@
                 alert('Erreur lors de la validation du planning');
             });
         }
-    }
-
-    function isApiSuccess(data) {
-        if (!data) {
-            return true;
-        }
-
-        if (typeof data.success !== 'undefined') {
-            return !!data.success;
-        }
-
-        if (typeof data.status === 'string') {
-            return data.status.toLowerCase() === 'success';
-        }
-
-        if (typeof data.code !== 'undefined') {
-            return Number(data.code) >= 200 && Number(data.code) < 300;
-        }
-
-        return true;
     }
 
     function afficherNonAssignees() {
