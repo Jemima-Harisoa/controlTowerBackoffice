@@ -19,6 +19,13 @@ public class PlanningAssignationDetail {
     private String pointsArrivee;
     private String createdAt;
     private String updatedAt;
+    
+    // ⭐ SPRINT 4 : Champs pour groupement par temps d'attente
+    private String reservationIdsGroupees;        // CSV des IDs du groupe (ex: "7,8")
+    private int nombreReservationsGroupe;         // Nombre de réservations dans le groupe
+    private int tempsAttenteGroupeMinutes;        // Temps d'attente total entre 1ère et dernière
+    private String heureDeprtAjustee;             // Heure de départ = heure dernière réservation
+    private String plageHeuresGroupe;             // Affichage lisible (ex: "08:00 → 08:15 (attente: 15 min)")
 
     public PlanningAssignationDetail() {}
 
@@ -164,5 +171,47 @@ public class PlanningAssignationDetail {
 
     public void setUpdatedAt(String updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    // ⭐ SPRINT 4 : Getters et Setters pour groupement par temps d'attente
+    
+    public String getReservationIdsGroupees() {
+        return reservationIdsGroupees;
+    }
+
+    public void setReservationIdsGroupees(String reservationIdsGroupees) {
+        this.reservationIdsGroupees = reservationIdsGroupees;
+    }
+
+    public int getNombreReservationsGroupe() {
+        return nombreReservationsGroupe;
+    }
+
+    public void setNombreReservationsGroupe(int nombreReservationsGroupe) {
+        this.nombreReservationsGroupe = nombreReservationsGroupe;
+    }
+
+    public int getTempsAttenteGroupeMinutes() {
+        return tempsAttenteGroupeMinutes;
+    }
+
+    public void setTempsAttenteGroupeMinutes(int tempsAttenteGroupeMinutes) {
+        this.tempsAttenteGroupeMinutes = tempsAttenteGroupeMinutes;
+    }
+
+    public String getHeureDeprtAjustee() {
+        return heureDeprtAjustee;
+    }
+
+    public void setHeureDeprtAjustee(String heureDeprtAjustee) {
+        this.heureDeprtAjustee = heureDeprtAjustee;
+    }
+
+    public String getPlageHeuresGroupe() {
+        return plageHeuresGroupe;
+    }
+
+    public void setPlageHeuresGroupe(String plageHeuresGroupe) {
+        this.plageHeuresGroupe = plageHeuresGroupe;
     }
 }

@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%-- Page d'assignation des véhicules aux réservations : inclut header et footer automatiquement --%>
 <%@ include file="/views/components/header.jsp" %>
 
@@ -505,6 +506,33 @@
         color: #856404;
     }
 
+    .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .chip {
+        padding: 4px 10px;
+        border-radius: 14px;
+        font-size: 12px;
+        font-weight: 600;
+        background: #eef2ff;
+        color: #3f51b5;
+        border: 1px solid #dbe3ff;
+    }
+
+    .chip-place {
+        background: #f1f8e9;
+        color: #33691e;
+        border: 1px solid #dcedc8;
+    }
+
+    .metric-inline {
+        font-weight: 700;
+        color: #2f3b52;
+    }
+
     @media (max-width: 1080px) {
         .filter-row {
             grid-template-columns: repeat(2, minmax(220px, 1fr));
@@ -538,6 +566,11 @@
     <div class="stat-card">
         <h3>${fn:length(reservations)}</h3>
         <p>Réservations à planifier</p>
+    </div>
+
+    <div class="stat-card stat-card-unassigned">
+        <h3>${fn:length(planningGroupes)}</h3>
+        <p>Trajets groupés (véhicule + créneau)</p>
     </div>
 
     <div class="stat-card stat-card-vehicles">
@@ -706,9 +739,10 @@
 </div>
 
 <div class="vehicules-section" id="statutPlanningSection">
-    <h3><i class="fas fa-list-check"></i> Statut de Planification des Trajets</h3>
+    <h3><i class="fas fa-list-check"></i> Statut de Planification Groupée des Trajets</h3>
+    <p style="color: #666; font-size: 13px; margin-bottom: 15px;">Affichage : Une ligne par groupe (véhicule + date + heure)</p>
     <c:choose>
-        <c:when test="${empty plannings}">
+        <c:when test="${empty planningGroupes}">
             <div class="empty-state">
                 <div class="empty-state-icon"><i class="fas fa-route"></i></div>
                 <h3>Aucun trajet planifié</h3>
@@ -719,39 +753,66 @@
             <table class="reservations-table">
                 <thead>
                     <tr>
-                        <th>Client</th>
-                        <th>Passagers</th>
+                        <th>Véhicule</th>
                         <th>Date arrivée</th>
                         <th>Heure arrivée</th>
-                        <th>Temps estimé</th>
-                        <th>Départ</th>
-                        <th>Arrivée</th>
+                        <th>Réservations assignées</th>
+                        <th>Passagers total</th>
+                        <th>Capacité</th>
+                        <th>Places libres</th>
+                        <th>Départs</th>
+                        <th>Arrivées</th>
+                        <th>Distance totale (km)</th>
+                        <th>Durée estimée</th>
                         <th>Carburant</th>
-                        <th>Places véhicule</th>
-                        <th>Véhicule</th>
                         <th>Statut</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <c:forEach items="${plannings}" var="planning">
+                    <c:forEach items="${planningGroupes}" var="groupe">
                         <tr>
-                            <td>${planning.nomClient}</td>
-                            <td>${planning.nombrePersonnes}</td>
-                            <td>${planning.dateArrivee}</td>
-                            <td>${planning.heureArrivee}</td>
-                            <td>${planning.dureeEstimee}</td>
-                            <td>${planning.lieuDepart}</td>
-                            <td>${planning.lieuArrivee}</td>
-                            <td>${planning.typeCarburantVehicule}</td>
-                            <td>${planning.capaciteVehicule}</td>
-                            <td>${planning.vehiculeImmatriculation}</td>
+                            <td><strong>${groupe.vehiculeImmatriculation}</strong></td>
+                            <td>${groupe.dateArrivee}</td>
+                            <td>${groupe.heureArrivee}</td>
+                            <td>
+                                <div class="chips">
+                                    <c:forEach items="${groupe.clients}" var="client">
+                                        <span class="chip">${client}</span>
+                                    </c:forEach>
+                                </div>
+                            </td>
+                            <td><span class="metric-inline">${groupe.nombrePassagersTotal}</span></td>
+                            <td>${groupe.capaciteVehicule}</td>
+                            <td><span class="metric-inline">${groupe.placesLibres}</span></td>
+                            <td>
+                                <div class="chips">
+                                    <c:forEach items="${groupe.pointsDepart}" var="pointDepart">
+                                        <span class="chip chip-place">${pointDepart}</span>
+                                    </c:forEach>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="chips">
+                                    <c:forEach items="${groupe.pointsArrivee}" var="pointArrivee">
+                                        <span class="chip chip-place">${pointArrivee}</span>
+                                    </c:forEach>
+                                </div>
+                            </td>
+                            <td>
+                                <span style="font-weight: 700;">
+                                    <fmt:formatNumber value="${groupe.distanceTotale}" maxFractionDigits="2" minFractionDigits="2" />
+                                    km
+                                </span>
+                            </td>
+                            <td><span style="font-weight: 700; color: #0066cc;">${groupe.dureeEstimee != null && !groupe.dureeEstimee.isEmpty() ? groupe.dureeEstimee : 'N/A'}</span></td>
+                            <td>${groupe.typeCarburantVehicule}</td>
                             <td>
                                 <c:choose>
-                                    <c:when test="${planning.statut == 'VALIDE'}">
-                                        <span class="badge badge-success">${planning.statut}</span>
+                                    <c:when test="${groupe.statut == 'VALIDE'}">
+                                        <span class="badge badge-success">${groupe.statut}</span>
                                     </c:when>
                                     <c:otherwise>
-                                        <span class="badge badge-warning">${planning.statut}</span>
+                                        <span class="badge badge-warning">${groupe.statut}</span>
                                     </c:otherwise>
                                 </c:choose>
                             </td>
@@ -776,33 +837,84 @@
         document.getElementById('vehicule-' + vehiculeId).classList.add('selected');
     }
 
+    function showLoadingSpinner(message = 'Traitement en cours...') {
+        const spinner = document.createElement('div');
+        spinner.id = 'loadingSpinner';
+        spinner.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        `;
+        spinner.innerHTML = `
+            <div style="background: white; padding: 30px; border-radius: 10px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+                <div style="border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 15px;"></div>
+                <p style="margin: 0; color: #333; font-weight: 500;">${message}</p>
+            </div>
+            <style>
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            </style>
+        `;
+        document.body.appendChild(spinner);
+        return spinner;
+    }
+
+    function hideLoadingSpinner() {
+        const spinner = document.getElementById('loadingSpinner');
+        if (spinner) {
+            spinner.remove();
+        }
+    }
+
     function genererPlanning() {
         if (confirm('Êtes-vous sûr de vouloir générer le planning automatiquement ?\nCette action assignera les réservations non assignées aux véhicules disponibles.')) {
+            const spinner = showLoadingSpinner('Génération du planning en cours...');
+            
             fetch('${pageContext.request.contextPath}/planning/assignation/generer', {
                 method: 'POST'
             })
-            .then(response =>
-                response.json()
-                    .then(data => {
-                        if (!response.ok && (!data || !data.message)) {
-                            return { success: false, message: 'Erreur serveur (' + response.status + ')' };
-                        }
-                        return data;
-                    })
-                    .catch(() => ({
-                        success: false,
-                        message: 'Réponse invalide du serveur'
-                    }))
-            )
+            .then(async response => {
+                let data = null;
+                try {
+                    data = await response.json();
+                } catch (e) {
+                    data = null;
+                }
+
+                if (!response.ok) {
+                    return {
+                        ok: false,
+                        message: (data && data.message) ? data.message : ('Erreur serveur (' + response.status + ')')
+                    };
+                }
+
+                return {
+                    ok: isApiSuccess(data),
+                    message: (data && data.message) ? data.message : 'Planning généré.'
+                };
+            })
             .then(data => {
-                if (data.status === 'success') {
-                    alert('Planning généré avec succès !');
-                    location.href = '${pageContext.request.contextPath}/planning/assignation#statutPlanningSection';
+                hideLoadingSpinner();
+                if (data.ok) {
+                    // Recharger la page pour afficher les nouvelles données
+                    setTimeout(() => {
+                        location.reload();
+                    }, 500);
                 } else {
                     alert('Erreur: ' + (data && data.message ? data.message : 'Une erreur inconnue est survenue'));
                 }
             })
             .catch(error => {
+                hideLoadingSpinner();
                 console.error('Error:', error);
                 alert('Erreur lors de la génération du planning');
             });
@@ -811,38 +923,71 @@
 
     function validerPlanning() {
         if (confirm('Êtes-vous sûr de vouloir valider le planning ?\nCette action finalisera toutes les assignations.')) {
+            const spinner = showLoadingSpinner('Validation du planning en cours...');
+            
             fetch('${pageContext.request.contextPath}/planning/assignation/valider', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 }
             })
-            .then(response =>
-                response.json()
-                    .then(data => {
-                        if (!response.ok && (!data || !data.message)) {
-                            return { success: false, message: 'Erreur serveur (' + response.status + ')' };
-                        }
-                        return data;
-                    })
-                    .catch(() => ({
-                        success: false,
-                        message: 'Réponse invalide du serveur'
-                    }))
-            )
+            .then(async response => {
+                let data = null;
+                try {
+                    data = await response.json();
+                } catch (e) {
+                    data = null;
+                }
+
+                if (!response.ok) {
+                    return {
+                        ok: false,
+                        message: (data && data.message) ? data.message : ('Erreur serveur (' + response.status + ')')
+                    };
+                }
+
+                return {
+                    ok: isApiSuccess(data),
+                    message: (data && data.message) ? data.message : 'Planning validé.'
+                };
+            })
             .then(data => {
-                if (data.status === 'success') {
-                    alert('Planning validé avec succès !');
-                    location.href = '${pageContext.request.contextPath}/planning/assignation#statutPlanningSection';
+                hideLoadingSpinner();
+                if (data.ok) {
+                    // Recharger la page pour afficher les données mises à jour
+                    setTimeout(() => {
+                        location.reload();
+                    }, 500);
                 } else {
                     alert('Erreur: ' + (data && data.message ? data.message : 'Une erreur inconnue est survenue'));
                 }
             })
             .catch(error => {
+                hideLoadingSpinner();
                 console.error('Error:', error);
                 alert('Erreur lors de la validation du planning');
             });
         }
+    }
+
+    function isApiSuccess(data) {
+        if (!data) {
+            return true;
+        }
+
+        if (typeof data.success !== 'undefined') {
+            return !!data.success;
+        }
+
+        if (typeof data.status === 'string') {
+            return data.status.toLowerCase() === 'success';
+        }
+
+        if (typeof data.code !== 'undefined') {
+            return Number(data.code) >= 200 && Number(data.code) < 300;
+        }
+
+        return true;
     }
 
     function afficherNonAssignees() {
