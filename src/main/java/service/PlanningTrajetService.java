@@ -1,26 +1,15 @@
 package service;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import dto.PlanningTrajetView;
-import model.PlanningAssignationDetail;
 import model.PlanningTrajet;
 import model.Reservation;
 import model.Vehicule;
-import repository.PlanningAssignationDetailRepository;
 import repository.PlanningTrajetRepository;
-import repository.VehiculeDeplacementHistoriqueRepository;
 
 /**
  * Service pour la gestion de la planification des trajets
@@ -32,28 +21,12 @@ public class PlanningTrajetService {
     private VehiculeService vehiculeService = new VehiculeService();
     private DistanceService distanceService = new DistanceService();
     private ParametreConfigurationService paramService = new ParametreConfigurationService();
-    private PlanningAssignationDetailRepository planningAssignationDetailRepository = new PlanningAssignationDetailRepository();
-    private VehiculeDeplacementHistoriqueRepository vehiculeDeplacementHistoriqueRepository = new VehiculeDeplacementHistoriqueRepository();
 
     /**
      * Récupérer tous les plannings
      */
     public List<PlanningTrajet> getAllPlannings() {
         return planningRepository.findAll();
-    }
-
-    /**
-     * Récupérer tous les détails d'assignation (une ligne par réservation)
-     */
-    public List<PlanningAssignationDetail> getAllPlanningDetails() {
-        return planningAssignationDetailRepository.findAll();
-    }
-
-    /**
-     * Récupérer les détails d'assignation filtrés
-     */
-    public List<PlanningAssignationDetail> getPlanningDetailsFiltered(String date, String heure, Long vehiculeId) {
-        return planningAssignationDetailRepository.findByFilters(date, heure, vehiculeId);
     }
 
     /**
@@ -126,13 +99,6 @@ public class PlanningTrajetService {
             } else {
                 updatePlanning(planning);
             }
-
-            // Mettre a jour les metadonnees de trajet et externaliser un detail agrege
-            remplirDetailsPlanification(reservation);
-            externaliserDetailAssignationVehicule(vehiculeId, reservation);
-
-            PlanningTrajet planningMisAJour = getPlanningByReservationId(reservationId);
-            enregistrerHistoriqueDeplacementVehicule(vehiculeId, reservation, planningMisAJour);
         } catch (Exception e) {
             throw new Exception("Erreur lors de l'assignation du véhicule: " + e.getMessage());
         }
@@ -153,167 +119,20 @@ public class PlanningTrajetService {
             List<Reservation> reservationsNonAssignees = 
                     reservationService.getReservationNonAssignees();
 
-            Map<String, List<Reservation>> groupesParCreneau = reservationsNonAssignees.stream()
-                    .filter(r -> r.getDateArrivee() != null && r.getHeure() != null && !r.getHeure().isEmpty())
-                    .collect(Collectors.groupingBy(
-                            this::buildCreneauKey,
-                            LinkedHashMap::new,
-                            Collectors.toList()
-                    ));
+            for (Reservation reservation : reservationsNonAssignees) {
+                // Trouver le meilleur véhicule pour cette réservation
+                Vehicule meilleurVehicule = trouverMeilleurVehicule(reservation);
 
-            for (List<Reservation> groupe : groupesParCreneau.values()) {
-                assignerGroupeReservations(groupe);
+                if (meilleurVehicule != null) {
+                    assignerVehicule(reservation.getId(), (int) meilleurVehicule.getId());
+                    
+                    // Remplir les détails du planning (lieux, distance, durée)
+                    remplirDetailsPlanification(reservation);
+                }
             }
         } catch (Exception e) {
             throw new Exception("Erreur lors de la génération du planning: " + e.getMessage());
         }
-    }
-
-    private void assignerGroupeReservations(List<Reservation> reservationsMemeCreneau) throws Exception {
-        if (reservationsMemeCreneau == null || reservationsMemeCreneau.isEmpty()) {
-            return;
-        }
-
-        List<Reservation> restantes = new ArrayList<>(reservationsMemeCreneau);
-        restantes.sort(Comparator
-                .comparingInt(Reservation::getNombrePersonnes).reversed()
-                .thenComparing(Reservation::getHeure, Comparator.nullsLast(String::compareTo))
-                .thenComparingInt(Reservation::getId));
-
-        while (!restantes.isEmpty()) {
-            Reservation reservationPivot = restantes.remove(0);
-            Vehicule vehicule = trouverMeilleurVehicule(reservationPivot);
-
-            if (vehicule == null) {
-                continue;
-            }
-
-            String dateHeureCreneau = construireDateHeureReservation(reservationPivot);
-            Long localisationCouranteVehicule = dateHeureCreneau != null
-                    ? vehiculeDeplacementHistoriqueRepository.getDernierLieuIdAvant(vehicule.getId(), dateHeureCreneau)
-                    : null;
-
-            assignerVehicule(reservationPivot.getId(), (int) vehicule.getId());
-
-            if (reservationPivot.getLieuDepartId() != null && reservationPivot.getLieuDepartId() > 0) {
-                localisationCouranteVehicule = reservationPivot.getLieuDepartId();
-            }
-
-            int placesRestantes = vehicule.getCapacitePassagers() - reservationPivot.getNombrePersonnes();
-            if (placesRestantes <= 0 || restantes.isEmpty()) {
-                continue;
-            }
-
-            List<Reservation> candidats = new ArrayList<>(restantes);
-            while (placesRestantes > 0 && !candidats.isEmpty()) {
-                final Long lieuCourant = localisationCouranteVehicule;
-                final int placesDisponibles = placesRestantes;
-                Reservation prochainCandidat = candidats.stream()
-                    .filter(r -> r.getNombrePersonnes() <= placesDisponibles)
-                        .min(Comparator
-                                .comparingDouble((Reservation r) -> calculerProximiteDepuisLieu(lieuCourant, r))
-                                .thenComparing(Comparator.comparingInt(Reservation::getNombrePersonnes).reversed())
-                                .thenComparingInt(Reservation::getId))
-                        .orElse(null);
-
-                if (prochainCandidat == null) {
-                    break;
-                }
-
-                assignerVehicule(prochainCandidat.getId(), (int) vehicule.getId());
-                placesRestantes -= prochainCandidat.getNombrePersonnes();
-                restantes.removeIf(r -> r.getId() == prochainCandidat.getId());
-                candidats.removeIf(r -> r.getId() == prochainCandidat.getId());
-
-                if (prochainCandidat.getLieuDepartId() != null && prochainCandidat.getLieuDepartId() > 0) {
-                    localisationCouranteVehicule = prochainCandidat.getLieuDepartId();
-                }
-            }
-        }
-    }
-
-    private String buildCreneauKey(Reservation reservation) {
-        LocalDate date = reservation.getDateArrivee().toLocalDateTime().toLocalDate();
-        return date + "|" + normaliserHeure(reservation.getHeure());
-    }
-
-    private double calculerProximiteRamassage(Reservation pivot, Reservation candidate) {
-        if (pivot.getLieuDepartId() == null || candidate.getLieuDepartId() == null) {
-            return Double.MAX_VALUE;
-        }
-
-        if (pivot.getLieuDepartId().longValue() == candidate.getLieuDepartId().longValue()) {
-            return 0.0;
-        }
-
-        double distance = distanceService.calculerDistance(
-                pivot.getLieuDepartId(),
-                candidate.getLieuDepartId()
-        );
-
-        return distance > 0 ? distance : Double.MAX_VALUE;
-    }
-
-    private double calculerProximiteDepuisLieu(Long lieuReferenceId, Reservation candidate) {
-        if (lieuReferenceId == null || candidate.getLieuDepartId() == null) {
-            return Double.MAX_VALUE;
-        }
-
-        if (lieuReferenceId.longValue() == candidate.getLieuDepartId().longValue()) {
-            return 0.0;
-        }
-
-        double distance = distanceService.calculerDistance(lieuReferenceId, candidate.getLieuDepartId());
-        return distance > 0 ? distance : Double.MAX_VALUE;
-    }
-
-    private String construireDateHeureReservation(Reservation reservation) {
-        if (reservation == null || reservation.getDateArrivee() == null || reservation.getHeure() == null) {
-            return null;
-        }
-
-        String date = reservation.getDateArrivee().toLocalDateTime().toLocalDate().toString();
-        String heure = normaliserHeure(reservation.getHeure());
-        return date + " " + heure;
-    }
-
-    private void enregistrerHistoriqueDeplacementVehicule(int vehiculeId,
-                                                          Reservation reservation,
-                                                          PlanningTrajet planning) {
-        if (reservation == null || reservation.getDateArrivee() == null || reservation.getHeure() == null) {
-            return;
-        }
-
-        String dateService = reservation.getDateArrivee().toLocalDateTime().toLocalDate().toString();
-        String heureDepart = normaliserHeure(reservation.getHeure());
-        String dateHeureDepart = dateService + " " + heureDepart;
-
-        Long planningId = planning != null ? planning.getId() : null;
-        Long reservationId = (long) reservation.getId();
-
-        vehiculeDeplacementHistoriqueRepository.insertEvenement(
-                vehiculeId,
-                reservation.getLieuDepartId(),
-                planningId,
-                reservationId,
-                "RAMASSAGE",
-                dateHeureDepart,
-                "Ramassage client reservation " + reservation.getId()
-        );
-
-        String dureeTrajet = planning != null ? planning.getDureeEstimee() : null;
-        String heureArrivee = calculerHeureArriveePrevue(heureDepart, dureeTrajet);
-        String dateHeureArrivee = dateService + " " + (heureArrivee != null ? heureArrivee : heureDepart);
-
-        vehiculeDeplacementHistoriqueRepository.insertEvenement(
-                vehiculeId,
-                reservation.getLieuArriveeId(),
-                planningId,
-                reservationId,
-                "ARRIVEE",
-                dateHeureArrivee,
-                "Arrivee client reservation " + reservation.getId()
-        );
     }
 
     /**
@@ -369,138 +188,6 @@ public class PlanningTrajetService {
         }
 
         /**
-         * NOUVELLE MÉTHODE SPRINT 3 : Calculer un trajet optimisé pour un groupe de réservations
-         * 
-         * Problème : Avant, on calculait la distance individuellement par réservation
-         * Solution : Calculer le trajet COMPLET du véhicule qui dessert PLUSIEURS réservations
-         * 
-         * Ordre du trajet : Position véhicule → Ramassage 1 → Ramassage 2 → ... → Dépôt 1 → Dépôt 2
-         * 
-         * @param vehiculeId ID du véhicule
-         * @param reservationsGroupe Liste de toutes les réservations assignées au même véhicule
-         * @param planningByReservationId Map des plannings par réservation pour accéder aux lieux
-         * @return distance totale en km
-         */
-        private double calculerTrajetOptimiseGroupe(int vehiculeId, List<Reservation> reservationsGroupe,
-                Map<Long, PlanningTrajet> planningByReservationId) {
-            if (reservationsGroupe == null || reservationsGroupe.isEmpty()) {
-                return 0.0;
-            }
-
-            try {
-                // ÉTAPE 1 : Récupérer la position actuelle du véhicule
-                //           (dernière localisation depuis l'historique de déplacement)
-                Long positionActuelleVehiculeId = vehiculeDeplacementHistoriqueRepository
-                    .getDerniereLieuDuVehicule(vehiculeId);
-                
-                if (positionActuelleVehiculeId == null || positionActuelleVehiculeId <= 0) {
-                    // Si pas d'historique, utiliser le premier point de ramassage comme référence
-                    positionActuelleVehiculeId = null;
-                }
-
-                // ÉTAPE 2 : Extraire tous les points de visite du groupe
-                //          - Points de départ (ramassages)
-                //          - Points d'arrivée (dépôts)
-                List<Long> pointsDepart = new ArrayList<>();
-                List<Long> pointsArrivee = new ArrayList<>();
-
-                for (Reservation r : reservationsGroupe) {
-                    PlanningTrajet p = planningByReservationId.get((long) r.getId());
-                    if (p != null) {
-                        if (p.getLieuDepartId() != null && p.getLieuDepartId() > 0) {
-                            pointsDepart.add(p.getLieuDepartId());
-                        }
-                        if (p.getLieuArriveeId() != null && p.getLieuArriveeId() > 0) {
-                            pointsArrivee.add(p.getLieuArriveeId());
-                        }
-                    }
-                }
-
-                // ÉTAPE 3 : Calculer les distances intermédiaires
-                //          avec optimisation des trajets (points les plus proches en priorité)
-                double distanceTotale = 0.0;
-                Long lieuActuel = positionActuelleVehiculeId;
-
-                // Traiter d'abord les ramassages (départs)
-                List<Long> dePartNonVisites = new ArrayList<>(pointsDepart);
-                while (!dePartNonVisites.isEmpty()) {
-                    // Trouver le point de ramassage le plus proche du point actuel
-                    Long pointLePlusPrche = dePartNonVisites.get(0);
-                    double distanceMin = Double.MAX_VALUE;
-
-                    if (lieuActuel != null && lieuActuel > 0) {
-                        for (Long lieu : dePartNonVisites) {
-                            double dist = distanceService.calculerDistance(lieuActuel, lieu);
-                            if (dist < distanceMin) {
-                                distanceMin = dist;
-                                pointLePlusPrche = lieu;
-                            }
-                        }
-                    }
-
-                    // Ajouter cette distance au total
-                    if (lieuActuel != null && lieuActuel > 0) {
-                        double distanceAuPoint = distanceService.calculerDistance(lieuActuel, pointLePlusPrche);
-                        if (distanceAuPoint > 0) {
-                            distanceTotale += distanceAuPoint;
-                        }
-                    }
-
-                    // Enregistrer cet événement de ramassage dans l'historique
-                    if (lieuActuel != null && lieuActuel > 0) {
-                        // Optionnel : enregistrer le déplacement vers ce point de ramassage
-                    }
-
-                    // Mettre à jour la position actuelle et continuer
-                    lieuActuel = pointLePlusPrche;
-                    dePartNonVisites.remove(pointLePlusPrche);
-                }
-
-                // Traiter ensuite les dépôts (arrivées)
-                List<Long> depotsNonVisites = new ArrayList<>(pointsArrivee);
-                while (!depotsNonVisites.isEmpty()) {
-                    // Trouver le point de dépôt le plus proche du point actuel
-                    Long pointLePlusPrche = depotsNonVisites.get(0);
-                    double distanceMin = Double.MAX_VALUE;
-
-                    if (lieuActuel != null && lieuActuel > 0) {
-                        for (Long lieu : depotsNonVisites) {
-                            double dist = distanceService.calculerDistance(lieuActuel, lieu);
-                            if (dist < distanceMin) {
-                                distanceMin = dist;
-                                pointLePlusPrche = lieu;
-                            }
-                        }
-                    }
-
-                    // Ajouter cette distance au total
-                    if (lieuActuel != null && lieuActuel > 0) {
-                        double distanceAuPoint = distanceService.calculerDistance(lieuActuel, pointLePlusPrche);
-                        if (distanceAuPoint > 0) {
-                            distanceTotale += distanceAuPoint;
-                        }
-                    }
-
-                    // Enregistrer cet événement de dépôt dans l'historique
-                    if (lieuActuel != null && lieuActuel > 0) {
-                        // Optionnel : enregistrer le dépôt
-                    }
-
-                    // Mettre à jour la position actuelle et continuer
-                    lieuActuel = pointLePlusPrche;
-                    depotsNonVisites.remove(pointLePlusPrche);
-                }
-
-                return distanceTotale;
-
-            } catch (Exception e) {
-                System.err.println("Erreur lors du calcul du trajet optimisé: " + e.getMessage());
-                e.printStackTrace();
-                return 0.0;
-            }
-        }
-
-        /**
          * Formater une durée en minutes au format HH:MM:SS pour INTERVAL PostgreSQL
          */
         private String formatDureeForInterval(int minutes) {
@@ -508,161 +195,6 @@ public class PlanningTrajetService {
             int mins = minutes % 60;
             int secs = 0;
             return String.format("%02d:%02d:%02d", heures, mins, secs);
-        }
-
-        /**
-         * Exporte un detail d'assignation agrege par vehicule + date + heure.
-         * Objectif sprint 3: stocker la liste des reservations assignees a un meme vehicule.
-         */
-        private void externaliserDetailAssignationVehicule(int vehiculeId, Reservation reservationPivot) {
-            if (reservationPivot == null || reservationPivot.getDateArrivee() == null || reservationPivot.getHeure() == null) {
-                return;
-            }
-
-            String dateArrivee = reservationPivot.getDateArrivee().toLocalDateTime().toLocalDate().toString();
-            String heureArrivee = reservationPivot.getHeure();
-
-            List<PlanningTrajet> planningsVehicule = getPlanningsByVehicule(vehiculeId);
-            if (planningsVehicule == null || planningsVehicule.isEmpty()) {
-                return;
-            }
-
-            List<PlanningTrajet> groupeMemeVehiculeDateHeure = new ArrayList<>();
-            List<Reservation> reservationsGroupe = new ArrayList<>();
-
-            for (PlanningTrajet p : planningsVehicule) {
-                Reservation r = reservationService.getReservationById((int) p.getReservationId());
-                if (r == null || r.getDateArrivee() == null || r.getHeure() == null) {
-                    continue;
-                }
-
-                String rDate = r.getDateArrivee().toLocalDateTime().toLocalDate().toString();
-                if (dateArrivee.equals(rDate) && heureArrivee.equals(r.getHeure())) {
-                    groupeMemeVehiculeDateHeure.add(p);
-                    reservationsGroupe.add(r);
-                }
-            }
-
-            if (reservationsGroupe.isEmpty()) {
-                return;
-            }
-
-            Vehicule vehicule = vehiculeService.getVehiculeById(vehiculeId);
-            int capaciteVehicule = vehicule != null ? vehicule.getCapacitePassagers() : 0;
-            int passagersTotal = reservationsGroupe.stream().mapToInt(Reservation::getNombrePersonnes).sum();
-            int placesLibres = Math.max(capaciteVehicule - passagersTotal, 0);
-
-                reservationsGroupe.sort(Comparator
-                    .comparing(Reservation::getHeure, Comparator.nullsLast(String::compareTo))
-                    .thenComparingInt(Reservation::getId));
-
-                Map<Long, PlanningTrajet> planningByReservationId = new HashMap<>();
-                for (PlanningTrajet planning : groupeMemeVehiculeDateHeure) {
-                planningByReservationId.put(planning.getReservationId(), planning);
-                }
-
-                // ⭐ CORRECTION SPRINT 3 : Calculer le TRAJET OPTIMISÉ DU GROUPE (au lieu du trajet individuel)
-                double distanceOptimiseeGroupe = calculerTrajetOptimiseGroupe(
-                    vehiculeId, 
-                    reservationsGroupe, 
-                    planningByReservationId
-                );
-                
-                // Calculer la durée estimée totale pour le groupe
-                int dureeEstimeeGroupeMinutes = 0;
-                if (distanceOptimiseeGroupe > 0) {
-                    int vitesseMoyenne = paramService.getParametreAsInt("VITESSE_MOYENNE_KMH");
-                    if (vitesseMoyenne > 0) {
-                        double heures = distanceOptimiseeGroupe / vitesseMoyenne;
-                        dureeEstimeeGroupeMinutes = (int) Math.round(heures * 60);
-                    }
-                }
-                String dureeOptimiseeGroup = formatDureeForInterval(dureeEstimeeGroupeMinutes);
-
-                Reservation premiereReservation = reservationsGroupe.get(0);
-                Reservation derniereReservation = reservationsGroupe.get(reservationsGroupe.size() - 1);
-                PlanningTrajet planningPremiereReservation = planningByReservationId.get((long) premiereReservation.getId());
-                PlanningTrajet planningDerniereReservation = planningByReservationId.get((long) derniereReservation.getId());
-
-                String premierPointDepart = planningPremiereReservation != null
-                    ? planningPremiereReservation.getLieuDepart()
-                    : null;
-                String dernierPointArrivee = planningDerniereReservation != null
-                    ? planningDerniereReservation.getLieuArrivee()
-                    : null;
-
-                for (Reservation reservation : reservationsGroupe) {
-                PlanningTrajet planningReservation = planningByReservationId.get((long) reservation.getId());
-
-                String nomClient = reservation.getNom() == null ? "" : reservation.getNom();
-                String pointsDepart = planningReservation != null ? planningReservation.getLieuDepart() : null;
-                String pointsArrivee = planningReservation != null ? planningReservation.getLieuArrivee() : null;
-                
-                // ⭐ UTILISER LA DISTANCE DU GROUPE OPTIMISÉ AU LIEU DE LA DISTANCE INDIVIDUELLE
-                double distanceEstimee = distanceOptimiseeGroupe;
-                String dureeEstimee = dureeOptimiseeGroup;
-
-                PlanningAssignationDetail detail = new PlanningAssignationDetail();
-                detail.setVehiculeId(vehiculeId);
-                detail.setDateArrivee(dateArrivee);
-                detail.setHeureArrivee(reservation.getHeure());
-                detail.setReservationId(reservation.getId());
-                detail.setPremiereReservationId(premiereReservation.getId());
-                detail.setReservationClient(nomClient + "(" + reservation.getNombrePersonnes() + "p)");
-                detail.setNombrePassagersTotal(passagersTotal);
-                detail.setCapaciteVehicule(capaciteVehicule);
-                detail.setPlacesLibres(placesLibres);
-                detail.setDistanceEstimee(distanceEstimee);
-                detail.setDureeEstimee(dureeEstimee);
-                detail.setPremierPointDepart(premierPointDepart);
-                detail.setDernierPointArrivee(dernierPointArrivee);
-                detail.setPointsDepart(pointsDepart);
-                detail.setPointsArrivee(pointsArrivee);
-
-                planningAssignationDetailRepository.upsert(detail);
-
-                String heureArriveePrevue = calculerHeureArriveePrevue(reservation.getHeure(), dureeEstimee);
-                planningAssignationDetailRepository.upsertHistoriqueAssignation(
-                        vehiculeId,
-                        reservation.getId(),
-                        planningReservation != null ? planningReservation.getId() : null,
-                        dateArrivee,
-                        reservation.getHeure(),
-                        heureArriveePrevue,
-                        "PLANIFIE"
-                );
-                }
-        }
-
-        private String calculerHeureArriveePrevue(String heureDepart, String dureeInterval) {
-            if (heureDepart == null || heureDepart.isEmpty() || dureeInterval == null || dureeInterval.isEmpty()) {
-                return null;
-            }
-
-            try {
-                LocalTime depart = LocalTime.parse(normaliserHeure(heureDepart));
-                String[] parts = dureeInterval.split(":");
-                if (parts.length < 2) {
-                    return null;
-                }
-
-                int heures = Integer.parseInt(parts[0]);
-                int minutes = Integer.parseInt(parts[1]);
-                int secondes = parts.length > 2 ? Integer.parseInt(parts[2]) : 0;
-
-                LocalTime arrivee = depart.plusHours(heures).plusMinutes(minutes).plusSeconds(secondes);
-                return arrivee.toString();
-            } catch (DateTimeParseException | NumberFormatException e) {
-                return null;
-            }
-        }
-
-        private String normaliserHeure(String heure) {
-            String h = heure.trim();
-            if (h.matches("^\\d{2}:\\d{2}$")) {
-                return h + ":00";
-            }
-            return h;
         }
 
     /**
@@ -727,15 +259,6 @@ public class PlanningTrajetService {
         // Filtrer par capacité passagers
         List<Vehicule> vehiculesAptes = vehiculeService
                 .getVehiculesByCapacite(reservation.getNombrePersonnes());
-
-        if (reservation.getDateArrivee() != null && reservation.getHeure() != null && !reservation.getHeure().isEmpty()) {
-            String dateService = reservation.getDateArrivee().toLocalDateTime().toLocalDate().toString();
-            String heureReference = reservation.getHeure();
-
-            vehiculesAptes = vehiculesAptes.stream()
-                .filter(v -> planningAssignationDetailRepository.isVehiculeDisponibleAt(v.getId(), dateService, heureReference))
-                .collect(Collectors.toList());
-        }
 
         // Prioriser les diesel
         List<Vehicule> diesels = vehiculesAptes.stream()

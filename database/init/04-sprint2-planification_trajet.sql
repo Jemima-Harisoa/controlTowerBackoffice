@@ -392,6 +392,20 @@ WHERE NOT EXISTS (
     SELECT 1 FROM reservations WHERE email = 'luc.moreau@email.com'
 );
 
+INSERT INTO reservations (nom, email, date_arrivee, heure, nombre_personnes, lieu_depart_id, lieu_arrivee_id, is_confirmed) 
+SELECT 
+    'Claire Dubois',
+    'claire.dubois@email.com',
+    '2026-08-05 11:00:00'::TIMESTAMP WITH TIME ZONE,
+    '11:00',
+    5,
+    (SELECT id FROM lieux WHERE nom LIKE '%Aéroport Nice%' AND is_active = true LIMIT 1),
+    (SELECT l.id FROM lieux l JOIN hotel h ON l.hotel_id = h.id WHERE h.nom = 'Boutique Hotel Vue Mer' AND l.is_active = true LIMIT 1),
+    true
+WHERE NOT EXISTS (
+    SELECT 1 FROM reservations WHERE email = 'claire.dubois@email.com'
+);
+
 -- ===========================================
 -- 7. PERMISSIONS
 -- ===========================================
