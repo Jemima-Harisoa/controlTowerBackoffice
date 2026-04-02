@@ -8,6 +8,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
 import java.util.stream.Collectors;
 
+import dto.PlanningAssignationAffichageView;
 import dto.PlanningTrajetGroupeView;
 import dto.PlanningTrajetView;
 import dto.ReservationView;
@@ -89,22 +90,13 @@ public class PlanningTrajetController {
             }
         }
         
-        List<model.PlanningAssignationDetail> details = planningTrajetService.getPlanningDetailsFiltered(date, heure, vehiculeIdFilter);
-        
-        // Grouper par première réservation pour une meilleure lecture
-        Map<String, model.PlanningAssignationDetail> groupesByFirstRes = new LinkedHashMap<>();
-        for (model.PlanningAssignationDetail detail : details) {
-            String grpKey = detail.getVehiculeId() + "|" + detail.getDateArrivee() + "|" + detail.getHeureArrivee();
-            if (!groupesByFirstRes.containsKey(grpKey)) {
-                groupesByFirstRes.put(grpKey, detail);
-            }
-        }
+        List<PlanningAssignationAffichageView> assignations =
+                planningTrajetService.getAssignationsAffichage(date, heure, vehiculeIdFilter);
         
         List<Vehicule> vehicules = vehiculeService.getAllVehicules();
 
         mav.addObject("pageTitle", "Visualisation des Trajets");
-        mav.addObject("details", details);
-        mav.addObject("groupeSummaries", new ArrayList<>(groupesByFirstRes.values()));
+        mav.addObject("assignations", assignations);
         mav.addObject("vehicules", vehicules);
         mav.addObject("filterDate", date);
         mav.addObject("filterHeure", heure);

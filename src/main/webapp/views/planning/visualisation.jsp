@@ -1,7 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
-<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ include file="/views/components/header.jsp" %>
 
 <style>
@@ -108,8 +107,8 @@
 </style>
 
 <div class="page-section">
-    <h2 class="page-title">Visualisation des trajets groupés</h2>
-    <p>Affichage des réservations regroupées par véhicule et créneau (date + heure).</p>
+    <h2 class="page-title">Visualisation des assignations</h2>
+    <p>Affichage synthétique des assignations par véhicule et client.</p>
 </div>
 
 <div class="page-section">
@@ -120,7 +119,7 @@
                 <input type="date" id="date" name="date" value="${filterDate}">
             </div>
             <div>
-                <label for="heure">Heure d'arrivée</label>
+                <label for="heure">Heure départ</label>
                 <input type="time" id="heure" name="heure" value="${filterHeure}">
             </div>
             <div>
@@ -144,45 +143,34 @@
 
 <div class="page-section">
     <c:choose>
-        <c:when test="${empty details}">
-            <div class="empty">Aucun trajet à afficher.</div>
+        <c:when test="${empty assignations}">
+            <div class="empty">Aucune assignation à afficher.</div>
         </c:when>
         <c:otherwise>
+            <div style="margin-bottom: 10px; font-weight: 700; color: #333;">
+                Resultat<br>
+                du ${not empty filterDate ? filterDate : assignations[0].dateService}
+            </div>
             <table class="data-table">
                 <thead>
                     <tr>
                         <th>Véhicule</th>
-                        <th>Date</th>
-                        <th>Heure</th>
-                        <th>Réservation</th>
-                        <th>Passagers</th>
-                        <th>Capacité</th>
-                        <th>Places libres</th>
-                        <th>Distance (km)</th>
-                        <th>Durée estimée</th>
-                        <th>Départ</th>
-                        <th>Arrivée</th>
+                        <th>Client</th>
+                        <th>Nb pers</th>
+                        <th>Heure depart</th>
+                        <th>Heure retour</th>
+                        <th>Min duree</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <c:forEach items="${details}" var="detail">
+                    <c:forEach items="${assignations}" var="a" varStatus="st">
                         <tr>
-                            <td><strong>Véhicule #${detail.vehiculeId}</strong></td>
-                            <td>${detail.dateArrivee}</td>
-                            <td>${detail.heureArrivee}</td>
-                            <td><em>${detail.reservationClient}</em></td>
-                            <td>-</td>
-                            <td>${detail.capaciteVehicule} pax</td>
-                            <td><strong>${detail.placesLibres}</strong></td>
-                            <td>
-                                <span style="font-weight: 700;">
-                                    <fmt:formatNumber value="${detail.distanceEstimee}" maxFractionDigits="2" minFractionDigits="2" />
-                                    km
-                                </span>
-                            </td>
-                            <td><span style="font-weight: 700; color: #0066cc;">${detail.dureeEstimee != null && !detail.dureeEstimee.isEmpty() ? detail.dureeEstimee : 'N/A'}</span></td>
-                            <td>${detail.pointsDepart}</td>
-                            <td>${detail.pointsArrivee}</td>
+                            <td>${a.vehicule}</td>
+                            <td>${a.client}</td>
+                            <td>${a.nbPers}</td>
+                            <td>${a.heureDepart}</td>
+                            <td>${a.heureRetour}</td>
+                            <td>${a.minDuree}</td>
                         </tr>
                     </c:forEach>
                 </tbody>

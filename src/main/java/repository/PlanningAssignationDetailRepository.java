@@ -6,6 +6,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import dto.PlanningAssignationAffichageView;
 import model.PlanningAssignationDetail;
 import util.DatabaseConnection;
 
@@ -227,5 +228,65 @@ public class PlanningAssignationDetailRepository {
         }
 
         return true;
+    }
+
+    public java.util.List<PlanningAssignationAffichageView> findAssignationsAffichage(String date, String heureDepart, Long vehiculeId) {
+        java.util.List<PlanningAssignationAffichageView> rows = new java.util.ArrayList<>();
+
+        StringBuilder sql = new StringBuilder(
+                "SELECT h.vehicule_id, " +
+                "('vehicule' || h.vehicule_id) AS vehicule_label, " +
+                "COALESCE(r.nom, 'Client ' || h.reservation_id) AS client, " +
+                "COALESCE(r.nombre_personnes, 0) AS nb_pers, " +
+                "TO_CHAR(h.heure_depart_prevue::time, 'HH24:MI:SS') AS heure_depart, " +
+                "TO_CHAR(COALESCE(h.heure_arrivee_prevue::time, h.heure_depart_prevue::time), 'HH24:MI:SS') AS heure_retour, " +
+                "GREATEST(0, CAST(EXTRACT(EPOCH FROM (COALESCE(h.heure_arrivee_prevue::time, h.heure_depart_prevue::time) - h.heure_depart_prevue::time)) / 60 AS INTEGER)) AS min_duree, " +
+                "h.date_service::text AS date_service " +
+                "FROM planning_trajet_assignation_historique h " +
+                "LEFT JOIN reservations r ON r.id = h.reservation_id " +
+                "WHERE 1=1"
+        );
+
+        java.util.List<Object> params = new java.util.ArrayList<>();
+        if (date != null && !date.trim().isEmpty()) {
+            sql.append(" AND h.date_service = ?::date");
+            params.add(date.trim());
+        }
+        if (heureDepart != null && !heureDepart.trim().isEmpty()) {
+            sql.append(" AND h.heure_depart_prevue::time = ?::time");
+            params.add(heureDepart.trim());
+        }
+        if (vehiculeId != null) {
+            sql.append(" AND h.vehicule_id = ?");
+            params.add(vehiculeId);
+        }
+
+        sql.append(" ORDER BY h.date_service, h.heure_depart_prevue::time, h.vehicule_id, h.reservation_id");
+
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                stmt.setObject(i + 1, params.get(i));
+            }
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    PlanningAssignationAffichageView row = new PlanningAssignationAffichageView();
+                    row.setVehiculeId(rs.getLong("vehicule_id"));
+                    row.setVehicule(rs.getString("vehicule_label"));
+                    row.setClient(rs.getString("client"));
+                    row.setNbPers(rs.getInt("nb_pers"));
+                    row.setHeureDepart(rs.getString("heure_depart"));
+                    row.setHeureRetour(rs.getString("heure_retour"));
+                    row.setMinDuree(rs.getInt("min_duree"));
+                    row.setDateService(rs.getString("date_service"));
+                    rows.add(row);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return rows;
     }
 }

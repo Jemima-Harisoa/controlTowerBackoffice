@@ -13,6 +13,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import dto.PlanningAssignationAffichageView;
 import dto.PlanningTrajetView;
 import model.PlanningAssignationDetail;
 import model.PlanningTrajet;
@@ -54,6 +55,10 @@ public class PlanningTrajetService {
      */
     public List<PlanningAssignationDetail> getPlanningDetailsFiltered(String date, String heure, Long vehiculeId) {
         return planningAssignationDetailRepository.findByFilters(date, heure, vehiculeId);
+    }
+
+    public List<PlanningAssignationAffichageView> getAssignationsAffichage(String date, String heureDepart, Long vehiculeId) {
+        return planningAssignationDetailRepository.findAssignationsAffichage(date, heureDepart, vehiculeId);
     }
 
     /**
