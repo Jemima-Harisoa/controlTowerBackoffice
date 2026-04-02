@@ -73,14 +73,14 @@
             </c:if>
             
             <%-- Formulaire POST vers /login --%>
-            <form action="${pageContext.request.contextPath}/login" method="post">
+            <form action="${pageContext.request.contextPath}/login" method="post" autocomplete="on">
                 <div class="form-group">
                     <label for="username">Nom d'utilisateur :</label>
-                    <input type="text" id="username" name="username" required autofocus>
+                    <input type="text" id="username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required autofocus>
                 </div>
                 <div class="form-group">
                     <label for="password">Mot de passe :</label>
-                    <input type="password" id="password" name="password" required>
+                    <input type="password" id="password" name="password" autocomplete="current-password" required>
                 </div>
                 <div class="form-actions">
                     <button type="submit" class="btn">Se connecter</button>

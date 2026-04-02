@@ -1,7 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
-<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%-- Page d'assignation des véhicules aux réservations : inclut header et footer automatiquement --%>
 <%@ include file="/views/components/header.jsp" %>
 
@@ -569,8 +568,8 @@
     </div>
 
     <div class="stat-card stat-card-unassigned">
-        <h3>${fn:length(planningGroupes)}</h3>
-        <p>Trajets groupés (véhicule + créneau)</p>
+        <h3>${fn:length(assignations)}</h3>
+        <p>Assignations (lignes client)</p>
     </div>
 
     <div class="stat-card stat-card-vehicles">
@@ -618,7 +617,7 @@
                 <input type="date" id="filterDate" name="date" value="${filterDate}">
             </div>
             <div class="filter-group">
-                <label for="filterHeure">Heure d'arrivée</label>
+                <label for="filterHeure">Heure départ</label>
                 <input type="time" id="filterHeure" name="heure" value="${filterHeure}">
             </div>
             <div class="filter-group">
@@ -739,85 +738,41 @@
 </div>
 
 <div class="vehicules-section" id="statutPlanningSection">
-    <h3><i class="fas fa-list-check"></i> Statut de Planification Groupée des Trajets</h3>
-    <p style="color: #666; font-size: 13px; margin-bottom: 15px;">Affichage : Une ligne par groupe (véhicule + date + heure)</p>
+    <h3><i class="fas fa-list-check"></i> Résultat des Assignations</h3>
+    <p style="color: #666; font-size: 13px; margin-bottom: 15px;">Affichage : une ligne par client assigné</p>
     <c:choose>
-        <c:when test="${empty planningGroupes}">
+        <c:when test="${empty assignations}">
             <div class="empty-state">
                 <div class="empty-state-icon"><i class="fas fa-route"></i></div>
-                <h3>Aucun trajet planifié</h3>
-                <p>Générez le planning pour voir le statut d'assignation des réservations et véhicules.</p>
+                <h3>Aucune assignation planifiée</h3>
+                <p>Générez le planning pour voir les résultats d'assignation.</p>
             </div>
         </c:when>
         <c:otherwise>
+            <div style="margin-bottom: 10px; font-weight: 700; color: #333;">
+                Resultat<br>
+                du ${not empty filterDate ? filterDate : assignations[0].dateService}
+            </div>
             <table class="reservations-table">
                 <thead>
                     <tr>
                         <th>Véhicule</th>
-                        <th>Date arrivée</th>
-                        <th>Heure arrivée</th>
-                        <th>Réservations assignées</th>
-                        <th>Passagers total</th>
-                        <th>Capacité</th>
-                        <th>Places libres</th>
-                        <th>Départs</th>
-                        <th>Arrivées</th>
-                        <th>Distance totale (km)</th>
-                        <th>Durée estimée</th>
+                        <th>Client</th>
+                        <th>Nb pers</th>
+                        <th>Heure depart</th>
                         <th>Heure retour</th>
-                        <th>Carburant</th>
-                        <th>Statut</th>
+                        <th>Min duree</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <c:forEach items="${planningGroupes}" var="groupe">
+                    <c:forEach items="${assignations}" var="a">
                         <tr>
-                            <td><strong>${groupe.vehiculeImmatriculation}</strong></td>
-                            <td>${groupe.dateArrivee}</td>
-                            <td>${groupe.heureArrivee}</td>
-                            <td>
-                                <div class="chips">
-                                    <c:forEach items="${groupe.clients}" var="client">
-                                        <span class="chip">${client}</span>
-                                    </c:forEach>
-                                </div>
-                            </td>
-                            <td><span class="metric-inline">${groupe.nombrePassagersTotal}</span></td>
-                            <td>${groupe.capaciteVehicule}</td>
-                            <td><span class="metric-inline">${groupe.placesLibres}</span></td>
-                            <td>
-                                <div class="chips">
-                                    <c:forEach items="${groupe.pointsDepart}" var="pointDepart">
-                                        <span class="chip chip-place">${pointDepart}</span>
-                                    </c:forEach>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="chips">
-                                    <c:forEach items="${groupe.pointsArrivee}" var="pointArrivee">
-                                        <span class="chip chip-place">${pointArrivee}</span>
-                                    </c:forEach>
-                                </div>
-                            </td>
-                            <td>
-                                <span style="font-weight: 700;">
-                                    <fmt:formatNumber value="${groupe.distanceTotale}" maxFractionDigits="2" minFractionDigits="2" />
-                                    km
-                                </span>
-                            </td>
-                            <td><span style="font-weight: 700; color: #0066cc;">${groupe.dureeEstimee != null && !groupe.dureeEstimee.isEmpty() ? groupe.dureeEstimee : 'N/A'}</span></td>
-                            <td><span style="font-weight: 700; color: #2f3b52;">${groupe.heureRetour != null && !groupe.heureRetour.isEmpty() ? groupe.heureRetour : 'N/A'}</span></td>
-                            <td>${groupe.typeCarburantVehicule}</td>
-                            <td>
-                                <c:choose>
-                                    <c:when test="${groupe.statut == 'VALIDE'}">
-                                        <span class="badge badge-success">${groupe.statut}</span>
-                                    </c:when>
-                                    <c:otherwise>
-                                        <span class="badge badge-warning">${groupe.statut}</span>
-                                    </c:otherwise>
-                                </c:choose>
-                            </td>
+                            <td><strong>${a.vehicule}</strong></td>
+                            <td>${a.client}</td>
+                            <td><span class="metric-inline">${a.nbPers}</span></td>
+                            <td>${a.heureDepart}</td>
+                            <td>${a.heureRetour}</td>
+                            <td><span class="metric-inline">${a.minDuree}</span></td>
                         </tr>
                     </c:forEach>
                 </tbody>

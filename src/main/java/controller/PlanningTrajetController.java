@@ -1,13 +1,14 @@
 package controller;
 
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.time.LocalTime;
-import java.time.format.DateTimeParseException;
 import java.util.stream.Collectors;
 
+import dto.PlanningAssignationAffichageView;
 import dto.PlanningTrajetGroupeView;
 import dto.PlanningTrajetView;
 import dto.ReservationView;
@@ -51,6 +52,8 @@ public class PlanningTrajetController {
         
         // Récupérer tous les véhicules disponibles
         List<Vehicule> vehicules = vehiculeService.getVehiculesDisponibles();
+        List<PlanningAssignationAffichageView> assignations =
+            planningTrajetService.getAssignationsAffichage(date, heure, null);
         
         String pageTitle = "Plannification des R&#233;servations";
         mav.addObject("pageTitle", pageTitle);
@@ -60,6 +63,7 @@ public class PlanningTrajetController {
         mav.addObject("vehicules", vehicules);
         mav.addObject("plannings", plannings);
         mav.addObject("planningGroupes", buildPlanningGroupes(plannings));
+        mav.addObject("assignations", assignations);
         mav.addObject("filterDate", date);
         mav.addObject("filterHeure", heure);
         mav.addObject("filterVehiculeId", vehiculeId);
@@ -89,22 +93,13 @@ public class PlanningTrajetController {
             }
         }
         
-        List<model.PlanningAssignationDetail> details = planningTrajetService.getPlanningDetailsFiltered(date, heure, vehiculeIdFilter);
-        
-        // Grouper par première réservation pour une meilleure lecture
-        Map<String, model.PlanningAssignationDetail> groupesByFirstRes = new LinkedHashMap<>();
-        for (model.PlanningAssignationDetail detail : details) {
-            String grpKey = detail.getVehiculeId() + "|" + detail.getDateArrivee() + "|" + detail.getHeureArrivee();
-            if (!groupesByFirstRes.containsKey(grpKey)) {
-                groupesByFirstRes.put(grpKey, detail);
-            }
-        }
+        List<PlanningAssignationAffichageView> assignations =
+                planningTrajetService.getAssignationsAffichage(date, heure, vehiculeIdFilter);
         
         List<Vehicule> vehicules = vehiculeService.getAllVehicules();
 
         mav.addObject("pageTitle", "Visualisation des Trajets");
-        mav.addObject("details", details);
-        mav.addObject("groupeSummaries", new ArrayList<>(groupesByFirstRes.values()));
+        mav.addObject("assignations", assignations);
         mav.addObject("vehicules", vehicules);
         mav.addObject("filterDate", date);
         mav.addObject("filterHeure", heure);
@@ -180,6 +175,7 @@ public class PlanningTrajetController {
         List<PlanningTrajetView> plannings = planningTrajetService.getAllPlanningsForView();
         mav.addObject("plannings", plannings);
         mav.addObject("planningGroupes", buildPlanningGroupes(plannings));
+        mav.addObject("assignations", planningTrajetService.getAssignationsAffichage(null, null, null));
         return mav;
     }
 
@@ -283,7 +279,7 @@ public class PlanningTrajetController {
             int placesLibres = Math.max(groupe.getCapaciteVehicule() - groupe.getNombrePassagersTotal(), 0);
             groupe.setPlacesLibres(placesLibres);
             
-            // ⭐ CORRECTION: Recalculer la durée estimée en fonction de la distance totale du groupe
+            //  CORRECTION: Recalculer la durée estimée en fonction de la distance totale du groupe
             // (La durée n'était définie que pour la première réservation du groupe)
             groupe.setDureeEstimee(calculerDureeEstimee(groupe.getDistanceTotale()));
             groupe.setHeureRetour(calculerHeureRetour(groupe.getHeureArrivee(), groupe.getDureeEstimee()));
