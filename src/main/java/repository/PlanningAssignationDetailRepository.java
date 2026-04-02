@@ -235,7 +235,7 @@ public class PlanningAssignationDetailRepository {
 
         StringBuilder sql = new StringBuilder(
                 "SELECT h.vehicule_id, " +
-                "('vehicule' || h.vehicule_id) AS vehicule_label, " +
+            "COALESCE(v.immatriculation, ('vehicule' || h.vehicule_id)) AS vehicule_label, " +
                 "COALESCE(r.nom, 'Client ' || h.reservation_id) AS client, " +
                 "COALESCE(r.nombre_personnes, 0) AS nb_pers, " +
                 "TO_CHAR(h.heure_depart_prevue::time, 'HH24:MI:SS') AS heure_depart, " +
@@ -244,6 +244,7 @@ public class PlanningAssignationDetailRepository {
                 "h.date_service::text AS date_service " +
                 "FROM planning_trajet_assignation_historique h " +
                 "LEFT JOIN reservations r ON r.id = h.reservation_id " +
+            "LEFT JOIN vehicules v ON v.id = h.vehicule_id " +
                 "WHERE 1=1"
         );
 
