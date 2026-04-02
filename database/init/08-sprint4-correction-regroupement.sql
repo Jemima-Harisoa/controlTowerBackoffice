@@ -40,7 +40,10 @@ CREATE INDEX IF NOT EXISTS idx_planning_trajet_detail_groupe
 
 -- Plage d'heures du groupe (ex: "08:00-08:15")
 ALTER TABLE planning_trajet_detail 
-    ADD COLUMN IF NOT EXISTS plage_heures_groupe CHARACTER VARYING(20) DEFAULT NULL;
+    ADD COLUMN IF NOT EXISTS plage_heures_groupe TEXT DEFAULT NULL;
+
+ALTER TABLE planning_trajet_detail
+    ALTER COLUMN plage_heures_groupe TYPE TEXT;
 
 -- ===========================================
 -- 4. DOCUMENTATION MÉTIER
