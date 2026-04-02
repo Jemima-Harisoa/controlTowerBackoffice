@@ -10,6 +10,8 @@ public class Vehicule {
     private String typeCarburant;
     private int capacitePassagers;
     private boolean isAvailable;
+    private String heureDisponibleDebut;
+    private String heureDisponibleCourante;
     private String createdAt;
     private String updatedAt;
 
@@ -25,6 +27,8 @@ public class Vehicule {
         this.typeCarburantId = typeCarburantId;
         this.capacitePassagers = capacitePassagers;
         this.isAvailable = true;
+        this.heureDisponibleDebut = "00:00:00";
+        this.heureDisponibleCourante = "00:00:00";
     }
 
     // Getters et Setters
@@ -98,6 +102,22 @@ public class Vehicule {
 
     public void setAvailable(boolean available) {
         isAvailable = available;
+    }
+
+    public String getHeureDisponibleDebut() {
+        return heureDisponibleDebut;
+    }
+
+    public void setHeureDisponibleDebut(String heureDisponibleDebut) {
+        this.heureDisponibleDebut = heureDisponibleDebut;
+    }
+
+    public String getHeureDisponibleCourante() {
+        return heureDisponibleCourante;
+    }
+
+    public void setHeureDisponibleCourante(String heureDisponibleCourante) {
+        this.heureDisponibleCourante = heureDisponibleCourante;
     }
 
     public String getCreatedAt() {

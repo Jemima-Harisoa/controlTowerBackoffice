@@ -18,6 +18,7 @@ public class PlanningTrajetGroupeView {
     private int placesLibres;
     private double distanceTotale;
     private String dureeEstimee;
+    private String heureRetour;
     private List<String> pointsDepart;
     private List<String> pointsArrivee;
     private String typeCarburantVehicule;
@@ -109,6 +110,14 @@ public class PlanningTrajetGroupeView {
 
     public void setDureeEstimee(String dureeEstimee) {
         this.dureeEstimee = dureeEstimee;
+    }
+
+    public String getHeureRetour() {
+        return heureRetour;
+    }
+
+    public void setHeureRetour(String heureRetour) {
+        this.heureRetour = heureRetour;
     }
 
     public List<String> getPointsDepart() {

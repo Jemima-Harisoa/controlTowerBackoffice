@@ -244,6 +244,47 @@ public class ReservationRepository {
 
         return reservations;
     }
+
+    /**
+     * Compte le nombre total de personnes encore non assignées.
+     */
+    public int countPersonnesNonAssignees() {
+        String query = "SELECT COALESCE(SUM(nombre_personnes), 0) AS total_personnes " +
+                      "FROM reservations WHERE vehicule_id IS NULL";
+
+        try (Connection conn = dbConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+
+            if (rs.next()) {
+                return rs.getInt("total_personnes");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
+
+    /**
+     * Compte le nombre de réservations non assignées.
+     */
+    public int countReservationsNonAssignees() {
+        String query = "SELECT COUNT(*) AS total_reservations FROM reservations WHERE vehicule_id IS NULL";
+
+        try (Connection conn = dbConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+
+            if (rs.next()) {
+                return rs.getInt("total_reservations");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
     // ==================== MÉTHODES D'AFFICHAGE (View) ====================
 
     /**
@@ -354,6 +395,78 @@ public class ReservationRepository {
         }
         
         return reservations;
+    }
+
+    /**
+     * Met à jour uniquement le nombre de personnes d'une réservation.
+     */
+    public boolean updateNombrePersonnes(int reservationId, int nouveauNombrePersonnes) {
+        String query = "UPDATE reservations SET nombre_personnes = ?, updated_at = NOW() WHERE id = ?";
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setInt(1, nouveauNombrePersonnes);
+            stmt.setInt(2, reservationId);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * Crée un fragment de réservation (Sprint 6) pour porter le reste des passagers.
+     */
+    public Reservation createFragment(Reservation source, int nombrePersonnesFragment, String suffixNom) {
+        String query = "INSERT INTO reservations (nom, email, date_arrivee, heure, nombre_personnes, hotel_id, " +
+                      "lieu_depart_id, lieu_arrivee_id, vehicule_id, is_confirmed, created_at, updated_at) " +
+                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, NOW(), NOW())";
+
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
+
+            String nomFragment = source.getNom();
+            if (suffixNom != null && !suffixNom.trim().isEmpty()) {
+                nomFragment = nomFragment + " " + suffixNom.trim();
+            }
+
+            stmt.setString(1, nomFragment);
+            stmt.setString(2, source.getEmail());
+            stmt.setTimestamp(3, source.getDateArrivee());
+            stmt.setString(4, source.getHeure());
+            stmt.setInt(5, nombrePersonnesFragment);
+            stmt.setInt(6, source.getHotelId());
+
+            if (source.getLieuDepartId() != null) {
+                stmt.setLong(7, source.getLieuDepartId());
+            } else {
+                stmt.setNull(7, java.sql.Types.BIGINT);
+            }
+
+            if (source.getLieuArriveeId() != null) {
+                stmt.setLong(8, source.getLieuArriveeId());
+            } else {
+                stmt.setNull(8, java.sql.Types.BIGINT);
+            }
+
+            stmt.setBoolean(9, source.isConfirmed());
+
+            int affectedRows = stmt.executeUpdate();
+            if (affectedRows <= 0) {
+                return null;
+            }
+
+            ResultSet generatedKeys = stmt.getGeneratedKeys();
+            if (generatedKeys.next()) {
+                Reservation fragment = findById(generatedKeys.getInt(1));
+                generatedKeys.close();
+                return fragment;
+            }
+            generatedKeys.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
 
     // ==================== UTILITAIRES ====================
