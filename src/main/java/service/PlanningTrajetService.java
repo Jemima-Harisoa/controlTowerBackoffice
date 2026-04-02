@@ -834,13 +834,14 @@ public class PlanningTrajetService {
                 // Sprint 6-bis: l'indisponibilité court jusqu'à la fin de mission complète (aller + retour).
                 LocalTime heureDepartPlanifiee = parseHeureSafe(heureDeprtAjustee, parseHeureSafe(premiereReservation.getHeure(), LocalTime.MIN));
                 LocalTime heureDisponibilitePrevue = calculerHeureDisponibiliteMission(heureDepartPlanifiee, dureeOptimiseeGroup);
+                String heureArriveePrevue = calculerHeureArriveePrevue(heureDepartPlanifiee.toString(), dureeOptimiseeGroup);
                 planningAssignationDetailRepository.upsertHistoriqueAssignation(
                         vehiculeId,
                         premiereReservation.getId(),
                         planningPremiereRes != null ? planningPremiereRes.getId() : null,
                         dateArrivee,
-                        premiereReservation.getHeure(),
-                        heureDisponibilitePrevue.toString(),
+                        heureDepartPlanifiee.toString(),
+                        heureArriveePrevue,
                         "PLANIFIE"
                 );
             }
