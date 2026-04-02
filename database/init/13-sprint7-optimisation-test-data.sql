@@ -102,6 +102,15 @@ UNION ALL
 SELECT 'S7-VEH-003', 'Mercedes', 'Sprinter', 2024, diesel.id, 12, true, TIME '13:00:00', TIME '13:00:00' FROM diesel
 ON CONFLICT (immatriculation) DO NOTHING;
 
+-- Isolation Sprint 7: seules les immatriculations S7 sont disponibles
+UPDATE vehicules
+SET is_available = false
+WHERE immatriculation NOT LIKE 'S7-VEH-%';
+
+UPDATE vehicules
+SET is_available = true
+WHERE immatriculation LIKE 'S7-VEH-%';
+
 -- Reservations Sprint 7 (date fixe)
 WITH
 ap AS (SELECT id FROM lieux WHERE nom = 'S7_AEROPORT_UNIQUE' LIMIT 1),
@@ -139,3 +148,7 @@ SELECT 'S7_CLIENT_G', 's7.g@test.com', CAST('2026-04-02 13:20:00+00' AS timestam
 SELECT 'S7_RESERVATIONS' AS metric, COUNT(*) AS total
 FROM reservations
 WHERE nom LIKE 'S7_CLIENT_%';
+
+SELECT 'S7_AVAILABLE_VEHICLES' AS metric, COUNT(*) AS total
+FROM vehicules
+WHERE immatriculation LIKE 'S7-VEH-%' AND is_available = true;
