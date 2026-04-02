@@ -43,14 +43,33 @@ public class DatabaseConnection {
         }
         return properties.getProperty(propName);
     }
+
+    /**
+     * Récupère la première variable d'environnement non vide parmi plusieurs clés,
+     * sinon retourne la propriété du fichier application.properties.
+     */
+    private String getPropertyFromEnvAliases(String[] envNames, String propName) {
+        if (envNames != null) {
+            for (String envName : envNames) {
+                if (envName == null || envName.isEmpty()) {
+                    continue;
+                }
+                String envValue = System.getenv(envName);
+                if (envValue != null && !envValue.isEmpty()) {
+                    return envValue;
+                }
+            }
+        }
+        return properties.getProperty(propName);
+    }
     
     public Connection getConnection() throws SQLException {
         // Récupérer les paramètres depuis les variables d'environnement ou application.properties
-        String dbName = getProperty("POSTGRES_DB", "db.name");
+        String dbName = getPropertyFromEnvAliases(new String[]{"DB_NAME", "POSTGRES_DB"}, "db.name");
         String dbHost = getProperty("DB_HOST", "db.host");
-        String dbPort = getProperty("POSTGRES_PORT", "db.port");
-        String user = getProperty("POSTGRES_USER", "db.username");
-        String password = getProperty("POSTGRES_PASSWORD", "db.password");
+        String dbPort = getPropertyFromEnvAliases(new String[]{"DB_PORT", "POSTGRES_PORT"}, "db.port");
+        String user = getPropertyFromEnvAliases(new String[]{"DB_USER", "POSTGRES_USER"}, "db.username");
+        String password = getPropertyFromEnvAliases(new String[]{"DB_PASSWORD", "POSTGRES_PASSWORD"}, "db.password");
         
         // Si pas de host/port dans les propriétés ou env, utiliser l'URL complète
         String url;

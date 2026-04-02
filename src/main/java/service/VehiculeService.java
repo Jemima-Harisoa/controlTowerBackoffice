@@ -2,9 +2,10 @@ package service;
 
 import java.util.List;
 import java.util.stream.Collectors;
+
+import dto.VehiculeView;
 import model.Vehicule;
 import repository.VehiculeRepository;
-import dto.VehiculeView;
 
 /**
  * Service pour la gestion des véhicules
@@ -115,6 +116,67 @@ public class VehiculeService {
         Vehicule vehicule = getVehiculeById(id);
         if (vehicule != null) {
             vehicule.setAvailable(true);
+            updateVehicule(vehicule);
+        }
+    }
+
+    /**
+     * Modifier l'heure de disponibilité de départ d'un véhicule.
+     * La disponibilité courante est alignée si elle est vide.
+     */
+    public void updateHeureDisponibilite(long vehiculeId, String heureDisponibleDebut) {
+        Vehicule vehicule = getVehiculeById(vehiculeId);
+        if (vehicule == null) {
+            return;
+        }
+
+        String heure = (heureDisponibleDebut == null || heureDisponibleDebut.trim().isEmpty())
+                ? "00:00:00"
+                : heureDisponibleDebut.trim();
+
+        if (heure.matches("^\\d{2}:\\d{2}$")) {
+            heure = heure + ":00";
+        }
+
+        vehicule.setHeureDisponibleDebut(heure);
+        if (vehicule.getHeureDisponibleCourante() == null || vehicule.getHeureDisponibleCourante().trim().isEmpty()) {
+            vehicule.setHeureDisponibleCourante(heure);
+        }
+        updateVehicule(vehicule);
+    }
+
+    /**
+     * Mettre à jour l'heure de disponibilité courante d'un véhicule.
+     */
+    public void updateHeureDisponibiliteCourante(long vehiculeId, String heureDisponibleCourante) {
+        Vehicule vehicule = getVehiculeById(vehiculeId);
+        if (vehicule == null) {
+            return;
+        }
+
+        String heure = (heureDisponibleCourante == null || heureDisponibleCourante.trim().isEmpty())
+                ? (vehicule.getHeureDisponibleDebut() != null ? vehicule.getHeureDisponibleDebut() : "00:00:00")
+                : heureDisponibleCourante.trim();
+
+        if (heure.matches("^\\d{2}:\\d{2}$")) {
+            heure = heure + ":00";
+        }
+
+        vehicule.setHeureDisponibleCourante(heure);
+        updateVehicule(vehicule);
+    }
+
+    /**
+     * Réinitialiser la disponibilité courante de tous les véhicules à leur heure de départ.
+     */
+    public void resetDisponibilitesCourantes() {
+        List<Vehicule> vehicules = getAllVehicules();
+        for (Vehicule vehicule : vehicules) {
+            String heureDebut = vehicule.getHeureDisponibleDebut();
+            if (heureDebut == null || heureDebut.trim().isEmpty()) {
+                heureDebut = "00:00:00";
+            }
+            vehicule.setHeureDisponibleCourante(heureDebut);
             updateVehicule(vehicule);
         }
     }

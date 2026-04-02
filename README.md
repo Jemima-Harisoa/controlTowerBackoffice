@@ -4,7 +4,7 @@ BackOffice projet web avec framework maison
 
 ## 📚 Documentation
 
-**New to the project? Start here:** 👉 **[Quick Start Guide](documentation/QUICKSTART.md)** ⭐
+**New to the project? Start here:** 👉 **[Quick Start Guide](documentation/QUICKSTART.md)** 
 
 **Complete documentation index:** 📖 **[Documentation Index](documentation/DOCS.md)**
 

@@ -141,11 +141,56 @@ public class ReservationService {
     public List<ReservationView> getReservationNonAssigneesViews(){
         return  reservationRepository.findNonAssigneesForView();
     }
+
+    /**
+     * Nombre total de personnes encore non assignées (côté métier).
+     */
+    public int getTotalPersonnesNonAssignees() {
+        return reservationRepository.countPersonnesNonAssignees();
+    }
+
+    /**
+     * Nombre total de réservations non assignées (côté métier).
+     */
+    public int getTotalReservationsNonAssignees() {
+        return reservationRepository.countReservationsNonAssignees();
+    }
+
     /**
      * Mettre à jour une réservation (notamment le vehiculeId lors d'une assignation)
      */
     public void updateReservation(Reservation reservation) {
         reservationRepository.update(reservation);
+    }
+
+    /**
+     * Mettre à jour uniquement le nombre de personnes d'une réservation.
+     */
+    public boolean updateNombrePersonnes(int reservationId, int nouveauNombrePersonnes) {
+        return reservationRepository.updateNombrePersonnes(reservationId, nouveauNombrePersonnes);
+    }
+
+    /**
+     * Fractionner une réservation en deux :
+     * - réservation source: prend le nombre assigné maintenant
+     * - nouvelle réservation: porte le reste non assigné
+     */
+    public Reservation fractionnerReservation(Reservation source, int nombreAssigneMaintenant) {
+        if (source == null || nombreAssigneMaintenant <= 0 || nombreAssigneMaintenant >= source.getNombrePersonnes()) {
+            return null;
+        }
+
+        int nombreTotal = source.getNombrePersonnes();
+        int reste = nombreTotal - nombreAssigneMaintenant;
+
+        boolean updated = reservationRepository.updateNombrePersonnes(source.getId(), nombreAssigneMaintenant);
+        if (!updated) {
+            return null;
+        }
+
+        source.setNombrePersonnes(nombreAssigneMaintenant);
+        String suffix = "[FRAG " + reste + "p]";
+        return reservationRepository.createFragment(source, reste, suffix);
     }
 }
 

@@ -304,7 +304,217 @@ Objectif : sachant un client = une reservation permettre l'assignation d'un mêm
   
 
 ## To do :
-  - [] refactoriser la fonction de planification des trajets pour prendre en compte l'assignation de plusieurs reservation a un même vehicule pour le même trajet - classe PlanningTrajetService - fonction de planification des trajets (PlanningTrajetService) - > assignation des reservations aux vehicules (PlanningTrajetRepository) - > regle de gestion : prioriser les reservation avec le plus de places demandes, assigner d'autre reservation a ce meme vehicule pour le reste des places disponibles dans le vehicule, le nombre de personne dans une meme reservation ne peuvent pas encore etre separer dans plusieurs vehicules different, le trajet sera contitue de l'ensemble des points de depart et d'arrivee (hotel, aeroport, gare) de l'ensemble des reservations assignées a ce vehicule pour ce trajet, point de ramassage les plus proche du point de depart du trajet seront prioriser pour l'assignation au vehicule
-  - [] refactoriser la page de visualisation du planning des trajets pour afficher l'ensemble des reservations assignées a un même vehicule pour le même trajet - classe PlanningTrajetController - page de visualisation du planning des trajets - table : date, heure arrivee, reservations (afficher l'ensemble des reservations assignées a un même vehicule pour le même trajet), vehicule , nb places, distance a parcourir, duree du trajet, point arrive  - point depart
-  - [] considere la durer de chaque trajet pour savoir si le vehicule peut etre assigner a une autre reservation pour un autre trajet dans la même journée ou pas - classe PlanningTrajetService - fonction de planification des trajets (PlanningTrajetService) - > assignation des reservations aux vehicules (PlanningTrajetRepository) - > regle de gestion : considerer la durer de chaque trajet pour savoir si le vehicule peut etre assigner a une autre reservation pour un autre trajet dans la même journée ou pas
+  - [X] refactoriser la fonction de planification des trajets pour prendre en compte l'assignation de plusieurs reservation a un même vehicule pour le même trajet - classe PlanningTrajetService - fonction de planification des trajets (PlanningTrajetService) - > assignation des reservations aux vehicules (PlanningTrajetRepository) - > regle de gestion : prioriser les reservation avec le plus de places demandes, assigner d'autre reservation a ce meme vehicule pour le reste des places disponibles dans le vehicule, le nombre de personne dans une meme reservation ne peuvent pas encore etre separer dans plusieurs vehicules different, le trajet sera contitue de l'ensemble des points de depart et d'arrivee (hotel, aeroport, gare) de l'ensemble des reservations assignées a ce vehicule pour ce trajet, point de ramassage les plus proche du point de depart du trajet seront prioriser pour l'assignation au vehicule
+  - [X] refactoriser la page de visualisation du planning des trajets pour afficher l'ensemble des reservations assignées a un même vehicule pour le même trajet - classe PlanningTrajetController - page de visualisation du planning des trajets - table : date, heure arrivee, reservations (afficher l'ensemble des reservations assignées a un même vehicule pour le même trajet), vehicule , nb places, distance a parcourir, duree du trajet, point arrive  - point depart
+  - [X] considere la durer de chaque trajet pour savoir si le vehicule peut etre assigner a une autre reservation pour un autre trajet dans la même journée ou pas - classe PlanningTrajetService - fonction de planification des trajets (PlanningTrajetService) - > assignation des reservations aux vehicules (PlanningTrajetRepository) - > regle de gestion : considerer la durer de chaque trajet pour savoir si le vehicule peut etre assigner a une autre reservation pour un autre trajet dans la même journée ou pas
 
+
+## Reconfiguration des donnes   de test existante : 
+- A cet instant les reservation reste assigner un seul et meme vehicule vu que les heure se chevachent pas : la durre du trajet doit etre la somme des temps estimmer pour chaque trajet avec allez retour vers le point de rammassage. Ex :  reservation 1 : hotel A a aeroport B, distance 20 km, duree du trajet 30 min, reservation 2 : hotel C a aeroport B, distance 10 km, duree du trajet 15 min, disatnce hotel A a hotel C 5 km les 2 reservation arrive a la mme heure a l'aeroport B, point de rammassage donc le vehicule va pouvoir aller chercher la reservation 1 a hotel A, puis aller chercher la reservation 2 a hotel C et ensuite aller a l'aeroport B, la duree totale du trajet on va dire la voiture vient de retourvner d;une commission a pres avoir deposer qqun a hotel B, on a les disatnce entre hotel B et C 5 km, distance entre hotel B et A 20 km, distance entre hotel A et C 5 km, la duree totale du trajet va etre : 20 km (hotel B a hotel A) + 5 km (hotel A a hotel C) + 10 km (hotel C a aeroport B) + 5 km (hotel C a hotel A) = 40 km, la duree totale du trajet va etre de 1h (30 min pour le trajet hotel A a aeroport B + 15 min pour le trajet hotel C a aeroport B + 5 min pour le trajet hotel A a hotel C) => la voiture va prioriser le plus proche a  partir de sa dernieret localisation enregistrer et va faire chaque trajet en fonction de la distance et de la duree du trajet pour savoir si elle peut faire les 2 trajets dans la même journée ou pas, si oui elle va assigner les 2 reservation au meme vehicule sinon elle va assigner une reservation a un vehicule et l'autre reservation a un autre vehicule
+
+
+# Sprint 4 : Regroupement des réservations avec temps d'attente
+
+## Objectif
+
+Ajouter la gestion du temps d'attente entre réservations lors du regroupement de véhicules. Les réservations arrivant dans la marge définie sont assignées au même véhicule avec ajustement automatique de l'heure de départ.
+
+## Données
+
+* [x] Table "Détail du planning" contenant :
+
+  * Date
+  * Heure d'arrivée
+  * Réservations assignées (liste)
+  * Véhicule
+  * Nombre de places
+  * Distance
+  * Durée du trajet
+  * Point de départ
+  * Point d'arrivée
+  * Places libres après assignation
+* [x] Temps d'attente calculé à partir des dates/heures d'arrivée
+* [x] Paramètre de configuration :
+
+  * Temps d'attente maximum (ex : 30 min, 1h)
+
+## Règles de gestion
+
+* [x] Regrouper les réservations dont l'écart ≤ temps d'attente max
+* [x] Assigner un seul véhicule par groupe
+* [x] Définir l'heure de départ = heure de la dernière réservation du groupe
+* [x] Respecter les règles existantes (capacité, proximité, etc.)
+* [x] Laisser non assignées les réservations hors délai
+
+## Tâches de développement
+
+### Refactorisation du moteur de planification
+
+* [x] Intégrer le calcul du temps d'attente
+* [x] Adapter la logique multi-clients 
+* [x] Ajouter le paramètre temps d'attente max
+* [x] Implémenter l'ajustement automatique de l'heure de départ
+* [x] Grouper les réservations selon l'écart de temps
+
+### Données de test
+
+* [x] Réservations dans la marge (ex : 8h, 8h15 avec TA=30min)
+* [x] Réservations hors marge (8h, 8h45 avec TA=30min)
+* [x] Vérification de l'heure de départ ajustée
+* [x] Respect des règles existantes
+* [x] Cas limite : une seule réservation / TA = 0
+
+### Interface de visualisation
+
+* [ ] Ajouter colonnes :
+
+  * [x] Date
+  * [x] Heure arrivée
+  * [x] Réservations
+  * [x] Véhicule
+  * [x] Places
+  * [x] Distance
+  * [x] Durée
+  * [x] Point départ
+  * [x] Point arrivée
+  * [ ] Temps d'attente (À ajouter côté UI)
+* [ ] Afficher le temps d'attente entre réservations
+* [ ] Implémenter layout responsive
+* [ ] Ajouter sidebar toggle
+* [ ] Ajouter header fixe
+* [ ] Gérer le wrapping du texte
+
+---
+
+# Sprint 5 : Assignation avec priorité au nombre minimum de trajets
+
+## Objectif
+
+Prioriser les véhicules avec le nombre minimum de trajets, sauf si un véhicule déjà utilisé est le seul disponible.
+
+## Logique
+
+* [x] Priorité d'assignation :
+
+  * Proximité (Diesel = 0, Essence = 1)
+  * Nombre minimum de trajets (count distinct date|heure)
+  * Nombre de places disponibles (negative for min sorting)
+* [x] Gérer les cas d'égalité (Comparator chain with tiebreakers)
+* [x] Favoriser les véhicules les moins utilisés (compterTrajetsVehicule)
+
+## Tâches de développement
+
+### Implémentation logique
+
+* [x] Ajouter le paramètre nombre de trajets par véhicule (compterTrajetsVehicule method)
+* [x] Implémenter la priorité (proximité → min trajets → places) (3-tier Comparator)
+* [x] Adapter la fonction d'assignation (trouverMeilleurVehicule refactored)
+* [x] Gérer les cas d'égalité (thenComparingInt chain)
+
+### Données de test
+
+* [x] Tous véhicules à 0 trajet (CAS1 ✓ créé)
+* [x] Cas mix : V1=2, V2=1, V3=2 (CAS2 ✓ créé avec SETUP)
+* [x] Cas égalité : V1=2, V2=2, V3=2 (CAS3 ✓ créé - TiebreakerDiesel)
+* [x] Cas égalité : V1=1, V2=1, V3=1 (CAS4 ✓ créé - 3 réservations)
+* [x] Contrainte capacité (CAS5 ✓ créé - 4 personnes)
+* [ ] Vérifier l'ordre de priorité complet (✗ besoin exécution Docker réelle)
+
+
+## Sprint 6 : Séparation des clients sur plusieurs véhicules
+
+## Objectif
+
+Permettre le fractionnement des réservations lorsque la capacité du véhicule est insuffisante.
+
+## Logique
+
+* [x] Priorité :
+
+  * Proximité
+  * Nombre minimum de trajets
+  * Nombre de places disponibles (capacité minimale suffisante)
+* [x] Autoriser le partage de réservation sur plusieurs véhicules
+* [ ] Trier par ancienneté de réservation
+
+## Exemple
+
+* [x] Réservation de 5 personnes
+* [x] Véhicule avec 4 places → assigner 4 personnes
+* [x] 1 personne restante → assignation sur autre véhicule
+* [x] Continuer jusqu'à assignation complète
+
+## Tâches de développement
+
+### Fractionnement des réservations
+
+* [x] Implémenter la logique de partage
+* [x] Gérer les sous-assignations
+* [ ] Trier par ancienneté
+* [x] Gérer les états partiellement assignés
+
+### Adaptation du service
+
+* [x] Intégrer le fractionnement dans le workflow
+* [x] Maintenir les priorités (proximité → min trajets → places)
+* [x] Respecter les règles Sprint 4 et 5
+* [x] Gérer les boucles d'assignation
+
+### Données de test
+
+* [ ] Réservations multi-personnes avec capacité partielle
+* [ ] Mix ancien / nouveau
+* [ ] Vérifier ordre par ancienneté
+* [ ] Cas limite : 1 place / véhicule
+* [ ] Chaîne complète de réservations
+* [ ] Vérifier la traçabilité
+
+### Mise à jour UI/UX
+
+* [ ] Afficher les réservations fragmentées
+* [ ] Indiquer les partages (ex : R1 [3p] / R1 [2p])
+* [ ] Ajouter indicateur de fragment
+* [ ] Afficher la réservation parent
+
+---
+
+## Résumé des étapes transversales
+
+## Sprint 4
+
+* [ ] Backend : calcul temps d'attente
+* [ ] Tests : assignation multi-clients
+* [ ] Frontend : dashboard + affichage temps d'attente
+
+## Sprint 5
+
+* [ ] Backend : logique min trajets
+* [ ] Tests : validation priorités
+* [ ] Frontend : aucun changement
+
+## Sprint 6
+
+* [ ] Backend : fractionnement + ancienneté
+* [ ] Tests : partage + ordre
+* [ ] Frontend : affichage fragments
+
+---
+
+## Dépendances entre sprints
+
+* [ ] Sprint 4 terminé avant Sprint 5
+* [ ] Sprint 5 dépend de Sprint 4
+* [ ] Sprint 6 dépend de Sprint 4 et 5
+* [ ] Sprint 5 peut démarrer en parallèle partiel de Sprint 4
+
+---
+
+## Checklist de livraison
+
+* [ ] Sprint 4 terminé (backend + tests + UI)
+* [ ] Sprint 5 terminé (logique + tests)
+* [ ] Sprint 6 terminé (fractionnement + tests + UI)
+* [ ] Documentation technique mise à jour
+* [ ] Code review effectuée
+* [ ] Validation métier effectuée
+* [ ] Tests d'intégration validés

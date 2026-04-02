@@ -6,6 +6,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import dto.PlanningAssignationAffichageView;
 import model.PlanningAssignationDetail;
 import util.DatabaseConnection;
 
@@ -13,11 +14,14 @@ public class PlanningAssignationDetailRepository {
     private DatabaseConnection dbConnection = DatabaseConnection.getInstance();
 
     public void upsert(PlanningAssignationDetail detail) {
+        //  SPRINT 4 : Inclure les colonnes de groupement par temps d'attente
         String sql = "INSERT INTO planning_trajet_detail " +
                 "(vehicule_id, date_arrivee, heure_arrivee, reservation_id, premiere_reservation_id, reservation_client, " +
                 "nombre_passagers_total, capacite_vehicule, places_libres, distance_estimee_km, " +
-                "duree_estimee, premier_point_depart, dernier_point_arrivee, points_depart, points_arrivee) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::interval, ?, ?, ?, ?) " +
+                "duree_estimee, premier_point_depart, dernier_point_arrivee, points_depart, points_arrivee, " +
+                "reservation_ids_groupees, nombre_reservations_groupe, temps_attente_groupe_minutes, " +
+                "heure_depart_ajustee, plage_heures_groupe) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::interval, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
                 "ON CONFLICT (vehicule_id, date_arrivee, heure_arrivee, reservation_id) " +
                 "DO UPDATE SET premiere_reservation_id = EXCLUDED.premiere_reservation_id, " +
                 "reservation_client = EXCLUDED.reservation_client, " +
@@ -30,6 +34,11 @@ public class PlanningAssignationDetailRepository {
                 "dernier_point_arrivee = EXCLUDED.dernier_point_arrivee, " +
                 "points_depart = EXCLUDED.points_depart, " +
                 "points_arrivee = EXCLUDED.points_arrivee, " +
+                "reservation_ids_groupees = EXCLUDED.reservation_ids_groupees, " +
+                "nombre_reservations_groupe = EXCLUDED.nombre_reservations_groupe, " +
+                "temps_attente_groupe_minutes = EXCLUDED.temps_attente_groupe_minutes, " +
+                "heure_depart_ajustee = EXCLUDED.heure_depart_ajustee, " +
+                "plage_heures_groupe = EXCLUDED.plage_heures_groupe, " +
                 "updated_at = NOW()";
 
         try (Connection conn = dbConnection.getConnection();
@@ -49,6 +58,12 @@ public class PlanningAssignationDetailRepository {
             stmt.setString(13, detail.getDernierPointArrivee());
             stmt.setString(14, detail.getPointsDepart());
             stmt.setString(15, detail.getPointsArrivee());
+            //  SPRINT 4 : Ajouter les champs de groupement
+            stmt.setString(16, detail.getReservationIdsGroupees());
+            stmt.setInt(17, detail.getNombreReservationsGroupe());
+            stmt.setInt(18, detail.getTempsAttenteGroupeMinutes());
+            stmt.setString(19, detail.getHeureDeprtAjustee());
+            stmt.setString(20, detail.getPlageHeuresGroupe());
             stmt.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -62,6 +77,8 @@ public class PlanningAssignationDetailRepository {
                                             String heureDepartPrevue,
                                             String heureArriveePrevue,
                                             String statut) {
+        String sqlDelete = "DELETE FROM planning_trajet_assignation_historique " +
+            "WHERE vehicule_id = ? AND reservation_id = ? AND date_service = ?::date";
         String sql = "INSERT INTO planning_trajet_assignation_historique " +
                 "(vehicule_id, reservation_id, planning_trajet_id, date_service, heure_depart_prevue, heure_arrivee_prevue, statut) " +
                 "VALUES (?, ?, ?, ?::date, ?, ?, ?) " +
@@ -72,7 +89,13 @@ public class PlanningAssignationDetailRepository {
                 "updated_at = NOW()";
 
         try (Connection conn = dbConnection.getConnection();
+             PreparedStatement stmtDelete = conn.prepareStatement(sqlDelete);
              PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmtDelete.setLong(1, vehiculeId);
+            stmtDelete.setLong(2, reservationId);
+            stmtDelete.setString(3, dateService);
+            stmtDelete.executeUpdate();
+
             stmt.setLong(1, vehiculeId);
             stmt.setLong(2, reservationId);
             if (planningTrajetId != null) {
@@ -95,7 +118,9 @@ public class PlanningAssignationDetailRepository {
         String sql = "SELECT id, vehicule_id, date_arrivee, heure_arrivee, reservation_id, " +
                 "premiere_reservation_id, reservation_client, nombre_passagers_total, capacite_vehicule, " +
                 "places_libres, distance_estimee_km, duree_estimee, premier_point_depart, " +
-                "dernier_point_arrivee, points_depart, points_arrivee " +
+                "dernier_point_arrivee, points_depart, points_arrivee, " +
+                "reservation_ids_groupees, nombre_reservations_groupe, temps_attente_groupe_minutes, " +
+                "heure_depart_ajustee, plage_heures_groupe " +
                 "FROM planning_trajet_detail " +
                 "ORDER BY vehicule_id, date_arrivee, heure_arrivee, reservation_id";
 
@@ -118,7 +143,9 @@ public class PlanningAssignationDetailRepository {
                 "SELECT id, vehicule_id, date_arrivee, heure_arrivee, reservation_id, " +
                 "premiere_reservation_id, reservation_client, nombre_passagers_total, capacite_vehicule, " +
                 "places_libres, distance_estimee_km, duree_estimee, premier_point_depart, " +
-                "dernier_point_arrivee, points_depart, points_arrivee " +
+                "dernier_point_arrivee, points_depart, points_arrivee, " +
+                "reservation_ids_groupees, nombre_reservations_groupe, temps_attente_groupe_minutes, " +
+                "heure_depart_ajustee, plage_heures_groupe " +
                 "FROM planning_trajet_detail WHERE 1=1"
         );
 
@@ -172,6 +199,14 @@ public class PlanningAssignationDetailRepository {
         detail.setDernierPointArrivee(rs.getString("dernier_point_arrivee"));
         detail.setPointsDepart(rs.getString("points_depart"));
         detail.setPointsArrivee(rs.getString("points_arrivee"));
+        
+        //  SPRINT 4 : Ajouter les champs de groupement par temps d'attente
+        detail.setReservationIdsGroupees(rs.getString("reservation_ids_groupees"));
+        detail.setNombreReservationsGroupe(rs.getInt("nombre_reservations_groupe"));
+        detail.setTempsAttenteGroupeMinutes(rs.getInt("temps_attente_groupe_minutes"));
+        detail.setHeureDeprtAjustee(rs.getString("heure_depart_ajustee"));
+        detail.setPlageHeuresGroupe(rs.getString("plage_heures_groupe"));
+        
         return detail;
     }
 
@@ -201,5 +236,66 @@ public class PlanningAssignationDetailRepository {
         }
 
         return true;
+    }
+
+    public java.util.List<PlanningAssignationAffichageView> findAssignationsAffichage(String date, String heureDepart, Long vehiculeId) {
+        java.util.List<PlanningAssignationAffichageView> rows = new java.util.ArrayList<>();
+
+        StringBuilder sql = new StringBuilder(
+                "SELECT h.vehicule_id, " +
+            "COALESCE(v.immatriculation, ('vehicule' || h.vehicule_id)) AS vehicule_label, " +
+                "COALESCE(r.nom, 'Client ' || h.reservation_id) AS client, " +
+                "COALESCE(r.nombre_personnes, 0) AS nb_pers, " +
+                "TO_CHAR(h.heure_depart_prevue::time, 'HH24:MI:SS') AS heure_depart, " +
+                "TO_CHAR(COALESCE(h.heure_arrivee_prevue::time, h.heure_depart_prevue::time), 'HH24:MI:SS') AS heure_retour, " +
+                "GREATEST(0, CAST(EXTRACT(EPOCH FROM (COALESCE(h.heure_arrivee_prevue::time, h.heure_depart_prevue::time) - h.heure_depart_prevue::time)) / 60 AS INTEGER)) AS min_duree, " +
+                "h.date_service::text AS date_service " +
+                "FROM planning_trajet_assignation_historique h " +
+                "LEFT JOIN reservations r ON r.id = h.reservation_id " +
+            "LEFT JOIN vehicules v ON v.id = h.vehicule_id " +
+                "WHERE 1=1"
+        );
+
+        java.util.List<Object> params = new java.util.ArrayList<>();
+        if (date != null && !date.trim().isEmpty()) {
+            sql.append(" AND h.date_service = ?::date");
+            params.add(date.trim());
+        }
+        if (heureDepart != null && !heureDepart.trim().isEmpty()) {
+            sql.append(" AND h.heure_depart_prevue::time = ?::time");
+            params.add(heureDepart.trim());
+        }
+        if (vehiculeId != null) {
+            sql.append(" AND h.vehicule_id = ?");
+            params.add(vehiculeId);
+        }
+
+        sql.append(" ORDER BY h.date_service, h.heure_depart_prevue::time, h.vehicule_id, h.reservation_id");
+
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                stmt.setObject(i + 1, params.get(i));
+            }
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    PlanningAssignationAffichageView row = new PlanningAssignationAffichageView();
+                    row.setVehiculeId(rs.getLong("vehicule_id"));
+                    row.setVehicule(rs.getString("vehicule_label"));
+                    row.setClient(rs.getString("client"));
+                    row.setNbPers(rs.getInt("nb_pers"));
+                    row.setHeureDepart(rs.getString("heure_depart"));
+                    row.setHeureRetour(rs.getString("heure_retour"));
+                    row.setMinDuree(rs.getInt("min_duree"));
+                    row.setDateService(rs.getString("date_service"));
+                    rows.add(row);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return rows;
     }
 }
