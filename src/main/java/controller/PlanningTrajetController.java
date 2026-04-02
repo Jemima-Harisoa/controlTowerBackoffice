@@ -1,11 +1,11 @@
 package controller;
 
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.time.LocalTime;
-import java.time.format.DateTimeParseException;
 import java.util.stream.Collectors;
 
 import dto.PlanningAssignationAffichageView;
@@ -52,6 +52,8 @@ public class PlanningTrajetController {
         
         // Récupérer tous les véhicules disponibles
         List<Vehicule> vehicules = vehiculeService.getVehiculesDisponibles();
+        List<PlanningAssignationAffichageView> assignations =
+            planningTrajetService.getAssignationsAffichage(date, heure, null);
         
         String pageTitle = "Plannification des R&#233;servations";
         mav.addObject("pageTitle", pageTitle);
@@ -61,6 +63,7 @@ public class PlanningTrajetController {
         mav.addObject("vehicules", vehicules);
         mav.addObject("plannings", plannings);
         mav.addObject("planningGroupes", buildPlanningGroupes(plannings));
+        mav.addObject("assignations", assignations);
         mav.addObject("filterDate", date);
         mav.addObject("filterHeure", heure);
         mav.addObject("filterVehiculeId", vehiculeId);
@@ -172,6 +175,7 @@ public class PlanningTrajetController {
         List<PlanningTrajetView> plannings = planningTrajetService.getAllPlanningsForView();
         mav.addObject("plannings", plannings);
         mav.addObject("planningGroupes", buildPlanningGroupes(plannings));
+        mav.addObject("assignations", planningTrajetService.getAssignationsAffichage(null, null, null));
         return mav;
     }
 
