@@ -832,8 +832,8 @@ public class PlanningTrajetService {
 
                 // Calculer temps d'attente du groupe
                 int tempsAttenteGroupeMinutes = calculerTempsAttenteGroupe(reservationsGroupeTriees);
-                // Sprint 4: départ aligné sur la réservation la plus tardive du groupe.
-                String heureDeprtAjustee = calculerHeureDepart(reservationsGroupeTriees);
+                // Sprint 4 + 6-bis: départ = dernier client du groupe, mais jamais avant la disponibilité réelle du véhicule.
+                String heureDeprtAjustee = calculerHeureDeprtAjustee(vehicule, reservationsGroupeTriees);
                 String plageHeuresGroupe = premiereReservation.getHeure() + " → " + heureDeprtAjustee
                     + " (attente: " + tempsAttenteGroupeMinutes + " min)";
 
