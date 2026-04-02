@@ -591,6 +591,27 @@
         border-bottom: none;
     }
 
+    .timeline-list {
+        width: 100%;
+        border-collapse: collapse;
+        background: #fff;
+        border: 1px solid #e8ebf3;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .timeline-list th,
+    .timeline-list td {
+        padding: 10px 12px;
+        text-align: left;
+        border-bottom: 1px solid #edf0f7;
+        font-size: 13px;
+    }
+
+    .timeline-list tr:last-child td {
+        border-bottom: none;
+    }
+
     @media (max-width: 1080px) {
         .filter-row {
             grid-template-columns: repeat(2, minmax(220px, 1fr));
@@ -792,11 +813,6 @@
                     </c:forEach>
                 </tbody>
             </table>
-
-            <div class="grouped-result-header">
-                Affichage regroupé par véhicule
-            </div>
-            <div id="groupedByVehicule" class="grouped-result-grid"></div>
         </c:otherwise>
     </c:choose>
 </div>
@@ -840,6 +856,26 @@
                         </tr>
                     </c:forEach>
                 </tbody>
+            </table>
+
+            <div class="grouped-result-header">Affichage regroupé par véhicule</div>
+            <div id="groupedByVehicule" class="grouped-result-grid"></div>
+
+            <div class="grouped-result-header">Chronologie globale (qui part quand, puis qui part après)</div>
+            <table id="timelineGlobale" class="timeline-list">
+                <thead>
+                    <tr>
+                        <th>Ordre</th>
+                        <th>Départ</th>
+                        <th>Véhicule</th>
+                        <th>Client</th>
+                        <th>Nb pers</th>
+                        <th>Retour</th>
+                        <th>Durée</th>
+                        <th>Distance</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
             </table>
         </c:otherwise>
     </c:choose>
@@ -1034,13 +1070,15 @@
         }
 
         const groupedContainer = document.getElementById('groupedByVehicule');
+        const timelineBody = document.querySelector('#timelineGlobale tbody');
         const sourceRows = resultSection.querySelectorAll('.reservations-table tbody tr');
 
-        if (!groupedContainer || sourceRows.length === 0) {
+        if (!groupedContainer || !timelineBody || sourceRows.length === 0) {
             return;
         }
 
         const grouped = {};
+        const allLignes = [];
         sourceRows.forEach((row) => {
             const cells = row.querySelectorAll('td');
             if (cells.length < 6) {
@@ -1056,25 +1094,31 @@
                 grouped[vehicule] = [];
             }
 
-            grouped[vehicule].push({
+            const ligne = {
                 client: (cells[1].textContent || '').trim(),
                 nbPers: (cells[2].textContent || '').trim(),
                 depart: (cells[3].textContent || '').trim(),
                 retour: (cells[4].textContent || '').trim(),
-                duree: (cells[5].textContent || '').trim()
-            });
+                duree: (cells[5].textContent || '').trim(),
+                distance: 'N/D',
+                vehicule: vehicule
+            };
+
+            grouped[vehicule].push(ligne);
+            allLignes.push(ligne);
         });
 
         const orderedVehicules = Object.keys(grouped).sort();
         groupedContainer.innerHTML = orderedVehicules.map((vehicule) => {
-            const lignes = grouped[vehicule];
+            const lignes = grouped[vehicule].slice().sort((a, b) => a.depart.localeCompare(b.depart));
             const bodyRows = lignes.map((ligne) => (
                 '<tr>' +
-                    '<td>' + ligne.client + '</td>' +
-                    '<td>' + ligne.nbPers + '</td>' +
-                    '<td>' + ligne.depart + '</td>' +
-                    '<td>' + ligne.retour + '</td>' +
-                    '<td>' + ligne.duree + '</td>' +
+                    '<td>' + escapeHtml(ligne.client) + '</td>' +
+                    '<td>' + escapeHtml(ligne.nbPers) + '</td>' +
+                    '<td>' + escapeHtml(ligne.depart) + '</td>' +
+                    '<td>' + escapeHtml(ligne.retour) + '</td>' +
+                    '<td>' + escapeHtml(ligne.duree) + '</td>' +
+                    '<td>' + escapeHtml(ligne.distance) + '</td>' +
                 '</tr>'
             )).join('');
 
@@ -1093,6 +1137,7 @@
                                     '<th>Depart</th>' +
                                     '<th>Retour</th>' +
                                     '<th>Duree</th>' +
+                                    '<th>Distance</th>' +
                                 '</tr>' +
                             '</thead>' +
                             '<tbody>' + bodyRows + '</tbody>' +
@@ -1101,6 +1146,40 @@
                 '</article>'
             );
         }).join('');
+
+        const orderedGlobal = allLignes.slice().sort((a, b) => {
+            const diffDepart = a.depart.localeCompare(b.depart);
+            if (diffDepart !== 0) {
+                return diffDepart;
+            }
+            const diffVehicule = a.vehicule.localeCompare(b.vehicule);
+            if (diffVehicule !== 0) {
+                return diffVehicule;
+            }
+            return a.client.localeCompare(b.client);
+        });
+
+        timelineBody.innerHTML = orderedGlobal.map((ligne, index) => (
+            '<tr>' +
+                '<td>' + (index + 1) + '</td>' +
+                '<td>' + escapeHtml(ligne.depart) + '</td>' +
+                '<td><strong>' + escapeHtml(ligne.vehicule) + '</strong></td>' +
+                '<td>' + escapeHtml(ligne.client) + '</td>' +
+                '<td>' + escapeHtml(ligne.nbPers) + '</td>' +
+                '<td>' + escapeHtml(ligne.retour) + '</td>' +
+                '<td>' + escapeHtml(ligne.duree) + '</td>' +
+                '<td>' + escapeHtml(ligne.distance) + '</td>' +
+            '</tr>'
+        )).join('');
+    }
+
+    function escapeHtml(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
     }
 
     document.addEventListener('DOMContentLoaded', construireVueGroupeeParVehicule);
