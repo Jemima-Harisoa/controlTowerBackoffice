@@ -98,6 +98,7 @@ ON CONFLICT (lieu_depart_id, lieu_arrivee_id) DO UPDATE SET
 	updated_at = NOW();
 
 -- Véhicules demandés
+-- Horaires disponibles ajustés pour respecter les dépendances de trajets
 WITH
 diesel AS (SELECT id FROM type_carburant WHERE libelle = 'Diesel' LIMIT 1),
 essence AS (SELECT id FROM type_carburant WHERE libelle = 'Essence' LIMIT 1)
@@ -154,5 +155,4 @@ WHERE nom LIKE 'FULL_CLIENT_%';
 SELECT 'AEROPORT_UNIQUE_USED' AS metric, COUNT(DISTINCT lieu_depart_id) AS nb_aeroports_differents
 FROM reservations
 WHERE nom LIKE 'FULL_CLIENT_%';
-
 

@@ -134,7 +134,8 @@ public class PlanningTrajetService {
 
             // Mettre a jour les metadonnees de trajet et externaliser un detail agrege
             remplirDetailsPlanification(reservation);
-            externaliserDetailAssignationVehicule(vehiculeId, reservation);
+            Vehicule vehiculeAssigne = vehiculeService.getVehiculeById(vehiculeId);
+            externaliserDetailAssignationVehicule(vehiculeId, reservation, vehiculeAssigne);
 
             PlanningTrajet planningMisAJour = getPlanningByReservationId(reservationId);
             enregistrerHistoriqueDeplacementVehicule(vehiculeId, reservation, planningMisAJour);
@@ -213,7 +214,8 @@ public class PlanningTrajetService {
                 for (PlanningTrajet planning : entry.getValue()) {
                     Reservation reservation = reservationService.getReservationById((int) planning.getReservationId());
                     if (reservation != null && planning.getVehiculeId() != null) {
-                        externaliserDetailAssignationVehicule(planning.getVehiculeId().intValue(), reservation);
+                        Vehicule vehicule = vehiculeService.getVehiculeById(planning.getVehiculeId().intValue());
+                        externaliserDetailAssignationVehicule(planning.getVehiculeId().intValue(), reservation, vehicule);
                     }
                 }
             }
@@ -688,7 +690,7 @@ public class PlanningTrajetService {
          * 3. Pour chaque groupe : créer UNE SEULE ligne d'assignation
          * 4. Énumérer toutes les réservations du groupe dans reservation_client
          */
-        private void externaliserDetailAssignationVehicule(int vehiculeId, Reservation reservationPivot) {
+        private void externaliserDetailAssignationVehicule(int vehiculeId, Reservation reservationPivot, Vehicule vehicule) {
             if (reservationPivot == null || reservationPivot.getDateArrivee() == null) {
                 return;
             }
@@ -722,7 +724,9 @@ public class PlanningTrajetService {
             }
 
             // Récupérer le véhicule et sa capacité
-            Vehicule vehicule = vehiculeService.getVehiculeById(vehiculeId);
+            if (vehicule == null) {
+                vehicule = vehiculeService.getVehiculeById(vehiculeId);
+            }
             int capaciteVehicule = vehicule != null ? vehicule.getCapacitePassagers() : 0;
 
             // ⭐ GROUPER PAR TEMPS D'ATTENTE ET CAPACITÉ (Sprint 4 + Sprint 6)
@@ -800,7 +804,8 @@ public class PlanningTrajetService {
 
                 // Calculer temps d'attente du groupe
                 int tempsAttenteGroupeMinutes = calculerTempsAttenteGroupe(reservationsGroupeTriees);
-                String heureDeprtAjustee = calculerHeureDepart(reservationsGroupeTriees);
+                // ⭐ FIX: Utiliser l'heure disponible courante du véhicule, pas l'heure de la dernière réservation
+                String heureDeprtAjustee = calculerHeureDeprtAjustee(vehicule, reservationsGroupeTriees);
                 String plageHeuresGroupe = premiereReservation.getHeure() + " → " + heureDeprtAjustee
                     + " (attente: " + tempsAttenteGroupeMinutes + " min)";
 
@@ -1327,6 +1332,46 @@ public class PlanningTrajetService {
             .orElse(null);
 
         return derniere != null ? derniere.getHeure() : null;
+    }
+
+    /**
+     * ⭐ FIX SPRINT 6: Calculer l'heure de départ réelle en utilisant la disponibilité du véhicule
+     * 
+     * Logique :
+     * - Si le véhicule est libre avant la première réservation du groupe → départ à l'heure de la première
+     * - Si le véhicule est libre après → départ quand il est libre (heure_disponible_courante)
+     * 
+     * @param vehicule Véhicule assigné
+     * @param groupe Liste de réservations du groupe
+     * @return Heure d'exécution du départ (MAX entre heure dispoIBLE et première réservation)
+     */
+    public String calculerHeureDeprtAjustee(Vehicule vehicule, List<Reservation> groupe) {
+        if (groupe == null || groupe.isEmpty()) {
+            return null;
+        }
+
+        // Heure de la première réservation du groupe
+        Reservation premiere = groupe.stream()
+            .min(Comparator.comparing(Reservation::getHeure, Comparator.nullsLast(String::compareTo)))
+            .orElse(null);
+
+        if (premiere == null || premiere.getHeure() == null) {
+            return null;
+        }
+
+        String heurePremiereRes = premiere.getHeure();
+
+        // Si pas de véhicule, utiliser l'heure de la première réservation
+        if (vehicule == null || vehicule.getHeureDisponibleCourante() == null) {
+            return heurePremiereRes;
+        }
+
+        String heureDispoVehicule = vehicule.getHeureDisponibleCourante();
+        LocalTime heurePremiereResTime = parseHeureSafe(heurePremiereRes, LocalTime.MIN);
+        LocalTime heureDispoVehiculeTime = parseHeureSafe(heureDispoVehicule, LocalTime.MIN);
+
+        // L'heure de départ réelle est la PLUS TARD entre disponibilité du véhicule et première réservation
+        return heureDispoVehiculeTime.isAfter(heurePremiereResTime) ? heureDispoVehicule : heurePremiereRes;
     }
 
     /**
