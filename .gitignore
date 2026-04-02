@@ -21,4 +21,6 @@ TODO_UPDATED.md
 
 MEMORY.md
 
-result.csv
+database/SCHEMA_RESUME.sql
+
+*.csv
