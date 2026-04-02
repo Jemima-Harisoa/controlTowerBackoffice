@@ -353,17 +353,10 @@ public class PlanningTrajetService {
         LocalTime heureDebutReservation = parseHeureSafe(reservation.getHeure(), LocalTime.MIN);
 
         PlanningTrajet planning = getPlanningByReservationId(reservation.getId());
-        LocalTime heureArrivee = null;
-        if (planning != null && planning.getDureeEstimee() != null) {
-            String heureArriveeStr = calculerHeureArriveePrevue(normaliserHeure(reservation.getHeure()), planning.getDureeEstimee());
-            heureArrivee = parseHeureSafe(heureArriveeStr, null);
-        }
+        String dureeAller = planning != null ? planning.getDureeEstimee() : null;
+        LocalTime heureDisponibilite = calculerHeureDisponibiliteMission(heureDebutReservation, dureeAller);
 
-        if (heureArrivee == null) {
-            heureArrivee = heureDebutReservation.plusHours(1);
-        }
-
-        LocalTime nouvelleDispo = heureArrivee.isAfter(heureCourante) ? heureArrivee : heureCourante;
+        LocalTime nouvelleDispo = heureDisponibilite.isAfter(heureCourante) ? heureDisponibilite : heureCourante;
         vehiculeService.updateHeureDisponibiliteCourante(vehiculeId, nouvelleDispo.toString());
     }
 
@@ -833,14 +826,16 @@ public class PlanningTrajetService {
 
                 // Enregistrer l'historique d'assignation pour la PREMIÈRE réservation du groupe
                 PlanningTrajet planningPremiereRes = planningByReservationId.get((long) premiereReservation.getId());
-                String heureArriveePrevue = calculerHeureArriveePrevue(heureDeprtAjustee, dureeOptimiseeGroup);
+                // Sprint 6-bis: l'indisponibilité court jusqu'à la fin de mission complète (aller + retour).
+                LocalTime heureDepartPlanifiee = parseHeureSafe(heureDeprtAjustee, parseHeureSafe(premiereReservation.getHeure(), LocalTime.MIN));
+                LocalTime heureDisponibilitePrevue = calculerHeureDisponibiliteMission(heureDepartPlanifiee, dureeOptimiseeGroup);
                 planningAssignationDetailRepository.upsertHistoriqueAssignation(
                         vehiculeId,
                         premiereReservation.getId(),
                         planningPremiereRes != null ? planningPremiereRes.getId() : null,
                         dateArrivee,
                         premiereReservation.getHeure(),
-                        heureArriveePrevue,
+                        heureDisponibilitePrevue.toString(),
                         "PLANIFIE"
                 );
             }
@@ -866,6 +861,45 @@ public class PlanningTrajetService {
                 return arrivee.toString();
             } catch (DateTimeParseException | NumberFormatException e) {
                 return null;
+            }
+        }
+
+        /**
+         * Sprint 6-bis: heure de disponibilité réelle du véhicule après mission complète.
+         * Disponibilité = départ + durée aller + durée retour.
+         */
+        private LocalTime calculerHeureDisponibiliteMission(LocalTime heureDepart, String dureeAllerInterval) {
+            if (heureDepart == null) {
+                heureDepart = LocalTime.MIN;
+            }
+
+            int dureeAllerMinutes = extraireMinutesDepuisInterval(dureeAllerInterval);
+            if (dureeAllerMinutes <= 0) {
+                // Fallback conservateur si la durée n'est pas connue: 2h (aller+retour).
+                return heureDepart.plusHours(2);
+            }
+
+            return heureDepart.plusMinutes((long) dureeAllerMinutes * 2L);
+        }
+
+        private int extraireMinutesDepuisInterval(String dureeInterval) {
+            if (dureeInterval == null || dureeInterval.trim().isEmpty()) {
+                return 0;
+            }
+
+            try {
+                String[] parts = dureeInterval.trim().split(":");
+                if (parts.length < 2) {
+                    return 0;
+                }
+
+                int heures = Integer.parseInt(parts[0]);
+                int minutes = Integer.parseInt(parts[1]);
+                int secondes = parts.length > 2 ? Integer.parseInt(parts[2]) : 0;
+
+                return (heures * 60) + minutes + (secondes >= 30 ? 1 : 0);
+            } catch (NumberFormatException e) {
+                return 0;
             }
         }
 
