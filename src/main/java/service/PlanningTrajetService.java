@@ -1074,17 +1074,18 @@ public class PlanningTrajetService {
             return trouverMeilleurVehiculeAvecAttente(reservation);
         }
 
-        // ÉTAPE 2 : Score des véhicules selon priorités Sprint 5 + Sprint 6.
+        // ÉTAPE 2 : Score des véhicules selon priorités Sprint 5 + Sprint 6-bis.
+        // La rotation (min trajets) passe avant le carburant pour éviter qu'un même véhicule enchaîne tous les créneaux.
         return vehiculesAptes.stream()
             .min(Comparator
-                // Priorité 1: Proximité (Diesel prioritaire)
-                .comparingInt((Vehicule v) -> {
+                // Priorité 1: Nombre MINIMUM de trajets (rotation flotte)
+                .comparingInt(this::compterTrajetsVehicule)
+                // Priorité 2: Proximité/carburant (Diesel prioritaire)
+                .thenComparingInt((Vehicule v) -> {
                     boolean isDiesel = v.getTypeCarburant() != null && 
                                       v.getTypeCarburant().equalsIgnoreCase("Diesel");
                     return isDiesel ? 0 : 1;
                 })
-                // Priorité 2: Nombre MINIMUM de trajets
-                .thenComparingInt(this::compterTrajetsVehicule)
                 // Priorité 3 (Sprint 6): capacité minimale suffisante pour limiter le gaspillage de places
                 .thenComparingInt(Vehicule::getCapacitePassagers)
                 .thenComparingInt((Vehicule v) -> (int) v.getId()))
@@ -1114,12 +1115,12 @@ public class PlanningTrajetService {
         return vehicules.stream()
             .min(Comparator
                 .comparingLong((Vehicule v) -> minutesJusquaDisponibilite(v, heureReference))
+                .thenComparingInt(this::compterTrajetsVehicule)
                 .thenComparingInt((Vehicule v) -> {
                     boolean isDiesel = v.getTypeCarburant() != null &&
                             v.getTypeCarburant().equalsIgnoreCase("Diesel");
                     return isDiesel ? 0 : 1;
                 })
-                .thenComparingInt(this::compterTrajetsVehicule)
                 .thenComparingInt(Vehicule::getCapacitePassagers)
                 .thenComparingInt(v -> (int) v.getId()))
             .orElse(null);
