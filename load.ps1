@@ -39,7 +39,7 @@ foreach ($file in $args) {
     }
 
     Write-Host " $file..." -ForegroundColor Yellow
-    Get-Content $resolvedPath -Raw -Encoding UTF8 | docker compose -f $composeFile exec -T $dbService psql -U $dbUser -d $dbName
+    Get-Content $resolvedPath -Raw -Encoding UTF8 | docker compose -f $composeFile exec -T $dbService psql -v ON_ERROR_STOP=1 -U $dbUser -d $dbName
 
     if ($LASTEXITCODE -eq 0) {
         Write-Host " $file OK" -ForegroundColor Green

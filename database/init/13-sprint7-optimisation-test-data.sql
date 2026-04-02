@@ -121,19 +121,19 @@ INSERT INTO reservations (
     nom, email, date_arrivee, heure, nombre_personnes, hotel_id,
     lieu_depart_id, lieu_arrivee_id, is_confirmed
 )
-SELECT 'S7_CLIENT_A', 's7.a@test.com', '2026-04-02 08:00:00+00', '08:00', 6, h1.hotel_id, ap.id, h1.lieu_id, true FROM ap, h1
+SELECT 'S7_CLIENT_A', 's7.a@test.com', CAST('2026-04-02 08:00:00+00' AS timestamptz), '08:00', 6, h1.hotel_id, ap.id, h1.lieu_id, true FROM ap, h1
 UNION ALL
-SELECT 'S7_CLIENT_B', 's7.b@test.com', '2026-04-02 08:10:00+00', '08:10', 2, h1.hotel_id, ap.id, h1.lieu_id, true FROM ap, h1
+SELECT 'S7_CLIENT_B', 's7.b@test.com', CAST('2026-04-02 08:10:00+00' AS timestamptz), '08:10', 2, h1.hotel_id, ap.id, h1.lieu_id, true FROM ap, h1
 UNION ALL
-SELECT 'S7_CLIENT_C', 's7.c@test.com', '2026-04-02 09:00:00+00', '09:00', 7, h2.hotel_id, ap.id, h2.lieu_id, true FROM ap, h2
+SELECT 'S7_CLIENT_C', 's7.c@test.com', CAST('2026-04-02 09:00:00+00' AS timestamptz), '09:00', 7, h2.hotel_id, ap.id, h2.lieu_id, true FROM ap, h2
 UNION ALL
-SELECT 'S7_CLIENT_D', 's7.d@test.com', '2026-04-02 09:15:00+00', '09:15', 3, h2.hotel_id, ap.id, h2.lieu_id, true FROM ap, h2
+SELECT 'S7_CLIENT_D', 's7.d@test.com', CAST('2026-04-02 09:15:00+00' AS timestamptz), '09:15', 3, h2.hotel_id, ap.id, h2.lieu_id, true FROM ap, h2
 UNION ALL
-SELECT 'S7_CLIENT_E', 's7.e@test.com', '2026-04-02 09:50:00+00', '09:50', 4, h2.hotel_id, ap.id, h2.lieu_id, true FROM ap, h2
+SELECT 'S7_CLIENT_E', 's7.e@test.com', CAST('2026-04-02 09:50:00+00' AS timestamptz), '09:50', 4, h2.hotel_id, ap.id, h2.lieu_id, true FROM ap, h2
 UNION ALL
-SELECT 'S7_CLIENT_F', 's7.f@test.com', '2026-04-02 13:10:00+00', '13:10', 10, h1.hotel_id, ap.id, h1.lieu_id, true FROM ap, h1
+SELECT 'S7_CLIENT_F', 's7.f@test.com', CAST('2026-04-02 13:10:00+00' AS timestamptz), '13:10', 10, h1.hotel_id, ap.id, h1.lieu_id, true FROM ap, h1
 UNION ALL
-SELECT 'S7_CLIENT_G', 's7.g@test.com', '2026-04-02 13:20:00+00', '13:20', 2, h1.hotel_id, ap.id, h1.lieu_id, true FROM ap, h1;
+SELECT 'S7_CLIENT_G', 's7.g@test.com', CAST('2026-04-02 13:20:00+00' AS timestamptz), '13:20', 2, h1.hotel_id, ap.id, h1.lieu_id, true FROM ap, h1;
 
 -- Controle rapide
 SELECT 'S7_RESERVATIONS' AS metric, COUNT(*) AS total
