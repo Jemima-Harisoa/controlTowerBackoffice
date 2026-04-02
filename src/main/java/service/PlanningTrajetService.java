@@ -1053,26 +1053,7 @@ public class PlanningTrajetService {
 
         // Sprint 6 : si aucun véhicule ne couvre toute la réservation, on tente un véhicule partiel.
         if (vehiculesAptes.isEmpty()) {
-            List<Vehicule> vehiculesPartiels = vehiculeService.getVehiculesDisponibles();
-            if (reservation.getDateArrivee() != null && reservation.getHeure() != null && !reservation.getHeure().isEmpty()) {
-                String dateService = reservation.getDateArrivee().toLocalDateTime().toLocalDate().toString();
-                String heureReference = reservation.getHeure();
-                vehiculesPartiels = vehiculesPartiels.stream()
-                    .filter(v -> estVehiculeDisponibleParHeure(v, heureReference))
-                    .filter(v -> planningAssignationDetailRepository.isVehiculeDisponibleAt(v.getId(), dateService, heureReference))
-                    .collect(Collectors.toList());
-            }
-
-            if (vehiculesPartiels.isEmpty()) {
-                return null;
-            }
-
-            return vehiculesPartiels.stream()
-                .max(Comparator
-                    .comparingInt(Vehicule::getCapacitePassagers)
-                    .thenComparingInt(v -> -compterTrajetsVehicule(v))
-                    .thenComparingInt(v -> (int) -v.getId()))
-                .orElse(null);
+            return trouverMeilleurVehiculeAvecAttente(reservation);
         }
 
         // ÉTAPE 2 : Score des véhicules selon priorités Sprint 5 + Sprint 6.
@@ -1090,6 +1071,51 @@ public class PlanningTrajetService {
                 .thenComparingInt(Vehicule::getCapacitePassagers)
                 .thenComparingInt((Vehicule v) -> (int) v.getId()))
             .orElse(null);
+    }
+
+    /**
+     * Fallback Sprint 6-bis: si aucun véhicule n'est libre à l'heure d'arrivée,
+     * choisir le prochain véhicule compatible et conserver la réservation en attente.
+     */
+    private Vehicule trouverMeilleurVehiculeAvecAttente(Reservation reservation) {
+        if (reservation == null) {
+            return null;
+        }
+
+        List<Vehicule> vehicules = vehiculeService.getVehiculesByCapacite(reservation.getNombrePersonnes());
+        if (vehicules == null || vehicules.isEmpty()) {
+            return null;
+        }
+
+        LocalTime heureReference = parseHeureSafe(reservation.getHeure(), LocalTime.MIN);
+
+        return vehicules.stream()
+            .min(Comparator
+                .comparingLong((Vehicule v) -> minutesJusquaDisponibilite(v, heureReference))
+                .thenComparingInt((Vehicule v) -> {
+                    boolean isDiesel = v.getTypeCarburant() != null &&
+                            v.getTypeCarburant().equalsIgnoreCase("Diesel");
+                    return isDiesel ? 0 : 1;
+                })
+                .thenComparingInt(this::compterTrajetsVehicule)
+                .thenComparingInt(Vehicule::getCapacitePassagers)
+                .thenComparingInt(v -> (int) v.getId()))
+            .orElse(null);
+    }
+
+    private long minutesJusquaDisponibilite(Vehicule vehicule, LocalTime heureReference) {
+        if (vehicule == null) {
+            return Long.MAX_VALUE;
+        }
+
+        String heureSource = vehicule.getHeureDisponibleCourante();
+        if (heureSource == null || heureSource.trim().isEmpty()) {
+            heureSource = vehicule.getHeureDisponibleDebut();
+        }
+
+        LocalTime heureDisponible = parseHeureSafe(heureSource, LocalTime.MIN);
+        long delta = java.time.temporal.ChronoUnit.MINUTES.between(heureReference, heureDisponible);
+        return Math.max(delta, 0L);
     }
 
     /**
