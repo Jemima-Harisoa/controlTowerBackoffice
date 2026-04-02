@@ -766,6 +766,12 @@ public class PlanningTrajetService {
                 capaciteVehicule
             );
 
+            // Recalculer la disponibilité dynamiquement groupe par groupe pour la journée.
+            LocalTime disponibiliteVehicule = parseHeureSafe(
+                vehicule != null ? vehicule.getHeureDisponibleDebut() : null,
+                LocalTime.MIN
+            );
+
             // Exporter chaque GROUPE en UNE SEULE LIGNE
             for (Map.Entry<Integer, List<Reservation>> entryGroupe : groupesParTempsAttente.entrySet()) {
                 List<Reservation> reservationsGroupeTriees = entryGroupe.getValue();
@@ -832,8 +838,19 @@ public class PlanningTrajetService {
 
                 // Calculer temps d'attente du groupe
                 int tempsAttenteGroupeMinutes = calculerTempsAttenteGroupe(reservationsGroupeTriees);
-                // Sprint 4 + 6-bis: départ = dernier client du groupe, mais jamais avant la disponibilité réelle du véhicule.
-                String heureDeprtAjustee = calculerHeureDeprtAjustee(vehicule, reservationsGroupeTriees);
+
+                // Sprint 4 + 6-bis: départ = dernier client du groupe, jamais avant disponibilité réelle.
+                Reservation derniereReservationGroupe = reservationsGroupeTriees.stream()
+                    .max(Comparator.comparing(Reservation::getHeure, Comparator.nullsLast(String::compareTo)))
+                    .orElse(premiereReservation);
+                LocalTime heureDernierClient = parseHeureSafe(
+                    derniereReservationGroupe != null ? derniereReservationGroupe.getHeure() : premiereReservation.getHeure(),
+                    LocalTime.MIN
+                );
+                LocalTime heureDepartPlanifiee = disponibiliteVehicule.isAfter(heureDernierClient)
+                    ? disponibiliteVehicule
+                    : heureDernierClient;
+                String heureDeprtAjustee = heureDepartPlanifiee.toString();
                 String plageHeuresGroupe = premiereReservation.getHeure() + " → " + heureDeprtAjustee
                     + " (attente: " + tempsAttenteGroupeMinutes + " min)";
 
@@ -863,7 +880,6 @@ public class PlanningTrajetService {
                 planningAssignationDetailRepository.upsert(detail);
 
                 // Enregistrer l'historique d'assignation pour chaque réservation du groupe.
-                LocalTime heureDepartPlanifiee = parseHeureSafe(heureDeprtAjustee, parseHeureSafe(premiereReservation.getHeure(), LocalTime.MIN));
                 LocalTime heureDisponibilitePrevue = calculerHeureFinMissionDepuisDureeComplete(heureDepartPlanifiee, dureeOptimiseeGroup);
                 for (Reservation reservationDuGroupe : reservationsGroupeTriees) {
                     PlanningTrajet planningReservation = planningByReservationId.get((long) reservationDuGroupe.getId());
@@ -877,6 +893,8 @@ public class PlanningTrajetService {
                             "PLANIFIE"
                     );
                 }
+
+                disponibiliteVehicule = heureDisponibilitePrevue;
             }
         }
 
@@ -1083,6 +1101,10 @@ public class PlanningTrajetService {
         }
 
         List<Vehicule> vehicules = vehiculeService.getVehiculesByCapacite(reservation.getNombrePersonnes());
+        if (vehicules == null || vehicules.isEmpty()) {
+            // Sprint 6: fallback partiel pour permettre le fractionnement des grosses réservations.
+            vehicules = vehiculeService.getAllVehicules();
+        }
         if (vehicules == null || vehicules.isEmpty()) {
             return null;
         }
@@ -1420,28 +1442,28 @@ public class PlanningTrajetService {
             return null;
         }
 
-        // Heure de la première réservation du groupe
-        Reservation premiere = groupe.stream()
-            .min(Comparator.comparing(Reservation::getHeure, Comparator.nullsLast(String::compareTo)))
+        // Heure de la dernière réservation du groupe (règle Sprint 4)
+        Reservation derniere = groupe.stream()
+            .max(Comparator.comparing(Reservation::getHeure, Comparator.nullsLast(String::compareTo)))
             .orElse(null);
 
-        if (premiere == null || premiere.getHeure() == null) {
+        if (derniere == null || derniere.getHeure() == null) {
             return null;
         }
 
-        String heurePremiereRes = premiere.getHeure();
+        String heureDerniereRes = derniere.getHeure();
 
-        // Si pas de véhicule, utiliser l'heure de la première réservation
+        // Si pas de véhicule, utiliser l'heure de la dernière réservation
         if (vehicule == null || vehicule.getHeureDisponibleCourante() == null) {
-            return heurePremiereRes;
+            return heureDerniereRes;
         }
 
         String heureDispoVehicule = vehicule.getHeureDisponibleCourante();
-        LocalTime heurePremiereResTime = parseHeureSafe(heurePremiereRes, LocalTime.MIN);
+        LocalTime heureDerniereResTime = parseHeureSafe(heureDerniereRes, LocalTime.MIN);
         LocalTime heureDispoVehiculeTime = parseHeureSafe(heureDispoVehicule, LocalTime.MIN);
 
-        // L'heure de départ réelle est la PLUS TARD entre disponibilité du véhicule et première réservation
-        return heureDispoVehiculeTime.isAfter(heurePremiereResTime) ? heureDispoVehicule : heurePremiereRes;
+        // L'heure de départ réelle est la PLUS TARD entre disponibilité du véhicule et dernière réservation
+        return heureDispoVehiculeTime.isAfter(heureDerniereResTime) ? heureDispoVehicule : heureDerniereRes;
     }
 
     /**
