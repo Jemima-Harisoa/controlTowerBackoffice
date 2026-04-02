@@ -61,7 +61,7 @@ services:
         condition: service_healthy
     volumes:
       # Volume partagé : ton WAR local → Tomcat webapps
-      - ./target/ControlTowerBackoffice.war:/usr/local/tomcat/webapps/ROOT.war
+      - ./target/ROOT.war:/usr/local/tomcat/webapps/ROOT.war
       # Logs accessibles depuis l'hôte
       - ./dev/logs:/usr/local/tomcat/logs
     networks:
