@@ -532,6 +532,86 @@
         color: #2f3b52;
     }
 
+    .grouped-result-header {
+        margin: 18px 0 10px;
+        font-weight: 700;
+        color: #333;
+    }
+
+    .grouped-result-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 14px;
+    }
+
+    .vehicule-group-card {
+        border: 1px solid #e8ebf3;
+        border-radius: 10px;
+        overflow: hidden;
+        background: #fff;
+    }
+
+    .vehicule-group-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 14px;
+        background: #f6f8ff;
+        border-bottom: 1px solid #e8ebf3;
+    }
+
+    .vehicule-group-head strong {
+        color: #2f3b52;
+    }
+
+    .vehicule-group-head span {
+        font-size: 12px;
+        color: #5c6a82;
+        font-weight: 600;
+    }
+
+    .vehicule-group-body {
+        padding: 10px 14px 14px;
+    }
+
+    .vehicule-group-body table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .vehicule-group-body th,
+    .vehicule-group-body td {
+        text-align: left;
+        padding: 6px 4px;
+        font-size: 13px;
+        border-bottom: 1px dashed #edf0f7;
+    }
+
+    .vehicule-group-body tr:last-child td {
+        border-bottom: none;
+    }
+
+    .timeline-list {
+        width: 100%;
+        border-collapse: collapse;
+        background: #fff;
+        border: 1px solid #e8ebf3;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .timeline-list th,
+    .timeline-list td {
+        padding: 10px 12px;
+        text-align: left;
+        border-bottom: 1px solid #edf0f7;
+        font-size: 13px;
+    }
+
+    .timeline-list tr:last-child td {
+        border-bottom: none;
+    }
+
     @media (max-width: 1080px) {
         .filter-row {
             grid-template-columns: repeat(2, minmax(220px, 1fr));
@@ -777,6 +857,26 @@
                     </c:forEach>
                 </tbody>
             </table>
+
+            <div class="grouped-result-header">Affichage regroupé par véhicule</div>
+            <div id="groupedByVehicule" class="grouped-result-grid"></div>
+
+            <div class="grouped-result-header">Chronologie globale (qui part quand, puis qui part après)</div>
+            <table id="timelineGlobale" class="timeline-list">
+                <thead>
+                    <tr>
+                        <th>Ordre</th>
+                        <th>Départ</th>
+                        <th>Véhicule</th>
+                        <th>Client</th>
+                        <th>Nb pers</th>
+                        <th>Retour</th>
+                        <th>Durée</th>
+                        <th>Distance</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
         </c:otherwise>
     </c:choose>
 </div>
@@ -962,6 +1062,127 @@
         });
         alert('Affichage des ' + count + ' réservations non assignées');
     }
+
+    function construireVueGroupeeParVehicule() {
+        const resultSection = document.getElementById('statutPlanningSection');
+        if (!resultSection) {
+            return;
+        }
+
+        const groupedContainer = document.getElementById('groupedByVehicule');
+        const timelineBody = document.querySelector('#timelineGlobale tbody');
+        const sourceRows = resultSection.querySelectorAll('.reservations-table tbody tr');
+
+        if (!groupedContainer || !timelineBody || sourceRows.length === 0) {
+            return;
+        }
+
+        const grouped = {};
+        const allLignes = [];
+        sourceRows.forEach((row) => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length < 6) {
+                return;
+            }
+
+            const vehicule = (cells[0].textContent || '').trim();
+            if (!vehicule) {
+                return;
+            }
+
+            if (!grouped[vehicule]) {
+                grouped[vehicule] = [];
+            }
+
+            const ligne = {
+                client: (cells[1].textContent || '').trim(),
+                nbPers: (cells[2].textContent || '').trim(),
+                depart: (cells[3].textContent || '').trim(),
+                retour: (cells[4].textContent || '').trim(),
+                duree: (cells[5].textContent || '').trim(),
+                distance: 'N/D',
+                vehicule: vehicule
+            };
+
+            grouped[vehicule].push(ligne);
+            allLignes.push(ligne);
+        });
+
+        const orderedVehicules = Object.keys(grouped).sort();
+        groupedContainer.innerHTML = orderedVehicules.map((vehicule) => {
+            const lignes = grouped[vehicule].slice().sort((a, b) => a.depart.localeCompare(b.depart));
+            const bodyRows = lignes.map((ligne) => (
+                '<tr>' +
+                    '<td>' + escapeHtml(ligne.client) + '</td>' +
+                    '<td>' + escapeHtml(ligne.nbPers) + '</td>' +
+                    '<td>' + escapeHtml(ligne.depart) + '</td>' +
+                    '<td>' + escapeHtml(ligne.retour) + '</td>' +
+                    '<td>' + escapeHtml(ligne.duree) + '</td>' +
+                    '<td>' + escapeHtml(ligne.distance) + '</td>' +
+                '</tr>'
+            )).join('');
+
+            return (
+                '<article class="vehicule-group-card">' +
+                    '<div class="vehicule-group-head">' +
+                        '<strong>' + vehicule + '</strong>' +
+                        '<span>' + lignes.length + ' client(s)</span>' +
+                    '</div>' +
+                    '<div class="vehicule-group-body">' +
+                        '<table>' +
+                            '<thead>' +
+                                '<tr>' +
+                                    '<th>Client</th>' +
+                                    '<th>Pers</th>' +
+                                    '<th>Depart</th>' +
+                                    '<th>Retour</th>' +
+                                    '<th>Duree</th>' +
+                                    '<th>Distance</th>' +
+                                '</tr>' +
+                            '</thead>' +
+                            '<tbody>' + bodyRows + '</tbody>' +
+                        '</table>' +
+                    '</div>' +
+                '</article>'
+            );
+        }).join('');
+
+        const orderedGlobal = allLignes.slice().sort((a, b) => {
+            const diffDepart = a.depart.localeCompare(b.depart);
+            if (diffDepart !== 0) {
+                return diffDepart;
+            }
+            const diffVehicule = a.vehicule.localeCompare(b.vehicule);
+            if (diffVehicule !== 0) {
+                return diffVehicule;
+            }
+            return a.client.localeCompare(b.client);
+        });
+
+        timelineBody.innerHTML = orderedGlobal.map((ligne, index) => (
+            '<tr>' +
+                '<td>' + (index + 1) + '</td>' +
+                '<td>' + escapeHtml(ligne.depart) + '</td>' +
+                '<td><strong>' + escapeHtml(ligne.vehicule) + '</strong></td>' +
+                '<td>' + escapeHtml(ligne.client) + '</td>' +
+                '<td>' + escapeHtml(ligne.nbPers) + '</td>' +
+                '<td>' + escapeHtml(ligne.retour) + '</td>' +
+                '<td>' + escapeHtml(ligne.duree) + '</td>' +
+                '<td>' + escapeHtml(ligne.distance) + '</td>' +
+            '</tr>'
+        )).join('');
+    }
+
+    function escapeHtml(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    document.addEventListener('DOMContentLoaded', construireVueGroupeeParVehicule);
 </script>
 
 <%-- Footer commun : ferme le layout et charge les scripts --%>
